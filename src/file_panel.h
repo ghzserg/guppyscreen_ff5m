@@ -4,6 +4,7 @@
 #include "lvgl/lvgl.h"
 #include "button_container.h"
 #include "hv/json.hpp"
+#include "websocket_client.h"
 
 #include <string>
 
@@ -11,11 +12,11 @@ using json = nlohmann::json;
 
 class FilePanel {
  public:
-  FilePanel(lv_obj_t *parent);
+  FilePanel(lv_obj_t *parent, KWebSocketClient &c);
   ~FilePanel();
 
   void foreground();
-  void refresh_view(json &j, const std::string &gcode_path);  
+  void refresh_view(json &j, const std::string &gcode_path);
   lv_obj_t *get_container();
   const char* get_thumbnail_path();
 
@@ -24,6 +25,7 @@ class FilePanel {
   lv_obj_t *thumbnail;
   lv_obj_t *fname_label;
   lv_obj_t *detail_label;
+  KWebSocketClient &ws;
 };
 
 #endif // __FILE_PANEL_H__

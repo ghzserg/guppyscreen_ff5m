@@ -1,6 +1,6 @@
+#include <tslib.h>
 #include "lvgl/lvgl.h"
 #include "lv_drivers/display/fbdev.h"
-#include "lv_drivers/indev/evdev.h"
 #include "lv_tc.h"
 #include "lv_tc_screen.h"
 
@@ -9,9 +9,14 @@
 #include <time.h>
 #include <sys/time.h>
 #include <experimental/filesystem>
+#ifdef GUPPY_FF5M
+#include <stdio.h>
+#include <sys/types.h>
+#include <dirent.h>
+#endif
 
 namespace fs = std::experimental::filesystem;
-
+struct tsdev *ts; // Глобальная переменная для tslib
 
 #ifdef SIMULATOR
 #define SDL_MAIN_HANDLED /*To fix SDL's "undefined reference to WinMain" issue*/
@@ -34,21 +39,75 @@ using namespace hv;
 
 #define DISP_BUF_SIZE (128 * 1024)
 
-int main(void)
+int main(int argc, char* argv[])
 {
+    setlocale(LC_ALL, "");
+    setlocale(LC_NUMERIC, "C");
+    bindtextdomain("guppyscreen", "/opt/config/mod/.shell/locale");
+    textdomain("guppyscreen");
+
     // config
     spdlog::debug("current path {}", std::string(fs::canonical("/proc/self/exe").parent_path()));
 
-    Config *conf = Config::get_instance();
+    Config* conf = Config::get_instance();
     auto config_path = fs::canonical("/proc/self/exe").parent_path() / "guppyconfig.json";
     conf->init(config_path.string(), "/usr/data/printer_data/thumbnails");
 
     GuppyScreen::init(hal_init);
-    GuppyScreen::loop();
+    GuppyScreen* guppy = GuppyScreen::get();
+    guppy->loop();
     return 0;
 }
-
 #ifndef SIMULATOR
+
+static void tslib_read(lv_indev_drv_t *drv, lv_indev_data_t *data) {
+    struct ts_sample sample;
+    static int32_t last_x = 0;
+    static int32_t last_y = 0;
+
+    while (ts_read(ts, &sample, 1) > 0) {
+        if (sample.pressure) {
+            last_x = sample.x;
+            last_y = sample.y;
+            data->state = LV_INDEV_STATE_PR;
+        } else
+            data->state = LV_INDEV_STATE_REL;
+    }
+
+    if (last_x < 0)
+        last_x = 0;
+    if (last_y < 0)
+        last_y = 0;
+    if (last_x >= drv->disp->driver->hor_res)
+        last_x = drv->disp->driver->hor_res - 1;
+    if(last_y >= drv->disp->driver->ver_res)
+        last_y = drv->disp->driver->ver_res - 1;
+
+    data->point.x = last_x;
+    data->point.y = last_y;
+}
+
+// Инициализация драйвера ввода
+void init_touch() {
+    ts = ts_setup(NULL, 0);
+    if (!ts) {
+        perror("ts_setup failed");
+        fprintf(stderr, "Tslib failed to open device from TSLIB_TSDEVICE='%s'\n",
+        getenv("TSLIB_TSDEVICE") ?: "NULL");
+        exit(EXIT_FAILURE);
+    }
+
+    int fd = ts_fd(ts); // [[3]]
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+    static lv_indev_drv_t indev_drv;
+    lv_indev_drv_init(&indev_drv);
+    indev_drv.type = LV_INDEV_TYPE_POINTER;
+    indev_drv.read_cb = tslib_read;
+    lv_tc_indev_drv_init(&indev_drv, tslib_read);
+    lv_indev_drv_register(&indev_drv);
+}
 
 static void hal_init(lv_color_t primary, lv_color_t secondary) {
     /*A small buffer for LittlevGL to draw the screen's content*/
@@ -69,7 +128,7 @@ static void hal_init(lv_color_t primary, lv_color_t secondary) {
     uint32_t height;
     uint32_t dpi;
     fbdev_get_sizes(&width, &height, &dpi);
-    
+
     disp_drv.hor_res    = width;
     disp_drv.ver_res    = height;
     Config *conf = Config::get_instance();
@@ -85,26 +144,11 @@ static void hal_init(lv_color_t primary, lv_color_t secondary) {
     spdlog::debug("resolution {} x {}", width, height);
     lv_disp_t * disp = lv_disp_drv_register(&disp_drv);
     lv_theme_t * th = height <= 480
-      ? lv_theme_default_init(NULL, primary, secondary, true, &lv_font_montserrat_12)
-      : lv_theme_default_init(NULL, primary, secondary, true, &lv_font_montserrat_20);
+      ? lv_theme_default_init(NULL, primary, secondary, true, &notosemi_16)
+      : lv_theme_default_init(NULL, primary, secondary, true, &notosemi_20);
     lv_disp_set_theme(disp, th);
 
-    evdev_init();
-    static lv_indev_drv_t indev_drv_1;
-    lv_indev_drv_init(&indev_drv_1);
-    indev_drv_1.read_cb = evdev_read; // no calibration
-    indev_drv_1.type = LV_INDEV_TYPE_POINTER;
-
-    auto touch_calibrated = conf->get_json("/touch_calibrated");
-    if (!touch_calibrated.is_null()) {
-      auto is_calibrated = touch_calibrated.template get<bool>();
-      if (is_calibrated) {
-        spdlog::info("using touch calibration");
-        lv_tc_indev_drv_init(&indev_drv_1, evdev_read);
-      }
-    }
-      
-    lv_indev_drv_register(&indev_drv_1);
+    init_touch();
 }
 
 #else // SIMULATOR
@@ -142,10 +186,10 @@ static void hal_init(lv_color_t primary, lv_color_t secondary)
 
   lv_disp_t * disp = lv_disp_drv_register(&disp_drv);
   lv_theme_t * th = MONITOR_HOR_RES <= 480
-    ? lv_theme_default_init(NULL, primary, secondary, true, &lv_font_montserrat_12)
-    : lv_theme_default_init(NULL, primary, secondary, true, &lv_font_montserrat_16);
+    ? lv_theme_default_init(NULL, primary, secondary, true, &roboto_14)
+    : lv_theme_default_init(NULL, primary, secondary, true, &roboto_16);
   lv_disp_set_theme(disp, th);
- 
+
   lv_group_t * g = lv_group_create();
   lv_group_set_default(g);
 

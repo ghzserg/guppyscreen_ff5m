@@ -6,22 +6,22 @@
 class ImageLabel {
  public:
   ImageLabel(lv_obj_t *parent,
-	     const void* img,
-	     int32_t width_pct,
-	     int32_t height_pct,
-	     const char *v);
+             const void* img,
+             int32_t width_pct,
+             int32_t height_pct,
+             const char *v);
   ImageLabel(lv_obj_t *parent,
-	     const void* img,
-	     uint16_t img_scale,
-	     int32_t width_pct,
-	     int32_t height_pct,
-	     const char *v);
+             const void* img,
+             uint16_t img_scale,
+             int32_t width_pct,
+             int32_t height_pct,
+             const char *v);
   ImageLabel(lv_obj_t *parent,
-	     const void* img,
-	     uint16_t img_scale,
-	     const char *v);
-   
-  
+             const void* img,
+             uint16_t img_scale,
+             const char *v);
+
+
   ~ImageLabel();
 
   lv_obj_t *get_container();
@@ -31,7 +31,7 @@ class ImageLabel {
   lv_obj_t *cont;
   lv_obj_t *image;
   lv_obj_t *label;
-  
+
 };
 
 #endif // __IMAGE_LABEL_H__

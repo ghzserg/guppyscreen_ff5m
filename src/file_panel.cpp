@@ -12,21 +12,21 @@
 
 namespace fs = std::experimental::filesystem;
 
-#define THUMBSCALE = 0.78
+#define THUMBSCALE = 0.5
 
-FilePanel::FilePanel(lv_obj_t *parent)
+FilePanel::FilePanel(lv_obj_t *parent, KWebSocketClient &c)
   : file_cont(lv_obj_create(parent))
   , thumbnail(lv_img_create(file_cont))
   , fname_label(lv_label_create(file_cont))
   , detail_label(lv_label_create(file_cont))
+  , ws(c)
 {
   lv_obj_set_size(file_cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);  
+  lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_align(file_cont, LV_ALIGN_CENTER, 0, 0);
   lv_obj_set_width(fname_label, LV_PCT(90));
   lv_label_set_long_mode(fname_label, LV_LABEL_LONG_SCROLL);
   lv_obj_set_style_text_align(fname_label, LV_TEXT_ALIGN_CENTER, 0);
-  
 
   static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
@@ -36,6 +36,8 @@ FilePanel::FilePanel(lv_obj_t *parent)
   lv_obj_set_grid_cell(thumbnail, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(fname_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 1, 1);
   lv_obj_set_grid_cell(detail_label, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+  lv_label_set_text(detail_label, "---");
+  lv_label_set_text(fname_label, "---");
 }
 
 FilePanel::~FilePanel() {
@@ -47,15 +49,15 @@ FilePanel::~FilePanel() {
 
 void FilePanel::refresh_view(json &j, const std::string &gcode_path) {
   auto v = j["/result/modified"_json_pointer];
-  std::stringstream time_stream;  
+  std::stringstream time_stream;
   if (!v.is_null()) {
     std::time_t timestamp = v.template get<std::time_t>();
     std::tm lt = *std::localtime(&timestamp);
-    time_stream << std::put_time(&lt, "%Y-%m-%d %H:%M");
+    time_stream << std::put_time(&lt, _("%Y-%m-%d %H:%M") /* "%d.%m.%Y %H:%M" */);
   } else {
-    time_stream << "(unknown)";
+    time_stream << _("(Unknown)") /* "(неизвестно)" */;
   }
-  
+
   v = j["/result/estimated_time"_json_pointer];
   int eta =  v.is_null() ? -1 : v.template get<int>();
   v = j["/result/filament_weight_total"_json_pointer];
@@ -63,16 +65,17 @@ void FilePanel::refresh_view(json &j, const std::string &gcode_path) {
 
   auto filename = fs::path(gcode_path).filename();
   lv_label_set_text(fname_label, filename.string().c_str());
-  
-  std::string detail = fmt::format("Filament Weight: {} g\nPrint Time: {}\nSize: {} MB\nModified: {}",
-				   fweight > 0 ? std::to_string(fweight) : "(unknown)",
-				   eta > 0 ? KUtils::eta_string(eta) : "(unknown)",
-				   KUtils::bytes_to_mb(j["result"]["size"].template get<size_t>()),
-				   time_stream.str());
+
+  std::string detail;
+  detail = fmt::format(_("Weight: {} г|{}\nTime: {}\nSize: {} MB"),
+                           fweight > 0 ? std::to_string(fweight) : _("(Unknown)"),
+                           time_stream.str(),
+                           eta > 0 ? KUtils::eta_string(eta) : _("(Unknown)"),
+                           KUtils::bytes_to_mb(j["result"]["size"].template get<size_t>()));
 
   auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   auto thumb_detail = KUtils::get_thumbnail(gcode_path, j, width_scale);
-  std::string fullpath = thumb_detail.first;    
+  std::string fullpath = thumb_detail.first;
   if (fullpath.length() > 0) {
     lv_label_set_text(detail_label, detail.c_str());
     auto screen_width = lv_disp_get_physical_hor_res(NULL);

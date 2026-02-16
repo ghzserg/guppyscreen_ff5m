@@ -28,8 +28,8 @@ KWebSocketClient::~KWebSocketClient() {
 }
 
 int KWebSocketClient::connect(const char* url,
-			      std::function<void()> connected,
-			      std::function<void()> disconnected) {
+                              std::function<void()> connected,
+                              std::function<void()> disconnected) {
   spdlog::debug("websocket connecting");
   // set callbacks
   onopen = [this, connected]() {
@@ -40,7 +40,7 @@ int KWebSocketClient::connect(const char* url,
   onmessage = [this, connected, disconnected](const std::string &msg) {
     // if (msg.find("notify_proc_stat_update") == std::string::npos) {
     //   spdlog::trace("onmessage(type={} len={}): {}", opcode() == WS_OPCODE_TEXT ? "text" : "binary",
-    // 	     (int)msg.size(), msg);
+    //              (int)msg.size(), msg);
     // }
     auto j = json::parse(msg);
 
@@ -61,14 +61,14 @@ int KWebSocketClient::connect(const char* url,
 
     if (j.contains("method")) {
       std::string method = j["method"].template get<std::string>();
-      if ("notify_status_update" == method) {
+      if ("notify_status_update" == method || "notify_filelist_changed" == method) {
         for (const auto &entry : notify_consumers) {
           entry->consume(j);
         }
       }  //  else if ("notify_gcode_response" == method) {
-      // 	for (const auto &gcode_cb : gcode_resp_cbs) {
-      // 	  gcode_cb(j);
-      // 	}
+      //         for (const auto &gcode_cb : gcode_resp_cbs) {
+      //           gcode_cb(j);
+      //         }
       // }
       else if ("notify_klippy_disconnected" == method) {
         disconnected();
@@ -106,8 +106,8 @@ int KWebSocketClient::connect(const char* url,
 };
 
 int KWebSocketClient::send_jsonrpc(const std::string &method,
-				   const json &params,
-				   std::function<void(json&)> cb) {
+                                   const json &params,
+                                   std::function<void(json&)> cb) {
   const auto &entry = callbacks.find(id);
   if (entry == callbacks.end()) {
     // spdlog::debug("registering consume %d, %x\n", id, consumer);
@@ -122,7 +122,7 @@ int KWebSocketClient::send_jsonrpc(const std::string &method,
 }
 
 int KWebSocketClient::send_jsonrpc(const std::string &method,
-				   std::function<void(json&)> cb) {
+                                   std::function<void(json&)> cb) {
   const auto &entry = callbacks.find(id);
   if (entry == callbacks.end()) {
     // spdlog::debug("registering consume %d, %x\n", id, consumer);
@@ -160,7 +160,7 @@ void KWebSocketClient::unregister_notify_update(NotifyConsumer *consumer) {
 }
 
 int KWebSocketClient::send_jsonrpc(const std::string &method,
-				   const json &params) {
+                                   const json &params) {
   json rpc;
   rpc["jsonrpc"] = "2.0";
   rpc["method"] = method;
@@ -187,8 +187,8 @@ int KWebSocketClient::gcode_script(const std::string &gcode) {
 }
 
 void KWebSocketClient::register_method_callback(std::string resp_method,
-						std::string handler_name,
-						std::function<void(json&)> cb) {
+                                                std::string handler_name,
+                                                std::function<void(json&)> cb) {
 
   const auto &entry = method_resp_cbs.find(resp_method);
   if (entry == method_resp_cbs.end()) {
@@ -198,7 +198,7 @@ void KWebSocketClient::register_method_callback(std::string resp_method,
     method_resp_cbs.insert({resp_method, handler_map});
   } else {
     spdlog::debug("found existing resp_method {} with handlers, updating handler callback {}",
-		  resp_method, handler_name);
+                  resp_method, handler_name);
     entry->second.insert({handler_name, cb});
   }
 }

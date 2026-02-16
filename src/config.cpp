@@ -41,13 +41,13 @@ void Config::init(std::string config_path, const std::string thumbdir) {
   json sensors_conf = {
     {
       {"id", "extruder"},
-      {"display_name", "Extruder"},
+      {"display_name", "Экструдер"},
       {"controllable", true},
       {"color", "red"}
     },
     {
       {"id", "heater_bed"},
-      {"display_name", "Bed"},
+      {"display_name", "Кровать"},
       {"controllable", true},
       {"color", "purple"}
     },
@@ -61,8 +61,8 @@ void Config::init(std::string config_path, const std::string thumbdir) {
 
   json cooldown_conf = {{ "cooldown", "SET_HEATER_TEMPERATURE HEATER=extruder TARGET=0\nSET_HEATER_TEMPERATURE HEATER=heater_bed TARGET=0"}};
   json default_macros_conf = {
-    {"load_filament", "_GUPPY_LOAD_MATERIAL"},
-    {"unload_filament", "_GUPPY_QUIT_MATERIAL"}
+    {"load_filament", "LOAD_FILAMENT"},
+    {"code", "_GUPPY_MACRO"}
   };
 
   if (stat(config_path.c_str(), &buffer) == 0) {
@@ -71,11 +71,13 @@ void Config::init(std::string config_path, const std::string thumbdir) {
     data = {
         {"log_path", "/usr/data/printer_data/logs/guppyscreen.log"},
         {"thumbnail_path", thumbdir},
+#ifndef GUPPY_FF5M
         {"wpa_supplicant", "/var/run/wpa_supplicant"},
+#endif
         {"display_sleep_sec", 600}
 #ifndef OS_ANDROID
-        , {"default_printer", "k1"},
-        {"printers", {{"k1", {
+        , {"default_printer", "FF5M"},
+        {"printers", {{"FF5M", {
                                  {"moonraker_api_key", false},
                                  {"moonraker_host", "127.0.0.1"},
                                  {"moonraker_port", 7125},
@@ -116,7 +118,7 @@ void Config::init(std::string config_path, const std::string thumbdir) {
 
     auto &guppy_init = data["/guppy_init_script"_json_pointer];
     if (guppy_init.is_null()) {
-      data["/guppy_init_script"_json_pointer] = "/etc/init.d/S99guppyscreen";
+      data["/guppy_init_script"_json_pointer] = "/etc/init.d/S80guppyscreen";
     }
 
     auto &ll = data[json::json_pointer(df() + "log_level")];
@@ -151,7 +153,7 @@ void Config::init(std::string config_path, const std::string thumbdir) {
   if (display_sleep.is_null()) {
     data["/display_sleep_sec"_json_pointer] = 600;
   }
-  
+
   std::ofstream o(config_path);
   o << std::setw(2) << data << std::endl;
 }
@@ -161,14 +163,16 @@ std::string& Config::df() {
 }
 
 std::string Config::get_thumbnail_path() {
-  return get<std::string>("/thumbnail_path");
+  return get<std::string>("/data/thumbnails");
 }
 
+#ifndef GUPPY_FF5M
 std::string Config::get_wifi_interface() {
-  return fs::path(get<std::string>("/wpa_supplicant"))
+  return fs::path(get<std::string>("/var/run/wpa_supplicant"))
     .filename()
     .string();
 }
+#endif
 
 std::string Config::get_path() {
     return path;

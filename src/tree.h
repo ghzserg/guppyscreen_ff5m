@@ -29,7 +29,7 @@ Tree(const std::string &filename, const std::string &path, uint32_t modified)
     // folders
     return children.empty();
   }
-  
+
   Tree& find_or_create(const std::string &value, const std::string &path, uint32_t modified) {
     if (modified > date_modified) {
       date_modified = modified;
@@ -55,9 +55,9 @@ Tree(const std::string &filename, const std::string &path, uint32_t modified)
     std::string cur_path;
     for (const auto &p : paths) {
       if (cur_path.length() > 0) {
-	cur_path = fmt::format("{}/{}", cur_path, p);
+        cur_path = fmt::format("{}/{}", cur_path, p);
       } else {
-	cur_path = p;
+        cur_path = p;
       }
 
       cur_node = &(cur_node->find_or_create(p, cur_path, modified));
@@ -73,14 +73,14 @@ Tree(const std::string &filename, const std::string &path, uint32_t modified)
     for (const auto &p : paths) {
       const auto &entry = cur_node->children.find(p);
       if (entry != cur_node->children.cend()) {
-	cur_node = &entry->second;
+        cur_node = &entry->second;
       } else {
-	return this;
+        return this;
       }
     }
     return cur_node->is_leaf() ? this : cur_node;
   }
-  
+
 
   Tree *get_child(const std::string child) {
     const auto &e = children.find(child);
@@ -88,7 +88,7 @@ Tree(const std::string &filename, const std::string &path, uint32_t modified)
       // spdlog::debug("get_child {}, result = {}", child, e->second.name);
       return &e->second;
     }
-    
+
     return NULL;
   }
 
@@ -100,7 +100,7 @@ Tree(const std::string &filename, const std::string &path, uint32_t modified)
     // spdlog::debug("%s%s", name, is_leaf() ? " *": "");
     if (!is_leaf()) {
       for (auto e = children.cbegin(); e != children.cend(); ++e) {
-	e->second.traverse();
+        e->second.traverse();
       }
     }
   }
@@ -125,7 +125,7 @@ Tree(const std::string &filename, const std::string &path, uint32_t modified)
     }
     return NULL;
   }
-  
+
   std::string name;
   std::string full_path;
   uint32_t date_modified;

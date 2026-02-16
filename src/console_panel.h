@@ -40,7 +40,7 @@ class ConsolePanel {
     ConsolePanel *panel = (ConsolePanel*)e->user_data;
     panel->handle_clear_input(e);
   };
-  
+
  private:
   KWebSocketClient &ws;
   std::mutex &lv_lock;

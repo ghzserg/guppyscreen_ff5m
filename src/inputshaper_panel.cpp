@@ -2,6 +2,10 @@
 #include "state.h"
 #include "utils.h"
 #include "config.h"
+#include <iostream>
+#include <experimental/filesystem>
+
+namespace fs = std::experimental::filesystem;
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
@@ -14,9 +18,9 @@ LV_IMG_DECLARE(back);
 LV_FONT_DECLARE(dejavusans_mono_14);
 
 #define X_DATA "/tmp/resonances_x_x.csv"
-#define X_PNG "resonances_x.png"
+#define X_PNG "mod_data/resonances_x.png"
 #define Y_DATA "/tmp/resonances_y_y.csv"
-#define Y_PNG "resonances_y.png"
+#define Y_PNG "mod_data/resonances_y.png"
 
 std::vector<std::string> InputShaperPanel::shapers = {
   "zv",
@@ -26,9 +30,10 @@ std::vector<std::string> InputShaperPanel::shapers = {
   "3hump_ei"
 };
 
-InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
+InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPanel &p)
   : ws(c)
   , lv_lock(l)
+  , prompt_panel(&p)
   , cont(lv_obj_create(lv_scr_act()))
 
     // xgraph
@@ -43,77 +48,79 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   , youtput(lv_label_create(cont))
   , yspinner(lv_spinner_create(cont, 1000, 60))
 
-    // x controls    
+    // x controls
   , xcontrol(lv_obj_create(cont))
   , xaxis_label(lv_label_create(xcontrol))
   , x_switch(lv_switch_create(xcontrol))
-  , xslider_cont(lv_obj_create(xcontrol))
-  , xslider(lv_slider_create(xslider_cont))
-  , xlabel(lv_label_create(xslider_cont))
+  , xspinbox_cont(lv_obj_create(xcontrol))
+  , xspinbox(xspinbox_cont, "Hz", 0, 1400, 0, NULL, 4, 3)
   , xshaper_dd(lv_dropdown_create(xcontrol))
 
     // y controls
   , ycontrol(lv_obj_create(cont))
   , yaxis_label(lv_label_create(ycontrol))
   , y_switch(lv_switch_create(ycontrol))
-  , yslider_cont(lv_obj_create(ycontrol))
-  , yslider(lv_slider_create(yslider_cont))
-  , ylabel(lv_label_create(yslider_cont))
+  , yspinbox_cont(lv_obj_create(ycontrol))
+  , yspinbox(yspinbox_cont, "Hz", 0, 1400, 0, NULL, 4, 3)
   , yshaper_dd(lv_dropdown_create(ycontrol))
-    
+
   , button_cont(lv_obj_create(cont))
   , switch_cont(lv_obj_create(button_cont))
   , graph_switch_label(lv_label_create(switch_cont))
   , graph_switch(lv_switch_create(switch_cont))
-  , calibrate_btn(button_cont, &resume, "Calibrate", &InputShaperPanel::_handle_callback, this)
-  , save_btn(button_cont, &sd_img, "Save", &InputShaperPanel::_handle_callback, this)
-  , emergency_btn(button_cont, &emergency, "Stop", &InputShaperPanel::_handle_callback, this,
-		  "Do you want to emergency stop?",
-		  [&c]() {
-		    spdlog::debug("emergency stop pressed");
-		    c.send_jsonrpc("printer.emergency_stop");
-		  })
-  , back_btn(cont, &back, "Back", &InputShaperPanel::_handle_callback, this)
+  , calibrate_btn(button_cont, &resume, _("Calibrate") /* "Калибровка" */, &InputShaperPanel::_handle_callback, this)
+  , save_btn(button_cont, &sd_img, _("Save") /* "Сохранить" */, &InputShaperPanel::_handle_callback, this)
+  , emergency_btn(button_cont, &emergency, _("Stop") /* "Стоп" */, &InputShaperPanel::_handle_callback, this,
+                  _("Do you want to emergency stop?") /* "Выполнить аварийную остановку?" */,
+                  [&c]() {
+                    spdlog::debug("emergency stop pressed");
+                    c.send_jsonrpc("printer.emergency_stop");
+                  })
+  , back_btn(cont, &back, _("Back") /* "Назад" */, &InputShaperPanel::_handle_callback, this)
   , ximage_fullsized(false)
   , yimage_fullsized(false)
 {
   lv_obj_move_background(cont);
 
-  lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);  
+  lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_style_pad_all(cont, 0, 0);
-  
+
   lv_obj_t *graph_label = lv_label_create(xgraph_cont);
-  lv_label_set_text(graph_label, "X Frequency Response");
+  lv_label_set_text(graph_label, _("X Frequency Response") /* "X Частотная характеристика" */);
   lv_obj_align(graph_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
   lv_obj_set_style_pad_all(xgraph_cont, 0, 0);
   lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_add_event_cb(xgraph_cont, &InputShaperPanel::_handle_image_clicked,
-		      LV_EVENT_CLICKED, this);
+                      LV_EVENT_SHORT_CLICKED, this);
 
   graph_label = lv_label_create(ygraph_cont);
-  lv_label_set_text(graph_label, "Y Frequency Response");  
+  lv_label_set_text(graph_label, _("Y Frequency Response") /* "Y Частотная характеристика" */);
   lv_obj_align(graph_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
   lv_obj_set_style_pad_all(ygraph_cont, 0, 0);
   lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_add_event_cb(ygraph_cont, &InputShaperPanel::_handle_image_clicked,
-		      LV_EVENT_CLICKED, this);
+                      LV_EVENT_SHORT_CLICKED, this);
 
   // graphs
   lv_img_set_zoom(xgraph, 95);
   lv_obj_center(xgraph);
-  // lv_img_set_src(xgraph, "A:/usr/data/printer_data/thumbnails/resonances_x.png");  
+  if (fs::exists("/opt/config/mod_data/resonances_x.png")) {
+    lv_img_set_src(xgraph, "A:/opt/config/mod_data/resonances_x.png");
+  }
 
   lv_img_set_zoom(ygraph, 95);
   lv_obj_center(ygraph);
-  // lv_img_set_src(ygraph, "A:/usr/data/printer_data/thumbnails/resonances_y.png");
-  
+  if (fs::exists("/opt/config/mod_data/resonances_y.png")) {
+    lv_img_set_src(ygraph, "A:/opt/config/mod_data/resonances_y.png");
+  }
+
   lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
-  lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_SCROLLABLE);  
+  lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
   lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_SCROLLABLE);
 
@@ -131,7 +138,7 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_size(xspinner, 100, 100);
 
   lv_obj_add_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_set_size(yspinner, 100, 100);  
+  lv_obj_set_size(yspinner, 100, 100);
 
   // buttons
   lv_obj_set_size(button_cont, LV_PCT(20), LV_PCT(100));
@@ -143,15 +150,13 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_pad_row(switch_cont, 0, 0);
   lv_obj_set_flex_flow(switch_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(switch_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  
+
   lv_obj_set_style_text_align(graph_switch_label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_label_set_text(graph_switch_label, "Graph");
+  lv_label_set_text(graph_switch_label, _("Graph") /* "График" */);
   lv_obj_set_width(graph_switch_label, LV_PCT(100));
   lv_obj_clear_state(graph_switch, LV_STATE_CHECKED);
   lv_obj_clear_flag(switch_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(switch_cont, 0, 0);
-
-  auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
 
   // controls
   lv_obj_set_flex_flow(xcontrol, LV_FLEX_FLOW_ROW_WRAP);
@@ -162,24 +167,13 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_pad_all(xcontrol, 0, 0);
 
   lv_obj_set_width(xaxis_label, LV_PCT(100));
-  lv_label_set_text(xaxis_label, "X Axis");
+  lv_label_set_text(xaxis_label, "  X (Hz)");
   lv_obj_add_state(x_switch, LV_STATE_CHECKED);
 
-  lv_obj_clear_flag(xslider_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(xslider_cont, LV_PCT(53), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_all(xslider_cont, 0, 0);
-  
-  lv_obj_center(xslider);
-  lv_obj_set_width(xslider, LV_PCT(85));
-  lv_slider_set_range(xslider, 0, 1400);
+  lv_obj_clear_flag(xspinbox_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(xspinbox_cont, LV_PCT(53), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(xspinbox_cont, 0, 0);
 
-  lv_obj_add_event_cb(xslider, &InputShaperPanel::_handle_update_slider,
-		      LV_EVENT_VALUE_CHANGED, this);
-  
-
-  lv_obj_align_to(xlabel, xslider, LV_ALIGN_OUT_BOTTOM_MID, 0, 35 * scale);
-  lv_label_set_text(xlabel, "0 Hz");
-  
   lv_dropdown_set_options(xshaper_dd, fmt::format("{}", fmt::join(shapers, "\n")).c_str());
 
   lv_obj_set_flex_flow(ycontrol, LV_FLEX_FLOW_ROW_WRAP);
@@ -190,22 +184,12 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_pad_row(ycontrol, 0, 0);
 
   lv_obj_set_width(yaxis_label, LV_PCT(100));
-  lv_label_set_text(yaxis_label, "Y Axis");
+  lv_label_set_text(yaxis_label, "  Y (Hz)");
   lv_obj_add_state(y_switch, LV_STATE_CHECKED);
 
-  lv_obj_clear_flag(yslider_cont, LV_OBJ_FLAG_SCROLLABLE);    
-  lv_obj_set_size(yslider_cont, LV_PCT(53), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_all(yslider_cont, 0, 0);
-  
-  lv_obj_center(yslider);
-  lv_obj_set_width(yslider, LV_PCT(85));
-  lv_slider_set_range(yslider, 0, 1400);
-  
-  lv_obj_add_event_cb(yslider, &InputShaperPanel::_handle_update_slider,
-		      LV_EVENT_VALUE_CHANGED, this);
-  
-  lv_obj_align_to(ylabel, yslider, LV_ALIGN_OUT_BOTTOM_MID, 0, 35 * scale);
-  lv_label_set_text(ylabel, "0 Hz");
+  lv_obj_clear_flag(yspinbox_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(yspinbox_cont, LV_PCT(53), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(yspinbox_cont, 0, 0);
 
   lv_dropdown_set_options(yshaper_dd, fmt::format("{}", fmt::join(shapers, "\n")).c_str());
 
@@ -213,7 +197,7 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
     LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(7), LV_GRID_FR(7),
     LV_GRID_TEMPLATE_LAST};
-  
+
   lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
 
   // row 1, col 2/3
@@ -233,14 +217,14 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   // row 1, col 1
   lv_obj_set_grid_cell(button_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 3);
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);  
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
   lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
-  
+
   // TODO: show only register when issuing macros inputshaper cares about, then unregister after.
   // ws.register_gcode_resp([this](json& d) { this->handle_macro_response(d); });
   ws.register_method_callback("notify_gcode_response",
-			      "InputShaperPanel",
-			      [this](json& d) { this->handle_macro_response(d); });
+                              "InputShaperPanel",
+                              [this](json& d) { this->handle_macro_response(d); });
 }
 
 InputShaperPanel::~InputShaperPanel() {
@@ -259,8 +243,7 @@ void InputShaperPanel::foreground() {
     auto v = inputshaper["/shaper_freq_x"_json_pointer];
     if (!v.is_null()) {
       double hz = std::stod(v.template get<std::string>());
-      lv_slider_set_value(xslider, hz * 10, LV_ANIM_OFF);
-      lv_label_set_text(xlabel, fmt::format("{} Hz", hz).c_str());
+      xspinbox.update_value(hz * 10);
     }
 
     v = inputshaper["/shaper_type_x"_json_pointer];
@@ -268,13 +251,12 @@ void InputShaperPanel::foreground() {
       auto shaper = v.template get<std::string>();
       auto idx = find_shaper_index(shapers, shaper);
       lv_dropdown_set_selected(xshaper_dd, idx);
-    }    
+    }
 
     v = inputshaper["/shaper_freq_y"_json_pointer];
     if (!v.is_null()) {
       double hz = std::stod(v.template get<std::string>());
-      lv_slider_set_value(yslider, hz * 10, LV_ANIM_OFF);
-      lv_label_set_text(ylabel, fmt::format("{} Hz", hz).c_str()); 
+      yspinbox.update_value(hz * 10);
     }
 
     v = inputshaper["/shaper_type_y"_json_pointer];
@@ -284,7 +266,7 @@ void InputShaperPanel::foreground() {
       lv_dropdown_set_selected(yshaper_dd, idx);
     }
   }
-  
+
   lv_obj_move_foreground(cont);
 }
 
@@ -303,13 +285,13 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
       // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x FREQ_START={} FREQ_END={}\nM400", 5, 10));
       ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x\nM400"));
 
-      // free src      
+      // free src
       lv_img_set_src(xgraph, NULL);
       // hack to color in empty space.
       ((lv_img_t*)xgraph)->src_type = LV_IMG_SRC_SYMBOL;
-      
+
       lv_label_set_text(xoutput, "");
-      lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);      
+      lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
       lv_obj_clear_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
       lv_obj_move_foreground(xspinner);
     }
@@ -322,8 +304,8 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
       lv_img_set_src(ygraph, NULL);
       // hack to color in empty space.
       ((lv_img_t*)ygraph)->src_type = LV_IMG_SRC_SYMBOL;
-      
-      lv_label_set_text(youtput, ""); 
+
+      lv_label_set_text(youtput, "");
       lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
       lv_obj_clear_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
       lv_obj_move_foreground(yspinner);
@@ -333,23 +315,25 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
     // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x\nM400\nTEST_RESONANCES AXIS=Y NAME=y\nM400"));
 
   } else if (btn == save_btn.get_container()) {
-    double xhz = (double)lv_slider_get_value(xslider) / 10.0;
-    double yhz = (double)lv_slider_get_value(yslider) / 10.0;
+    double xhz = (double)xspinbox.get_value() / 10.0;
+    double yhz = (double)yspinbox.get_value() / 10.0;
 
     char xbuf[10];
     lv_dropdown_get_selected_str(xshaper_dd, xbuf, sizeof(xbuf));
 
     char ybuf[10];
     lv_dropdown_get_selected_str(yshaper_dd, ybuf, sizeof(ybuf));
-    
-    ws.gcode_script(fmt::format("SAVE_INPUT_SHAPER SHAPER_FREQ_X={} SHAPER_TYPE_X={} SHAPER_FREQ_Y={} SHAPER_TYPE_Y={}\nSAVE_CONFIG",
-				xhz, xbuf, yhz, ybuf));
 
+    prompt_panel->ignore_save_config(false);
+
+    ws.gcode_script(fmt::format("SAVE_SHAPER AXIS=X NAME={} FREQUENCY={}\nSAVE_SHAPER AXIS=Y NAME={} FREQUENCY={}\nSAVE_CONFIG",
+                                xbuf, xhz, ybuf, yhz));
   } else if (btn == back_btn.get_container()) {
     lv_obj_move_background(cont);
   } else if (btn == emergency_btn.get_container()) {
     ws.send_jsonrpc("printer.emergency_stop");
   }
+
 }
 
 void InputShaperPanel::handle_macro_response(json &j) {
@@ -363,61 +347,61 @@ void InputShaperPanel::handle_macro_response(json &j) {
       auto res = json::parse(resp.substr(3));
       auto &axis_log = res["/logfile"_json_pointer];
       auto &axis_png = res["/png"_json_pointer];
-      
+
       if (!axis_log.is_null()) {
-	std::string fn = axis_log.template get<std::string>();
-	if (X_DATA == fn) {
-	  if (graph_requested && !axis_png.is_null()) {
-	    spdlog::trace("found generated x freq png");
-	    auto config_root = KUtils::get_root_path("config");
-	    auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , X_PNG);
+        std::string fn = axis_log.template get<std::string>();
+        if (X_DATA == fn) {
+          if (graph_requested && !axis_png.is_null()) {
+            spdlog::trace("found generated x freq png");
+            auto config_root = KUtils::get_root_path("config");
+            auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , X_PNG);
 
-	    png_path = 
-	      fmt::format("A:{}", KUtils::is_running_local()
-			  ? png_path
-			  : KUtils::download_file("config", X_PNG, Config::get_instance()->get_thumbnail_path()));
+            png_path =
+              fmt::format("A:{}", KUtils::is_running_local()
+                          ? png_path
+                          : KUtils::download_file("config", X_PNG, Config::get_instance()->get_thumbnail_path()));
 
-	    spdlog::trace("x freq png path {}", png_path);
-	      
-	    lv_label_set_text(xoutput, "");
-	    lv_img_set_src(xgraph, png_path.c_str());
-	    lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
-	    set_shaper_detail(res, NULL, xslider, xlabel, xshaper_dd);
-	    lv_obj_move_foreground(xgraph_cont);
-	  } else {
-	    set_shaper_detail(res, xoutput, xslider, xlabel, xshaper_dd);
-	    lv_obj_move_foreground(xoutput);
-	  }
-	  
-	  lv_obj_add_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
-	  lv_obj_move_background(xspinner);
+            spdlog::trace("x freq png path {}", png_path);
 
-	} else if (Y_DATA == fn) {
-	  if (graph_requested && !axis_png.is_null()) {
-	    spdlog::trace("found generated y freq png");
-	    auto config_root = KUtils::get_root_path("config");
-	    auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , Y_PNG);
+            lv_label_set_text(xoutput, "");
+            lv_img_set_src(xgraph, png_path.c_str());
+            lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
+            set_shaper_detail(res, NULL, &xspinbox, xshaper_dd);
+            lv_obj_move_foreground(xgraph_cont);
+          } else {
+            set_shaper_detail(res, xoutput, &xspinbox, xshaper_dd);
+            lv_obj_move_foreground(xoutput);
+          }
 
-	    png_path = 
-	      fmt::format("A:{}", KUtils::is_running_local()
-			  ? png_path
-			  : KUtils::download_file("config", Y_PNG, Config::get_instance()->get_thumbnail_path()));
+          lv_obj_add_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
+          lv_obj_move_background(xspinner);
 
-	    spdlog::trace("y freq png path {}", png_path);
+        } else if (Y_DATA == fn) {
+          if (graph_requested && !axis_png.is_null()) {
+            spdlog::trace("found generated y freq png");
+            auto config_root = KUtils::get_root_path("config");
+            auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , Y_PNG);
 
-	    lv_label_set_text(youtput, "");
-	    lv_img_set_src(ygraph, png_path.c_str());
-	    lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
-	    set_shaper_detail(res, NULL, yslider, ylabel, yshaper_dd);
-	    lv_obj_move_foreground(ygraph_cont);
-	  } else {
-	    set_shaper_detail(res, youtput, yslider, ylabel, yshaper_dd);
-	    lv_obj_move_foreground(youtput);
-	  }
+            png_path =
+              fmt::format("A:{}", KUtils::is_running_local()
+                          ? png_path
+                          : KUtils::download_file("config", Y_PNG, Config::get_instance()->get_thumbnail_path()));
 
-	  lv_obj_add_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
-	  lv_obj_move_background(yspinner);
-	}
+            spdlog::trace("y freq png path {}", png_path);
+
+            lv_label_set_text(youtput, "");
+            lv_img_set_src(ygraph, png_path.c_str());
+            lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
+            set_shaper_detail(res, NULL, &yspinbox, yshaper_dd);
+            lv_obj_move_foreground(ygraph_cont);
+          } else {
+            set_shaper_detail(res, youtput, &yspinbox, yshaper_dd);
+            lv_obj_move_foreground(youtput);
+          }
+
+          lv_obj_add_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
+          lv_obj_move_background(yspinner);
+        }
       }
 
     } else if ("// Resonances data written to " Y_DATA " file" == resp) {
@@ -426,9 +410,10 @@ void InputShaperPanel::handle_macro_response(json &j) {
       auto screen_height = (double)lv_disp_get_physical_ver_res(NULL) / 100.0;
       auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , Y_PNG);
       std::string arg = graph_requested
-	? fmt::format("{} -o {} -w {} -l {}", Y_DATA, png_path, screen_width, screen_height)
-	: Y_DATA;
+        ? fmt::format("{} -o {} -w {} -l {}", Y_DATA, png_path, screen_width, screen_height)
+        : Y_DATA;
 
+      prompt_panel->ignore_save_config(true);
       ws.gcode_script(fmt::format("RUN_SHELL_COMMAND CMD=guppy_input_shaper PARAMS={:?}", arg));
 
     } else if ("// Resonances data written to " X_DATA " file" == resp) {
@@ -437,9 +422,10 @@ void InputShaperPanel::handle_macro_response(json &j) {
       auto screen_height = (double)lv_disp_get_physical_ver_res(NULL) / 100.0;
       auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , X_PNG);
       std::string arg = graph_requested
-	? fmt::format("{} -o {} -w {} -l {}", X_DATA, png_path, screen_width, screen_height)
-	: X_DATA;
+        ? fmt::format("{} -o {} -w {} -l {}", X_DATA, png_path, screen_width, screen_height)
+        : X_DATA;
 
+      prompt_panel->ignore_save_config(true);
       ws.gcode_script(fmt::format("RUN_SHELL_COMMAND CMD=guppy_input_shaper PARAMS={:?}", arg));
     }
   }
@@ -447,62 +433,62 @@ void InputShaperPanel::handle_macro_response(json &j) {
 
 void InputShaperPanel::handle_image_clicked(lv_event_t *e) {
   const lv_event_code_t code = lv_event_get_code(e);
-  if (code == LV_EVENT_CLICKED) {
+  if (code == LV_EVENT_SHORT_CLICKED) {
     lv_obj_t *clicked = lv_event_get_target(e);
 
     if (clicked == xgraph_cont) {
       if (yimage_fullsized) {
-	lv_obj_invalidate(ygraph);
-	lv_img_set_zoom(ygraph, 150);
-	yimage_fullsized = false;
-	lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
-	lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);	
-	
-	// lv_obj_set_size(ygraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);	
+        lv_obj_invalidate(ygraph);
+        lv_img_set_zoom(ygraph, 150);
+        yimage_fullsized = false;
+        lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
+        lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
+
+        // lv_obj_set_size(ygraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
       }
-      
+
       lv_obj_invalidate(xgraph);
 
       if (ximage_fullsized) {
-	lv_img_set_zoom(xgraph, 95);
-	lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
-	lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);	
-	
-	// lv_obj_set_size(xgraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);		
-	
+        lv_img_set_zoom(xgraph, 95);
+        lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
+        lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);
+
+        // lv_obj_set_size(xgraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+
       } else {
-	lv_img_set_zoom(xgraph, LV_IMG_ZOOM_NONE);
-	lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);	
-	lv_obj_set_size(xgraph_cont, LV_PCT(100), LV_PCT(100));
+        lv_img_set_zoom(xgraph, LV_IMG_ZOOM_NONE);
+        lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);
+        lv_obj_set_size(xgraph_cont, LV_PCT(100), LV_PCT(100));
       }
-      lv_obj_move_foreground(xgraph_cont);      
+      lv_obj_move_foreground(xgraph_cont);
       ximage_fullsized = !ximage_fullsized;
 
     } else if (clicked == ygraph_cont) {
       if (ximage_fullsized) {
-	lv_obj_invalidate(xgraph);
-	lv_img_set_zoom(xgraph, 150);
-	ximage_fullsized = false;
-	// lv_obj_set_size(xgraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-	lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
-	lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);	
-	
+        lv_obj_invalidate(xgraph);
+        lv_img_set_zoom(xgraph, 150);
+        ximage_fullsized = false;
+        // lv_obj_set_size(xgraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+        lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
+        lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);
+
       }
-      
+
       lv_obj_invalidate(ygraph);
 
       if (yimage_fullsized) {
-	lv_img_set_zoom(ygraph, 95);
-	// lv_obj_set_size(ygraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-	lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
-	lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
+        lv_img_set_zoom(ygraph, 95);
+        // lv_obj_set_size(ygraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+        lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
+        lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
 
       } else {
-	lv_img_set_zoom(ygraph, LV_IMG_ZOOM_NONE);
-	lv_obj_set_size(ygraph_cont, LV_PCT(100), LV_PCT(100));
+        lv_img_set_zoom(ygraph, LV_IMG_ZOOM_NONE);
+        lv_obj_set_size(ygraph_cont, LV_PCT(100), LV_PCT(100));
 
-	// floating hacks (free child from grid) around the grid layout alignment
-	lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
+        // floating hacks (free child from grid) around the grid layout alignment
+        lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
 
       }
       lv_obj_move_foreground(ygraph_cont);
@@ -517,24 +503,18 @@ void InputShaperPanel::handle_update_slider(lv_event_t *e) {
     lv_obj_t * obj = lv_event_get_target(e);
     double hz = (double)lv_slider_get_value(obj);
     lv_slider_set_value(obj, hz, LV_ANIM_OFF);
-    if (obj == xslider) {
-      lv_label_set_text(xlabel, fmt::format("{} hz", hz / 10.0 ).c_str());
-    } else if (obj == yslider) {
-      lv_label_set_text(ylabel, fmt::format("{} hz", hz / 10.0).c_str());      
-    }
   }
 }
 
 uint32_t InputShaperPanel::find_shaper_index(const std::vector<std::string> &s,
-					     const std::string &shaper) {
+                                             const std::string &shaper) {
   return std::distance(s.cbegin(), std::find(s.cbegin(), s.cend(), shaper));
 }
 
 void InputShaperPanel::set_shaper_detail(json &res,
-					 lv_obj_t *label,
-					 lv_obj_t *slider,
-					 lv_obj_t *slider_label,
-					 lv_obj_t *dd) {
+                                         lv_obj_t *label,
+                                         SpinBoxSelector *spinbox,
+                                         lv_obj_t *dd) {
   auto &shapers_resp = res["/shapers"_json_pointer];
   if (!shapers_resp.is_null()) {
     std::vector<std::string> shaper_details;
@@ -542,27 +522,26 @@ void InputShaperPanel::set_shaper_detail(json &res,
     if (!best_shaper.is_null()) {
       auto bs_name = best_shaper.template get<std::string>();
       double f = shapers_resp[bs_name]["freq"]
-	.template get<double>();
-      shaper_details.push_back(fmt::format("Best shaper is {} @ {:.2f} Hz\n", bs_name, f));
+        .template get<double>();
+      shaper_details.push_back(fmt::format(_("Best shaper is {} @ {:.2f} Hz\n") /* "Лучший шейпер {} @ {:.2f} Hz\n" */, bs_name, f));
 
       uint32_t idx = find_shaper_index(shapers, bs_name);
       lv_dropdown_set_selected(dd, idx);
 
-      lv_slider_set_value(slider, f * 10, LV_ANIM_OFF);
-      lv_label_set_text(slider_label, fmt::format("{:.1f} Hz", f).c_str());
+      spinbox->update_value(f * 10);
     }
 
     if (label != NULL) {
       shaper_details.push_back(fmt::format("{:^8}\t{:^4}\t{:^5}\t{:^5}\t{:^5}",
-					   "Shaper", "Hz", "Vibr", "Smt", "MaxAcl"));
+                                           "Shaper", "Hz", "Vibr", "Smt", "MaxAcl"));
       for (auto &el : shapers_resp.items()) {
-	shaper_details.push_back(
-				 fmt::format("{:<8}\t{:.1f}\t{:.1f}%\t{:.3f}\t{:>}",
-					     el.key(),
-					     el.value()["freq"].template get<double>(),
-					     el.value()["vib"].template get<double>(),
-					     el.value()["smooth"].template get<double>(),
-					     el.value()["max_acel"].template get<double>()));
+        shaper_details.push_back(
+                                 fmt::format("{:<8}\t{:.1f}\t{:.1f}%\t{:.3f}\t{:>}",
+                                             el.key(),
+                                             el.value()["freq"].template get<double>(),
+                                             el.value()["vib"].template get<double>(),
+                                             el.value()["smooth"].template get<double>(),
+                                             el.value()["max_acel"].template get<double>()));
       }
 
       lv_label_set_text(label, fmt::format("{}", fmt::join(shaper_details, "\n")).c_str());

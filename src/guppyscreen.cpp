@@ -4,7 +4,7 @@
 #ifndef OS_ANDROID
   #include "lv_drivers/display/fbdev.h"
   #include "lv_drivers/indev/evdev.h"
-  
+
   #include "spdlog/sinks/rotating_file_sink.h"
   #include "spdlog/sinks/stdout_sinks.h"
 
@@ -12,10 +12,14 @@
   #include "spdlog/sinks/android_sink.h"
 #endif
 
+#ifndef GUPPY_FF5M
 #include "printer_select_panel.h"
+#endif
 #include "spdlog/spdlog.h"
 #include "state.h"
 #include "theme.h"
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 GuppyScreen *GuppyScreen::instance = NULL;
 lv_style_t GuppyScreen::style_container;
@@ -31,6 +35,7 @@ lv_obj_t *GuppyScreen::screen_saver = NULL;
 KWebSocketClient GuppyScreen::ws(NULL);
 
 std::mutex GuppyScreen::lv_lock;
+std::mutex GuppyScreen::lv_lock_update;
 
 GuppyScreen::GuppyScreen()
   : spoolman_panel(ws, lv_lock)
@@ -55,8 +60,8 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
   Config *conf = Config::get_instance();
   const std::string ll_path = conf->df() + "log_level";
   auto ll = spdlog::level::from_str(
-      conf->get_json("/printers").empty() 
-      ? "debug" 
+      conf->get_json("/printers").empty()
+      ? "debug"
       : conf->get<std::string>(ll_path));
 
   auto selected_theme = conf->get_json("/theme").empty()
@@ -96,6 +101,8 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
 #ifdef GUPPYSCREEN_VERSION
   spdlog::info("Guppy Screen Version: {}", GUPPYSCREEN_VERSION);
 #endif  // GUPPYSCREEN_VERSION
+
+  spdlog::info(_(" Waiting for the Klipper launch..."));
 
   spdlog::info("DPI: {}", LV_DPI_DEF);
   /*LittlevGL init*/
@@ -138,20 +145,6 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
   /*Assign the new theme to the current display*/
   lv_disp_set_theme(NULL, &th_new);
 
-  ws.register_notify_update(State::get_instance());
-
-  GuppyScreen *gs = GuppyScreen::get();
-  auto printers = conf->get_json("/printers");
-  if (!printers.empty()) {
-    // start initializing all guppy components
-    std::string ws_url = fmt::format("ws://{}:{}/websocket",
-                                     conf->get<std::string>(conf->df() + "moonraker_host"),
-                                     conf->get<uint32_t>(conf->df() + "moonraker_port"));
-
-    spdlog::info("connecting to printer at {}", ws_url);
-    gs->connect_ws(ws_url);
-  }
-
 #ifndef OS_ANDROID
   screen_saver = lv_obj_create(lv_scr_act());
 
@@ -159,6 +152,7 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
   lv_obj_set_style_bg_opa(screen_saver, LV_OPA_100, 0);
   lv_obj_move_background(screen_saver);
 
+/*
   lv_obj_t *main_screen = lv_disp_get_scr_act(NULL);
   auto touch_calibrated = conf->get_json("/touch_calibrated");
   if (!touch_calibrated.is_null()) {
@@ -183,17 +177,59 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
       }
     }
   }
+*/
 #endif // OS_ANDROID
 
+  ws.register_notify_update(State::get_instance());
+
+  GuppyScreen *gs = GuppyScreen::get();
+  auto printers = conf->get_json("/printers");
+  if (!printers.empty()) {
+    // start initializing all guppy components
+    std::string ws_url = fmt::format("ws://{}:{}/websocket",
+                                     conf->get<std::string>(conf->df() + "moonraker_host"),
+                                     conf->get<uint32_t>(conf->df() + "moonraker_port"));
+
+    spdlog::info("connecting to printer at {}", ws_url);
+    gs->connect_ws(ws_url);
+  }
+
+
   return gs;
+}
+
+void GuppyScreen::up(bool full) {
+    spdlog::debug("waking up display");
+
+    lv_lock_update.lock();
+    if (full) {
+        update_time = time(NULL);
+        update = false;
+    }
+    is_sleeping = false;
+    lv_lock_update.unlock();
+
+    fbdev_unblank();
+    lv_obj_move_background(screen_saver);
+}
+
+void GuppyScreen::down() {
+    spdlog::debug("putting display to sleeping");
+
+    fbdev_blank();
+    lv_obj_move_foreground(screen_saver);
+
+    lv_lock_update.lock();
+    is_sleeping = true;
+    lv_lock_update.unlock();
 }
 
 void GuppyScreen::loop() {
   /*Handle LitlevGL tasks (tickless mode)*/
 #if !defined(SIMULATOR) && !defined(OS_ANDROID)
-  std::atomic_bool is_sleeping(false);
   Config *conf = Config::get_instance();
   int32_t display_sleep = conf->get<int32_t>("/display_sleep_sec") * 1000;
+  up(true);
 #endif
 
   while (1) {
@@ -201,22 +237,26 @@ void GuppyScreen::loop() {
     lv_timer_handler();
     lv_lock.unlock();
 
+    lv_lock_update.lock();
+    if (!update) {
+        time_t cur_time = time(NULL);
+        if (cur_time - update_time > 60 * 60 * 24)
+            update_time = cur_time;
+
+        if (cur_time - update_time > (time_t)(display_sleep/1000))
+            update = true;
+    }
+    lv_lock_update.unlock();
+
 #if !defined(SIMULATOR) && !defined(OS_ANDROID)
     if (display_sleep != -1) {
-      if (lv_disp_get_inactive_time(NULL) > display_sleep) {
+      if (update && lv_disp_get_inactive_time(NULL) > display_sleep) {
         if (!is_sleeping.load()) {
-          spdlog::debug("putting display to sleeping");
-          fbdev_blank();
-          lv_obj_move_foreground(screen_saver);
-          // spdlog::debug("screen saver foreground");
-          is_sleeping = true;
+          down();
         }
       } else {
         if (is_sleeping.load()) {
-          spdlog::debug("waking up display");
-          fbdev_unblank();
-          lv_obj_move_background(screen_saver);
-          is_sleeping = false;
+          up(false);
         }
       }
     }
@@ -231,11 +271,13 @@ std::mutex &GuppyScreen::get_lock() {
 }
 
 void GuppyScreen::connect_ws(const std::string &url) {
-  init_panel.set_message(LV_SYMBOL_WARNING " Waiting for printer to initialize...");
+  up(true);
+  init_panel.set_message(_(LV_SYMBOL_WARNING" Waiting for the Klipper launch..."));
   ws.connect(url.c_str(),
    [this]() { init_panel.connected(ws); },
    [this]() { init_panel.disconnected(ws); });
 }
+
 
 void GuppyScreen::new_theme_apply_cb(lv_theme_t *th, lv_obj_t *obj) {
   LV_UNUSED(th);
@@ -251,6 +293,7 @@ void GuppyScreen::new_theme_apply_cb(lv_theme_t *th, lv_obj_t *obj) {
   }
 }
 
+/*
 void GuppyScreen::handle_calibrated(lv_event_t *event) {
   spdlog::info("finished calibration");
   lv_obj_t *main_screen = (lv_obj_t *)event->user_data;
@@ -280,6 +323,7 @@ void GuppyScreen::refresh_theme() {
   lv_disp_set_theme(disp, new_theme);
   lv_style_set_img_recolor(&style_imgbtn_pressed, primary_color);
 }
+*/
 
 /*Set in lv_conf.h as `LV_TICK_CUSTOM_SYS_TIME_EXPR`*/
 uint32_t custom_tick_get(void) {

@@ -8,21 +8,21 @@
 class Selector {
  public:
   Selector(lv_obj_t *parent,
-	   const char *label_text,
-	   std::vector<const char*> map,
-	   uint32_t default_idx,
-	   int32_t width_pct,
-	   int32_t height_pct,
-	   lv_event_cb_t cb,
-	   void *cb_data);
+           const char *label_text,
+           std::vector<const char*> map,
+           uint32_t default_idx,
+           int32_t width_pct,
+           int32_t height_pct,
+           lv_event_cb_t cb,
+           void *cb_data);
 
   Selector(lv_obj_t *parent,
-	   const char *label_text,
-	   std::vector<const char*> map,
-	   uint32_t default_idx,
-	   lv_event_cb_t cb,
-	   void *cb_data);
-  
+           const char *label_text,
+           std::vector<const char*> map,
+           uint32_t default_idx,
+           lv_event_cb_t cb,
+           void *cb_data);
+
   ~Selector();
   lv_obj_t *get_container();
   lv_obj_t *get_selector();

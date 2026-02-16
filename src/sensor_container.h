@@ -10,41 +10,75 @@
 class SensorContainer {
  public:
   SensorContainer(KWebSocketClient &c,
-		  lv_obj_t *parent,
-		  const void *img,
-		  const char *text,
-		  lv_color_t color,
-		  bool editable,
-		  bool show_target,
-		  Numpad &np,
-		  std::string name,
-		  lv_obj_t *chart,
-		  lv_chart_series_t *chart_series);
-		  
+                  lv_obj_t *parent,
+                  const void *img,
+                  const char *text,
+                  lv_color_t color,
+                  bool editable,
+                  bool show_target,
+                  Numpad &np,
+                  std::string name,
+                  lv_obj_t *chart,
+                  lv_chart_series_t *chart_series,
+                  bool not_set);
+
   SensorContainer(KWebSocketClient &c,
-		  lv_obj_t *parent,
-		  const void *img,
-		  uint16_t img_scale,
-		  const char *text,
-		  lv_color_t color,
-		  bool editable,
-		  bool show_target,
-		  Numpad &np,
-		  std::string name,
-		  lv_obj_t *chart,
-		  lv_chart_series_t *chart_series);
-  
+                  lv_obj_t *parent,
+                  const void *img,
+                  const char *text,
+                  lv_color_t color,
+                  bool editable,
+                  bool show_target,
+                  Numpad &np,
+                  std::string name,
+                  lv_obj_t *chart,
+                  lv_chart_series_t *chart_series);
+
+  SensorContainer(KWebSocketClient &c,
+                  lv_obj_t *parent,
+                  const void *img,
+                  uint16_t img_scale,
+                  const char *text,
+                  lv_color_t color,
+                  bool editable,
+                  bool show_target,
+                  Numpad &np,
+                  std::string name,
+                  lv_obj_t *chart,
+                  lv_chart_series_t *chart_series);
+
+  SensorContainer(KWebSocketClient &c,
+                  lv_obj_t *parent,
+                  const void *img,
+                  uint16_t img_scale,
+                  const char *text,
+                  lv_color_t color,
+                  bool editable,
+                  bool show_target,
+                  Numpad &np,
+                  std::string name,
+                  lv_obj_t *chart,
+                  lv_chart_series_t *chart_series,
+                  bool not_set);
+
   ~SensorContainer();
 
   lv_obj_t *get_sensor();
   void update_target(int new_target);
   void update_value(int new_value);
   void update_series(int value);
+  int get_target_value();
   void handle_edit(lv_event_t *event);
+  void handle_edit2(lv_event_t *event);
 
   static void _handle_edit(lv_event_t *event) {
     SensorContainer *panel = (SensorContainer*)event->user_data;
     panel->handle_edit(event);
+  };
+
+  static void _handle_edit2(lv_event_t *event) {
+    SensorContainer *panel = (SensorContainer*)event->user_data;
+    panel->handle_edit2(event);
   };
 
  private:
@@ -62,7 +96,7 @@ class SensorContainer {
   lv_obj_t *chart;
   lv_chart_series_t *series;
   std::time_t last_updated_ts;
-  
+
 };
 
 #endif // __SENSOR_CONTAINER_H__

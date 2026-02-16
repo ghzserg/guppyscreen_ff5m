@@ -19,7 +19,7 @@ class HomingPanel : public NotifyConsumer {
   void foreground();
   void handle_callback(lv_event_t *event);
   void handle_selector_cb(lv_event_t *event);
-  
+
   static void _handle_callback(lv_event_t *event) {
     HomingPanel *panel = (HomingPanel*)event->user_data;
     panel->handle_callback(event);

@@ -26,11 +26,16 @@ class GuppyScreen {
   static lv_obj_t *screen_saver;
 #endif
   static std::mutex lv_lock;
+  static std::mutex lv_lock_update;
   static KWebSocketClient ws;
 
   SpoolmanPanel spoolman_panel;
   MainPanel main_panel;
   InitPanel init_panel;
+
+  time_t update_time;
+  bool update;
+  std::atomic_bool is_sleeping;
 
  public:
   GuppyScreen();
@@ -42,11 +47,14 @@ class GuppyScreen {
   void connect_ws(const std::string &url);
   static GuppyScreen *get();
   static GuppyScreen *init(std::function<void(lv_color_t, lv_color_t)> hal_init);
-  static void loop();
+  void loop();
+  void up(bool full);
+  void down();
   static void new_theme_apply_cb(lv_theme_t *th, lv_obj_t *obj);
-  static void handle_calibrated(lv_event_t *event);
+/*  static void handle_calibrated(lv_event_t *event);
   static void save_calibration_coeff(lv_tc_coeff_t coeff);
-  static void refresh_theme();
+*/
+/*  static void refresh_theme(); */
 };
 
 #endif  // __GUPPY_SCREEN_H__

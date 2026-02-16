@@ -17,7 +17,7 @@ class FanPanel : public NotifyConsumer {
   ~FanPanel();
 
   void consume(json &j);
-  
+
   lv_obj_t *get_container();
   void create_fans(json &f);
   void foreground();
@@ -40,7 +40,7 @@ class FanPanel : public NotifyConsumer {
     FanPanel *panel = (FanPanel*)event->user_data;
     panel->handle_fan_update_part_fan(event);
   };
-  
+
   static void _handle_fan_update_generic(lv_event_t *event) {
     FanPanel *panel = (FanPanel*)event->user_data;
     panel->handle_fan_update_generic(event);

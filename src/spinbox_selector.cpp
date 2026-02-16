@@ -1,11 +1,23 @@
 #include "spinbox_selector.h"
 
 SpinBoxSelector::SpinBoxSelector(lv_obj_t *parent,
-				 const std::string &name,
-				 int min,
-				 int max,
-				 int value,
-				 std::function<void(int)> update_cb)
+                                 const std::string &name,
+                                 int min,
+                                 int max,
+                                 int value,
+                                 std::function<void(int)> update_cb)
+    : SpinBoxSelector(parent, name, min, max, value, update_cb, 2, 0)
+{
+}
+
+SpinBoxSelector::SpinBoxSelector(lv_obj_t *parent,
+                                 const std::string &name,
+                                 int min,
+                                 int max,
+                                 int value,
+                                 std::function<void(int)> update_cb,
+                                 int digit_count,
+                                 int separator_position)
   : cont(lv_obj_create(parent))
   , sb_cont(lv_obj_create(cont))
   , sb(lv_spinbox_create(sb_cont))
@@ -18,13 +30,15 @@ SpinBoxSelector::SpinBoxSelector(lv_obj_t *parent,
   lv_obj_set_style_pad_all(cont, 0, 0);
   lv_obj_set_style_pad_bottom(cont, 5, 0);
   lv_obj_set_style_pad_row(cont, 0, 0);
-  
+
   lv_obj_set_size(sb_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(sb_cont, 0, 0);
 
-  lv_obj_t *l = lv_label_create(cont);
-  lv_obj_set_width(l, LV_PCT(100));  
-  lv_label_set_text(l, name.c_str());
+  if (separator_position==0) {
+    lv_obj_t *l = lv_label_create(cont);
+    lv_obj_set_width(l, LV_PCT(100));
+    lv_label_set_text(l, name.c_str());
+  }
 
   lv_obj_center(sb);
 
@@ -33,17 +47,21 @@ SpinBoxSelector::SpinBoxSelector(lv_obj_t *parent,
   lv_spinbox_set_range(sb, min, max);
   lv_spinbox_set_value(sb, value);
   lv_spinbox_set_step(sb, 1);
-  lv_spinbox_set_digit_format(sb, 2, 0);
-  lv_obj_set_style_border_width(sb, 0, LV_PART_CURSOR);
-  lv_obj_set_style_border_opa(sb, LV_OPA_0, LV_PART_CURSOR);
-  lv_obj_set_style_bg_opa(sb, LV_OPA_0, LV_PART_CURSOR);
-  lv_textarea_set_cursor_click_pos(sb, false);
+  lv_spinbox_set_digit_format(sb, digit_count, separator_position);
+  if (separator_position==0) {
+      lv_textarea_set_cursor_click_pos(sb, false);
+      lv_obj_set_style_border_width(sb, 0, LV_PART_CURSOR);
+      lv_obj_set_style_border_opa(sb, LV_OPA_0, LV_PART_CURSOR);
+      lv_obj_set_style_bg_opa(sb, LV_OPA_0, LV_PART_CURSOR);
+  } else {
+      lv_textarea_set_cursor_click_pos(sb, true);
+  }
 
   int32_t h = lv_obj_get_height(sb);
   lv_obj_t * btn = lv_btn_create(sb_cont);
   lv_obj_set_size(btn, h, h);
   lv_obj_align(btn, LV_ALIGN_RIGHT_MID, 0, 0);
-  
+
   lv_obj_set_style_bg_img_src(btn, LV_SYMBOL_PLUS, 0);
   lv_obj_add_event_cb(btn, [](lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
@@ -55,11 +73,12 @@ SpinBoxSelector::SpinBoxSelector(lv_obj_t *parent,
     if (code == LV_EVENT_RELEASED) {
       lv_spinbox_increment(panel->sb);
       if (panel->cb) {
-	panel->cb(lv_spinbox_get_value(panel->sb));
+        panel->cb(lv_spinbox_get_value(panel->sb));
       }
     }
-      
+
   }, LV_EVENT_ALL, this);
+
 
   btn = lv_btn_create(sb_cont);
   lv_obj_set_size(btn, h, h);
@@ -68,7 +87,7 @@ SpinBoxSelector::SpinBoxSelector(lv_obj_t *parent,
   lv_obj_set_style_bg_img_src(btn, LV_SYMBOL_MINUS, 0);
   lv_obj_add_event_cb(btn, [](lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
-    SpinBoxSelector *panel = (SpinBoxSelector*)e->user_data;    
+    SpinBoxSelector *panel = (SpinBoxSelector*)e->user_data;
     if(code == LV_EVENT_LONG_PRESSED_REPEAT) {
       lv_spinbox_decrement(panel->sb);
     }
@@ -76,7 +95,7 @@ SpinBoxSelector::SpinBoxSelector(lv_obj_t *parent,
     if (code == LV_EVENT_RELEASED) {
       lv_spinbox_decrement(panel->sb);
       if (panel->cb) {
-	panel->cb(lv_spinbox_get_value(panel->sb));
+        panel->cb(lv_spinbox_get_value(panel->sb));
       }
     }
   }, LV_EVENT_ALL, this);
@@ -91,4 +110,8 @@ SpinBoxSelector::~SpinBoxSelector() {
 
 void SpinBoxSelector::update_value(int v) {
   lv_spinbox_set_value(sb, v);
+}
+
+int SpinBoxSelector::get_value() {
+  return lv_spinbox_get_value(sb);
 }

@@ -3,6 +3,9 @@
 #include "config.h"
 #include "theme.h"
 #include "spdlog/spdlog.h"
+#ifdef GUPPY_FF5M
+#include "lv_drivers/display/fbdev.h"
+#endif
 #include "guppyscreen.h"
 
 #include <algorithm>
@@ -40,29 +43,35 @@ static std::map<int32_t, uint32_t> sleepsec_to_dd_idx = {
   {-1, 0}, // never
   {300, 1}, // 5 min
   {600, 2}, // 10 min
-  {1800, 3}, // 30 min
-  {3600, 4}, // 1 hour
-  {18000, 5} // 5 hour
+  {1200, 3}, // 20 min
+  {1800, 4}, // 30 min
+  {3600, 5}, // 1 hour
+  {18000, 6} // 5 hour
 };
 
 static std::map<std::string, uint32_t> sleep_label_to_sec = {
-  {"Never", -1}, // never
-  {"5 Minutes", 300}, // 5 min
-  {"10 Minutes", 600}, // 10 min
-  {"30 Minutes", 1800}, // 30 min
-  {"1 Hour", 3600}, // 1 hour
-  {"5 Hours", 18000} // 5 hour
+  {"Никогда", -1}, // never
+  {"5m", 300}, // 5 min
+  {"10m", 600}, // 10 min
+  {"20m", 1200}, // 20 min
+  {"30m", 1800}, // 30 min
+  {"1h", 3600}, // 1 hour
+  {"5h", 18000} // 5 hour
 };
 
-SysInfoPanel::SysInfoPanel()
+SysInfoPanel::SysInfoPanel(KWebSocketClient &c)
   : cont(lv_obj_create(lv_scr_act()))
   , left_cont(lv_obj_create(cont))
   , right_cont(lv_obj_create(cont))
   , network_label(lv_label_create(right_cont))
-
+  , ws(c)
     // display sleep
   , disp_sleep_cont(lv_obj_create(left_cont))
   , display_sleep_dd(lv_dropdown_create(disp_sleep_cont))
+#ifdef GUPPY_FF5M
+  , disp_brightness_cont(lv_obj_create(left_cont))
+  , disp_brightness_dd(lv_dropdown_create(disp_brightness_cont))
+#endif
 
     // log level
   , ll_cont(lv_obj_create(left_cont))
@@ -73,6 +82,7 @@ SysInfoPanel::SysInfoPanel()
   , estop_toggle_cont(lv_obj_create(left_cont))
   , prompt_estop_toggle(lv_switch_create(estop_toggle_cont))
 
+#ifndef GUPPY_FF5M
     // Z axis icons
   , z_icon_toggle_cont(lv_obj_create(left_cont))
   , z_icon_toggle(lv_switch_create(z_icon_toggle_cont))
@@ -81,8 +91,9 @@ SysInfoPanel::SysInfoPanel()
   , theme_cont(lv_obj_create(left_cont))
   , theme_dd(lv_dropdown_create(theme_cont))
   , theme(0)
+#endif
 
-  , back_btn(cont, &back, "Back", &SysInfoPanel::_handle_callback, this)
+  , back_btn(cont, &back, _("Back") /* "Назад" */, &SysInfoPanel::_handle_callback, this)
 {
   lv_obj_move_background(cont);
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -90,12 +101,12 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
 
   lv_obj_clear_flag(left_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(left_cont, LV_PCT(50), LV_PCT(100));
+  lv_obj_set_size(left_cont, LV_PCT(60), LV_PCT(100));
   lv_obj_set_flex_flow(left_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(left_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 
   lv_obj_clear_flag(right_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(right_cont, LV_PCT(50), LV_PCT(100));  
+  lv_obj_set_size(right_cont, LV_PCT(40), LV_PCT(100));
   lv_obj_set_flex_flow(right_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(right_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 
@@ -103,16 +114,18 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_t *l = lv_label_create(disp_sleep_cont);
   lv_obj_set_size(disp_sleep_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(disp_sleep_cont, 0, 0);
-  lv_label_set_text(l, "Display Sleep");
+  lv_label_set_text(l, _("Screen off") /* "Отключение экрана" */);
   lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
   lv_obj_align(display_sleep_dd, LV_ALIGN_RIGHT_MID, 0, 0);
   lv_dropdown_set_options(display_sleep_dd,
-			  "Never\n"
-			  "5 Minutes\n"
-			  "10 Minutes\n"
-			  "30 Minutes\n"
-			  "1 Hour\n"
-			  "5 Hours");
+                          "None"
+                          "5m\n"
+                          "10m\n"
+                          "20m\n"
+                          "30m\n"
+                          "1h\n"
+                          "5h");
+
 
   auto v = conf->get_json("/display_sleep_sec");
   if (!v.is_null()) {
@@ -123,12 +136,40 @@ SysInfoPanel::SysInfoPanel()
     }
   }
   lv_obj_add_event_cb(display_sleep_dd, &SysInfoPanel::_handle_callback,
-		      LV_EVENT_VALUE_CHANGED, this);
-  
+                      LV_EVENT_VALUE_CHANGED, this);
+
+#ifdef GUPPY_FF5M
+  lv_obj_t *l2 = lv_label_create(disp_brightness_cont);
+  lv_obj_set_size(disp_brightness_cont, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(disp_brightness_cont, 0, 0);
+  lv_label_set_text(l2, _("Brightness") /* "Яркость дисплея" */);
+  lv_obj_align(l2, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_align(disp_brightness_dd, LV_ALIGN_RIGHT_MID, 0, 0);
+  lv_dropdown_set_options(disp_brightness_dd,
+                          "10\n"
+                          "20\n"
+                          "30\n"
+                          "40\n"
+                          "50\n"
+                          "60\n"
+                          "70\n"
+                          "80\n"
+                          "90\n"
+                          "100");
+
+  auto v2 = conf->get_json("/display_brightness");
+  if (!v2.is_null()) {
+    auto bn = v2.template get<int32_t>();
+    lv_dropdown_set_selected(disp_brightness_dd, (bn/10)-1);
+  }
+  lv_obj_add_event_cb(disp_brightness_dd, &SysInfoPanel::_handle_callback,
+                      LV_EVENT_VALUE_CHANGED, this);
+#endif
+
   lv_obj_set_size(ll_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(ll_cont, 0, 0);
   l = lv_label_create(ll_cont);
-  lv_label_set_text(l, "Log Level");
+  lv_label_set_text(l, _("Log level") /* "Уровень логирования" */);
   lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
   lv_obj_align(loglevel_dd, LV_ALIGN_RIGHT_MID, 0, 0);
 
@@ -148,13 +189,13 @@ SysInfoPanel::SysInfoPanel()
   }
 
   lv_obj_add_event_cb(loglevel_dd, &SysInfoPanel::_handle_callback,
-		      LV_EVENT_VALUE_CHANGED, this);
+                      LV_EVENT_VALUE_CHANGED, this);
 
   lv_obj_set_size(estop_toggle_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(estop_toggle_cont, 0, 0);
 
   l = lv_label_create(estop_toggle_cont);
-  lv_label_set_text(l, "Prompt Emergency Stop");
+  lv_label_set_text(l, _("Emergency stop confirmation") /* "Подтверждение аварийной остановки" */);
   lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
   lv_obj_align(prompt_estop_toggle, LV_ALIGN_RIGHT_MID, 0, 0);
 
@@ -170,8 +211,9 @@ SysInfoPanel::SysInfoPanel()
   }
 
   lv_obj_add_event_cb(prompt_estop_toggle, &SysInfoPanel::_handle_callback,
-		      LV_EVENT_VALUE_CHANGED, this);
+                      LV_EVENT_VALUE_CHANGED, this);
 
+#ifndef GUPPY_FF5M
     /* Z icon selection */
   lv_obj_set_size(z_icon_toggle_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(z_icon_toggle_cont, 0, 0);
@@ -194,7 +236,7 @@ SysInfoPanel::SysInfoPanel()
   }
 
   lv_obj_add_event_cb(z_icon_toggle, &SysInfoPanel::_handle_callback,
-		      LV_EVENT_VALUE_CHANGED, this);
+                      LV_EVENT_VALUE_CHANGED, this);
 
   // theme dropdown
   lv_obj_set_size(theme_cont, LV_PCT(100), LV_SIZE_CONTENT);
@@ -218,9 +260,9 @@ SysInfoPanel::SysInfoPanel()
   }
   lv_obj_add_event_cb(theme_dd, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
+#endif
 
-
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);	
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
   lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, 0);
 }
 
@@ -236,18 +278,18 @@ void SysInfoPanel::foreground() {
 
   auto ifaces = KUtils::get_interfaces();
   std::vector<std::string> network_detail;
-  network_detail.push_back("Network");
+  network_detail.push_back(_("Network") /* "Сеть" */);
   for (auto &iface : ifaces) {
     auto ip = KUtils::interface_ip(iface);
     network_detail.push_back(fmt::format("\t{}: {}", iface, ip));
   }
-  lv_label_set_text(network_label, fmt::format("{}\n\nGuppyScreen\n\tVersion: " GS_VERSION,
-					       fmt::join(network_detail, "\n")).c_str());
+  lv_label_set_text(network_label, fmt::format("{}\n\nGuppyScreen\n\tVersion: " GS_VERSION ".1.5.1",
+                                               fmt::join(network_detail, "\n")).c_str());
 }
 
 void SysInfoPanel::handle_callback(lv_event_t *e)
 {
-  if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+  if (lv_event_get_code(e) == LV_EVENT_SHORT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(e);
 
     if (btn == back_btn.get_container())
@@ -288,6 +330,7 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
         conf->set<int32_t>("/display_sleep_sec", el->second);
         conf->save();
       }
+#ifndef GUPPY_FF5M
     }
     else if (obj == z_icon_toggle) {
       bool inverted = lv_obj_has_state(z_icon_toggle, LV_STATE_CHECKED);
@@ -304,6 +347,16 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
         ThemeConfig::get_instance()->init(theme_config);
         GuppyScreen::refresh_theme();
       }
+#endif
+#ifdef GUPPY_FF5M
+    } else if (obj == disp_brightness_dd) {
+        char buf[5]; // max 100
+        lv_dropdown_get_selected_str(disp_brightness_dd, buf, sizeof(buf));
+        int bn = atoi(buf);
+        conf->set<int32_t>("/display_brightness", bn);
+        conf->save();
+        fbdev_brightness(bn);
+#endif
     }
   }
 }

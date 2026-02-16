@@ -156,11 +156,11 @@ public:
 
 //Environment Variable types
 #ifndef _MSC_VER
-	using env_string_t = std::string;
-	using env_char_t = char;
+        using env_string_t = std::string;
+        using env_char_t = char;
 #else
-	using env_string_t = std::wstring;
-	using env_char_t = wchar_t;
+        using env_string_t = std::wstring;
+        using env_char_t = wchar_t;
 #endif
 using env_map_t = std::map<env_string_t, env_string_t>;
 using env_vector_t = std::vector<env_char_t>;
@@ -361,41 +361,41 @@ namespace util
   // * Returns the vector
   inline env_vector_t WindowsEnvironmentVectorFromMap(const env_map_t &source_map)
   {
-	// Make a new environment map buffer.
-	env_vector_t environment_map_buffer;
-	// Give it some space.
-	environment_map_buffer.reserve(4096);
+        // Make a new environment map buffer.
+        env_vector_t environment_map_buffer;
+        // Give it some space.
+        environment_map_buffer.reserve(4096);
 
-	// And fill'er up.
-	for(auto kv: source_map){
-	  // Create the line
-	  env_string_t current_line(kv.first); current_line += L"="; current_line += kv.second;
-	  // Add the line to the buffer.
-	  std::copy(current_line.begin(), current_line.end(), std::back_inserter(environment_map_buffer));
-	  // Append a null
-	  environment_map_buffer.push_back(0);
-	}
-	// Append one last null because of how Windows does it's environment maps.
-	environment_map_buffer.push_back(0);
+        // And fill'er up.
+        for(auto kv: source_map){
+          // Create the line
+          env_string_t current_line(kv.first); current_line += L"="; current_line += kv.second;
+          // Add the line to the buffer.
+          std::copy(current_line.begin(), current_line.end(), std::back_inserter(environment_map_buffer));
+          // Append a null
+          environment_map_buffer.push_back(0);
+        }
+        // Append one last null because of how Windows does it's environment maps.
+        environment_map_buffer.push_back(0);
 
-	return environment_map_buffer;
+        return environment_map_buffer;
   }
 
   // env_vector_t CreateUpdatedWindowsEnvironmentVector(const env_map_t &changes_map)
   // * Merges host environment with new mapped variables
   // * Creates and returns string vector based on map
   inline env_vector_t CreateUpdatedWindowsEnvironmentVector(const env_map_t &changes_map){
-	// Import the environment map
-	env_map_t environment_map = MapFromWindowsEnvironment();
+        // Import the environment map
+        env_map_t environment_map = MapFromWindowsEnvironment();
     // Merge in the changes with overwrite
-	for(auto& it: changes_map)
-	{
-		environment_map[it.first] = it.second;
-	}
+        for(auto& it: changes_map)
+        {
+                environment_map[it.first] = it.second;
+        }
     // Create a Windows-usable Environment Map Buffer
     env_vector_t environment_map_strings_vector = WindowsEnvironmentVectorFromMap(environment_map);
 
-	return environment_map_strings_vector;
+        return environment_map_strings_vector;
   }
 
 #endif
@@ -1498,8 +1498,8 @@ inline void Popen::execute_process() noexcept(false)
   void* environment_string_table_ptr = nullptr;
   env_vector_t environment_string_vector;
   if(this->env_.size()){
-	  environment_string_vector = util::CreateUpdatedWindowsEnvironmentVector(env_);
-	  environment_string_table_ptr = (void*)environment_string_vector.data();
+          environment_string_vector = util::CreateUpdatedWindowsEnvironmentVector(env_);
+          environment_string_table_ptr = (void*)environment_string_vector.data();
   }
 
   if (exe_name_.length()) {
@@ -1547,7 +1547,7 @@ inline void Popen::execute_process() noexcept(false)
                             NULL,         // process security attributes
                             NULL,         // primary thread security attributes
                             TRUE,         // handles are inherited
-                            creation_flags,	// creation flags
+                            creation_flags,        // creation flags
                             environment_string_table_ptr,  // use provided environment
                             NULL,         // use parent's current directory
                             &siStartInfo, // STARTUPINFOW pointer

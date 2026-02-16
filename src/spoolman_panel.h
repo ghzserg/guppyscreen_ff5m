@@ -18,7 +18,7 @@ class SpoolmanPanel {
   void foreground();
   void populate_spools(std::vector<json> &sorted_spools);
   void handle_active_id_update(json &j);
-  
+
   void handle_callback(lv_event_t *event);
   void handle_spoolman_action(lv_event_t *event);
 
@@ -26,7 +26,7 @@ class SpoolmanPanel {
     SpoolmanPanel *panel = (SpoolmanPanel*)event->user_data;
     panel->handle_callback(event);
   };
-  
+
   static void _handle_spoolman_action(lv_event_t *event) {
     SpoolmanPanel *panel = (SpoolmanPanel*)event->user_data;
     panel->handle_spoolman_action(event);

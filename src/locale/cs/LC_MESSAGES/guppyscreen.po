@@ -1,0 +1,506 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: buildroot 2024.11.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-02 20:22+0500\n"
+"PO-Revision-Date: 2025-04-16 14:44+0500\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: cs_CZ\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../print_panel.cpp:71
+msgid " A-Z"
+msgstr " A–Z"
+
+#: ../print_panel.cpp:67
+msgid " Changed"
+msgstr " Změněno"
+
+#: ../print_panel.cpp:63
+msgid " Refresh"
+msgstr " Obnovit"
+
+#: ../guppyscreen.cpp:105 ../guppyscreen.cpp:275
+msgid " Waiting for the Klipper launch..."
+msgstr " Čeká se na spuštění Klipperu..."
+
+#: ../file_panel.cpp:56
+msgid "%Y-%m-%d %H:%M"
+msgstr "%d.%m.%Y %H:%M"
+
+#: ../file_panel.cpp:58 ../file_panel.cpp:71 ../file_panel.cpp:73
+msgid "(Unknown)"
+msgstr "(Neznámé)"
+
+#: ../limits_panel.cpp:14
+msgid "Acceleration (mm/s2)"
+msgstr "Zrychlení (mm/s²)"
+
+#: ../limits_panel.cpp:16
+msgid "Acceleration to Deceleration (mm/s2)"
+msgstr "Zrychlení na zpomalení (mm/s²)"
+
+#: ../bedmesh_panel.cpp:374
+msgid "Algorithm"
+msgstr "Algoritmus"
+
+#: ../prompt_panel.cpp:368
+msgid "Attention!"
+msgstr "Pozor!"
+
+#: ../bedmesh_panel.cpp:39 ../belts_calibration_panel.cpp:44
+#: ../exclude_panel.cpp:13 ../extruder_panel.cpp:42 ../fan_panel.cpp:15
+#: ../finetune_panel.cpp:37 ../homing_panel.cpp:38 ../inputshaper_panel.cpp:79
+#: ../led_panel.cpp:15 ../limits_panel.cpp:17 ../pid_panel.cpp:37
+#: ../print_panel.cpp:37 ../print_status_panel.cpp:68 ../pro_panel.cpp:17
+#: ../retract_panel.cpp:17 ../spoolman_panel.cpp:23 ../sysinfo_panel.cpp:96
+msgid "Back"
+msgstr "Zpět"
+
+#: ../pid_panel.cpp:28
+msgid "Bed"
+msgstr "Tisk. plocha"
+
+#: ../printertune_panel.cpp:46
+msgid "Bed Mesh"
+msgstr "Síť lože"
+
+#: ../printertune_panel.cpp:49 ../printertune_panel.cpp:51
+msgid "Belts/Shake"
+msgstr "Řemeny/Chvění"
+
+#: ../inputshaper_panel.cpp:526
+#, c++-format
+msgid "Best shaper is {} @ {:.2f} Hz\n"
+msgstr "Nejlepší shaper je {} @ {:.2f} Hz\n"
+
+#: ../sysinfo_panel.cpp:145
+msgid "Brightness"
+msgstr "Jas"
+
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+msgid "Calibrate"
+msgstr "Kalibrovat"
+
+#: ../bedmesh_panel.cpp:141 ../print_panel.cpp:135 ../print_status_panel.cpp:54
+msgid "Cancel"
+msgstr "Zrušit"
+
+#: ../setting_panel.cpp:55
+msgid "Change WEB"
+msgstr "Změnit WEB"
+
+#: ../bedmesh_panel.cpp:36
+msgid "Clean"
+msgstr "Vyčistit"
+
+#: ../pid_panel.cpp:34
+msgid "Clear nozzle"
+msgstr "Vyčistit trysku"
+
+#: ../prompt_panel.cpp:184 ../prompt_panel.cpp:393
+msgid "Close"
+msgstr "Zavřít"
+
+#: ../bedmesh_panel.cpp:38
+msgid "Cold"
+msgstr "Studený"
+
+#: ../prompt_panel.cpp:160 ../prompt_panel.cpp:170
+msgid "Configuration change detected"
+msgstr "Zjištěna změna konfigurace"
+
+#: ../extruder_panel.cpp:40
+msgid "Cool down"
+msgstr "Ochladit"
+
+#: ../print_status_panel.cpp:55
+msgid "Do you want to cancel the print?"
+msgstr "Chcete zrušit tisk?"
+
+#: ../inputshaper_panel.cpp:74 ../main_panel.cpp:62
+#: ../print_status_panel.cpp:63
+msgid "Do you want to emergency stop?"
+msgstr "Nouzové zastavení?"
+
+#: ../homing_panel.cpp:32
+msgid "Do you want to make an emergency stop?"
+msgstr "Chcete provést nouzové zastavení?"
+
+#: ../mini_print_status.cpp:43 ../mini_print_status.cpp:84
+#: ../mini_print_status.cpp:89
+#, c++-format
+msgid ""
+"ETA: {}\n"
+"Status: {}"
+msgstr ""
+"ETA: {}\n"
+"Stav: {}"
+
+#: ../belts_calibration_panel.cpp:39
+msgid "Emergency printer shutdown?"
+msgstr "Nouzové vypnutí tiskárny?"
+
+#: ../sysinfo_panel.cpp:198
+msgid "Emergency stop confirmation"
+msgstr "Potvrzení nouzového zastavení"
+
+#: ../belts_calibration_panel.cpp:37
+msgid "Excitate"
+msgstr "Excitovat"
+
+#: ../pro_panel.cpp:15
+#, fuzzy
+msgid "External circulation"
+msgstr "Vnitřní cirkulace"
+
+#: ../main_panel.cpp:57
+msgid "Extrude"
+msgstr "Extrudovat"
+
+#: ../extruder_panel.cpp:27 ../pid_panel.cpp:26
+msgid "Extruder"
+msgstr "Extruder"
+
+#: ../extruder_panel.cpp:28
+msgid "Extruder temperature"
+msgstr "Teplota extruderu"
+
+#: ../extruder_panel.cpp:30
+msgid "Extrusion length"
+msgstr "Délka extruze"
+
+#: ../extruder_panel.cpp:32
+msgid "Extrusion speed (mm/s)"
+msgstr ""
+
+#: ../main_panel.cpp:58
+msgid "Fans"
+msgstr "Ventilátory"
+
+#: ../printertune_panel.cpp:43 ../print_status_panel.cpp:50
+msgid "Fine Tune"
+msgstr "Jemné doladění"
+
+#: ../setting_panel.cpp:45
+msgid "Firmware Restart"
+msgstr "Restart firmwaru"
+
+#: ../finetune_panel.cpp:34
+msgid "Flow Reset"
+msgstr "Reset průtoku"
+
+#: ../finetune_panel.cpp:35
+msgid "Flow+"
+msgstr "Průtok+"
+
+#: ../finetune_panel.cpp:36
+msgid "Flow-"
+msgstr "Průtok-"
+
+#: ../belts_calibration_panel.cpp:75
+msgid "Frequency"
+msgstr "Frekvence"
+
+#: ../inputshaper_panel.cpp:155
+msgid "Graph"
+msgstr "Graf"
+
+#: ../setting_panel.cpp:52
+msgid "Guppy Restart"
+msgstr "Restart Guppy"
+
+#: ../prompt_panel.cpp:411
+msgid "Home"
+msgstr "Domů"
+
+#: ../main_panel.cpp:56
+msgid "Homing"
+msgstr "Homing"
+
+#: ../pro_panel.cpp:14
+msgid "Internal circulation"
+msgstr "Vnitřní cirkulace"
+
+#: ../setting_panel.cpp:44
+msgid "Klipper Restart"
+msgstr "Restart Klipperu"
+
+#: ../printertune_panel.cpp:44
+msgid "Limits"
+msgstr "Limity"
+
+#: ../extruder_panel.cpp:36
+msgid "Load"
+msgstr "Načíst"
+
+#: ../pid_panel.cpp:35
+msgid "Load Cell"
+msgstr "Snímač zatížení"
+
+#: ../sysinfo_panel.cpp:172
+msgid "Log level"
+msgstr "Úroveň logu"
+
+#: ../extruder_panel.cpp:38
+msgid "Macro"
+msgstr "Makro"
+
+#: ../fan_panel.cpp:76 ../led_panel.cpp:80
+msgid "Max"
+msgstr "Max"
+
+#: ../homing_panel.cpp:37
+msgid "Motor off"
+msgstr "Vypnout motor"
+
+#: ../finetune_panel.cpp:40
+msgid "Multipler Step"
+msgstr "Multipler Step"
+
+#: ../spoolman_panel.cpp:142
+msgid "Name"
+msgstr "Název"
+
+#: ../setting_panel.cpp:54
+msgid "Native screen"
+msgstr "Orig. displej"
+
+#: ../sysinfo_panel.cpp:281
+msgid "Network"
+msgstr "Síť"
+
+#: ../fan_panel.cpp:75 ../led_panel.cpp:79
+msgid "Off"
+msgstr "Vypnuto"
+
+#: ../pid_panel.cpp:33
+msgid "PID Bed"
+msgstr "PID lože"
+
+#: ../pid_panel.cpp:32
+msgid "PID Extruder"
+msgstr "PID extruderu"
+
+#: ../print_status_panel.cpp:52
+msgid "Pause"
+msgstr "Pozastavit"
+
+#: ../setting_panel.cpp:53
+msgid "Power Off"
+msgstr "Vypnout napájení"
+
+#: ../main_panel.cpp:60 ../print_panel.cpp:36
+msgid "Print"
+msgstr "Tisk"
+
+#: ../print_panel.cpp:143
+msgid "Printing..."
+msgstr "Tiskne..."
+
+#: ../print_panel.cpp:139
+msgid "Queue"
+msgstr "Fronta"
+
+#: ../bedmesh_panel.cpp:283 ../bedmesh_panel.cpp:302 ../bedmesh_panel.cpp:367
+msgid "Range"
+msgstr "Rozsah"
+
+#: ../spoolman_panel.cpp:22
+msgid "Refresh"
+msgstr "Obnovit"
+
+#: ../spoolman_panel.cpp:145
+msgid ""
+"Remain\n"
+"Length"
+msgstr ""
+"Zbývá\n"
+"Délka"
+
+#: ../spoolman_panel.cpp:144
+msgid ""
+"Remain\n"
+"Weight"
+msgstr ""
+"Zbývá\n"
+"Hmotnost"
+
+#: ../limits_panel.cpp:13 ../limits_panel.cpp:14 ../limits_panel.cpp:15
+#: ../limits_panel.cpp:16 ../retract_panel.cpp:13 ../retract_panel.cpp:14
+#: ../retract_panel.cpp:15 ../retract_panel.cpp:16
+msgid "Reset"
+msgstr "Reset"
+
+#: ../finetune_panel.cpp:28
+msgid "Reset PA"
+msgstr "Reset PA"
+
+#: ../finetune_panel.cpp:25
+msgid "Reset Z"
+msgstr "Reset Z"
+
+#: ../setting_panel.cpp:56
+msgid "Restore Print"
+msgstr "Obnovit tisk"
+
+#: ../print_status_panel.cpp:53
+msgid "Resume"
+msgstr "Pokračovat"
+
+#: ../printertune_panel.cpp:45 ../print_status_panel.cpp:51
+msgid "Retract"
+msgstr "Retrakce"
+
+#: ../retract_panel.cpp:13
+msgid "Retract Length"
+msgstr "Délka retrakce"
+
+#: ../retract_panel.cpp:14
+msgid "Retract Speed"
+msgstr "Rychlost retrakce"
+
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:138 ../inputshaper_panel.cpp:72
+msgid "Save"
+msgstr "Uložit"
+
+#: ../bedmesh_panel.cpp:132
+msgid "Saving the profile will restart the printer."
+msgstr "Uložení profilu restartuje tiskárnu."
+
+#: ../sysinfo_panel.cpp:117
+msgid "Screen off"
+msgstr "Vypnout displej"
+
+#: ../pid_panel.cpp:36
+msgid "Screw adjustment"
+msgstr "Seřízení šroubů"
+
+#: ../belts_calibration_panel.cpp:36
+msgid "Shake Belts"
+msgstr "Chvění řemenů"
+
+#: ../spoolman_panel.cpp:63
+msgid "Show Archived"
+msgstr "Zobrazit archív"
+
+#: ../macros_panel.cpp:25
+msgid "Show Hidden"
+msgstr "Zobrazit skryté"
+
+#: ../print_panel.cpp:131
+msgid "Show task"
+msgstr "Zobrazit úlohu"
+
+#: ../finetune_panel.cpp:31
+msgid "Speed Reset"
+msgstr "Reset rychlosti"
+
+#: ../finetune_panel.cpp:32
+msgid "Speed+"
+msgstr "Rychlost+"
+
+#: ../finetune_panel.cpp:33
+msgid "Speed-"
+msgstr "Rychlost-"
+
+#: ../limits_panel.cpp:15
+msgid "Square Corner Velocity (mm/s)"
+msgstr "Rychlost v rozích (mm/s)"
+
+#: ../print_panel.cpp:35
+msgid "Status"
+msgstr "Stav"
+
+#: ../belts_calibration_panel.cpp:38 ../homing_panel.cpp:31
+#: ../inputshaper_panel.cpp:73 ../main_panel.cpp:61
+#: ../print_status_panel.cpp:62
+msgid "Stop"
+msgstr "Zastavit"
+
+#: ../pro_panel.cpp:16
+msgid "Stop circulation"
+msgstr "Zastavit cirkulaci"
+
+#: ../setting_panel.cpp:47 ../setting_panel.cpp:49
+msgid "System"
+msgstr "Systém"
+
+#: ../homing_panel.cpp:39
+msgid "Travel distance (mm)"
+msgstr "Vzdálenost pohybu (mm)"
+
+#: ../extruder_panel.cpp:37
+msgid "Unload"
+msgstr "Vysunout"
+
+#: ../retract_panel.cpp:15
+msgid "Unretract Extra Length"
+msgstr "Extra délka (unretract)"
+
+#: ../retract_panel.cpp:16
+msgid "Unretract Speed"
+msgstr "Rychlost (unretract)"
+
+#: ../limits_panel.cpp:13
+msgid "Velocity (mm/s)"
+msgstr "Rychlost (mm/s)"
+
+#: ../pid_panel.cpp:31
+msgid "Weight"
+msgstr "Hmotnost"
+
+#: ../file_panel.cpp:70
+#, c++-format
+msgid ""
+"Weight: {} г|{}\n"
+"Time: {}\n"
+"Size: {} MB"
+msgstr ""
+"Hmotnost: {} g|{}\n"
+"Čas: {}\n"
+"Velikost: {} MB"
+
+#: ../inputshaper_panel.cpp:90
+msgid "X Frequency Response"
+msgstr "Frekvenční odezva X"
+
+#: ../inputshaper_panel.cpp:100
+msgid "Y Frequency Response"
+msgstr "Frekvenční odezva Y"
+
+#: ../utils.cpp:251
+msgid "д "
+msgstr "d "
+
+#: ../utils.cpp:257
+msgid "м "
+msgstr "min "
+
+#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:42 ../finetune_panel.cpp:43
+#: ../finetune_panel.cpp:106 ../finetune_panel.cpp:112
+#: ../finetune_panel.cpp:149 ../finetune_panel.cpp:154
+#: ../print_status_panel.cpp:78 ../print_status_panel.cpp:79
+#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:207
+#: ../print_status_panel.cpp:208 ../print_status_panel.cpp:312
+#: ../print_status_panel.cpp:422 ../print_status_panel.cpp:428
+#: ../print_status_panel.cpp:477
+msgid "мм"
+msgstr "mm"
+
+#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:43 ../finetune_panel.cpp:112
+#: ../finetune_panel.cpp:154 ../print_status_panel.cpp:78
+#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:83
+#: ../print_status_panel.cpp:207 ../print_status_panel.cpp:208
+#: ../print_status_panel.cpp:209 ../print_status_panel.cpp:422
+#: ../print_status_panel.cpp:477 ../utils.cpp:259
+msgid "с"
+msgstr "s"
+
+#: ../utils.cpp:254
+msgid "ч "
+msgstr "h "

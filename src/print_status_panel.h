@@ -6,6 +6,10 @@
 #include "button_container.h"
 #include "image_label.h"
 #include "finetune_panel.h"
+#include "retract_panel.h"
+#include "exclude_panel.h"
+#include "pro_panel.h"
+#include "pid_panel.h"
 #include "mini_print_status.h"
 #include "lvgl/lvgl.h"
 
@@ -13,10 +17,12 @@
 #include <ctime>
 #include <map>
 
+class MainPanel;
+
 class PrintStatusPanel : public NotifyConsumer {
  public:
   /* PrintStatusPanel(KWebSocketClient &ws, std::mutex &lock, json &j); */
-  PrintStatusPanel(KWebSocketClient &ws, std::mutex &lock, lv_obj_t *mini_parent);
+  PrintStatusPanel(KWebSocketClient &ws, std::mutex &lock, lv_obj_t *mini_parent, MainPanel &main_p);
   ~PrintStatusPanel();
 
   void init(json &fans);
@@ -27,7 +33,7 @@ class PrintStatusPanel : public NotifyConsumer {
 
   void handle_metadata(const std::string &gcode_file, json &j);
   void handle_callback(lv_event_t *event);
-  
+
   static void _handle_callback(lv_event_t *event) {
     PrintStatusPanel *panel = (PrintStatusPanel*)event->user_data;
     panel->handle_callback(event);
@@ -35,20 +41,31 @@ class PrintStatusPanel : public NotifyConsumer {
 
   void consume(json &j);
   void update_time_progress(uint32_t time_passed);
+  void update_filament_progress(float value);
   void update_flow_rate(double filament_used);
   void update_layers(json &info);
   int max_layer(json &info);
   int current_layer(json &info);
 
   FineTunePanel &get_finetune_panel();
+  RetractPanel &get_retract_panel();
+  ExcludePanel &get_exclude_panel();
+  ProPanel &get_pro_panel();
+  PidPanel &get_pid_panel();
 
  private:
   KWebSocketClient &ws;
+  MainPanel &main_panel_ref;
   FineTunePanel finetune_panel;
+  RetractPanel retract_panel;
+  ExcludePanel exclude_panel;
+  ProPanel pro_panel;
+  PidPanel pid_panel;
   MiniPrintStatus mini_print_status;
   lv_obj_t *status_cont;
   lv_obj_t *buttons_cont;
   ButtonContainer finetune_btn;
+  ButtonContainer retract_btn;
   ButtonContainer pause_btn;
   ButtonContainer resume_btn;
   ButtonContainer cancel_btn;
@@ -59,6 +76,7 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_obj_t *pbar_cont;
   lv_obj_t *progress_bar;
   lv_obj_t *progress_label;
+  lv_obj_t *progress_end;
   lv_obj_t *detail_cont;
 
   ImageLabel extruder_temp;
@@ -71,9 +89,11 @@ class PrintStatusPanel : public NotifyConsumer {
   ImageLabel elapsed;
   /* ImageLabel fan1; */
   ImageLabel time_left;
+  ImageLabel filament;
   /* ImageLabel fan2; */
 
   /* json &metadata; */
+  float filament_m;
   uint32_t estimated_time_s;
 
   // flow rate

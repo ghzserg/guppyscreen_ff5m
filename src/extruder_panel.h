@@ -16,7 +16,7 @@ class ExtruderPanel : public NotifyConsumer {
   ~ExtruderPanel();
 
   void foreground();
-  void enable_spoolman();  
+  void enable_spoolman();
   void consume(json &j);
   void handle_callback(lv_event_t *e);
 
@@ -36,14 +36,14 @@ class ExtruderPanel : public NotifyConsumer {
   lv_obj_t *rightside_btns_cont;
   lv_obj_t *leftside_btns_cont;
   ButtonContainer load_btn;
-  ButtonContainer unload_btn;
-  ButtonContainer cooldown_btn;
-  ButtonContainer spoolman_btn;
-  ButtonContainer extrude_btn;
   ButtonContainer retract_btn;
+  ButtonContainer code_btn;
+  ButtonContainer spoolman_btn;
+  ButtonContainer cooldown_btn;
+  ButtonContainer coldpull_btn;
   ButtonContainer back_btn;
   std::string load_filament_macro;
-  std::string unload_filament_macro;
+  std::string code_macro;
   std::string cooldown_macro;
 };
 

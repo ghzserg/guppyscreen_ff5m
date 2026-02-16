@@ -22,7 +22,7 @@ class BeltsCalibrationPanel {
     BeltsCalibrationPanel *panel = (BeltsCalibrationPanel*)event->user_data;
     panel->handle_callback(event);
   };
-  
+
   static void _handle_image_clicked(lv_event_t *event) {
     BeltsCalibrationPanel *panel = (BeltsCalibrationPanel*)event->user_data;
     panel->handle_image_clicked(event);

@@ -1,0 +1,510 @@
+# Japanese translations for buildroot package.
+# Copyright (C) 2025 THE buildroot'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the buildroot package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: buildroot 2024.11.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-28 17:04+0500\n"
+"PO-Revision-Date: 2025-04-16 14:44+0500\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ja_JA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../print_panel.cpp:71
+msgid " A-Z"
+msgstr " A-Z"
+
+#: ../print_panel.cpp:67
+msgid " Changed"
+msgstr " 変更された"
+
+#: ../print_panel.cpp:63
+msgid " Refresh"
+msgstr " 更新"
+
+#: ../guppyscreen.cpp:105 ../guppyscreen.cpp:275
+msgid " Waiting for the Klipper launch..."
+msgstr " Klipperの起動を待っています..."
+
+#: ../file_panel.cpp:56
+msgid "%Y-%m-%d %H:%M"
+msgstr "%Y-%m-%d %H:%M"
+
+#: ../file_panel.cpp:58 ../file_panel.cpp:71 ../file_panel.cpp:73
+msgid "(Unknown)"
+msgstr "(不明)"
+
+#: ../limits_panel.cpp:14
+msgid "Acceleration (mm/s2)"
+msgstr "加速度 (mm/s²)"
+
+#: ../limits_panel.cpp:16
+msgid "Acceleration to Deceleration (mm/s2)"
+msgstr "加速から減速まで (mm/s²)"
+
+#: ../bedmesh_panel.cpp:374
+msgid "Algorithm"
+msgstr "アルゴリズム"
+
+#: ../prompt_panel.cpp:368
+msgid "Attention!"
+msgstr "注意！"
+
+#: ../bedmesh_panel.cpp:39 ../belts_calibration_panel.cpp:44
+#: ../exclude_panel.cpp:13 ../extruder_panel.cpp:42 ../fan_panel.cpp:15
+#: ../finetune_panel.cpp:37 ../homing_panel.cpp:38 ../inputshaper_panel.cpp:79
+#: ../led_panel.cpp:15 ../limits_panel.cpp:17 ../pid_panel.cpp:37
+#: ../print_panel.cpp:37 ../print_status_panel.cpp:68 ../pro_panel.cpp:17
+#: ../retract_panel.cpp:17 ../spoolman_panel.cpp:23 ../sysinfo_panel.cpp:96
+msgid "Back"
+msgstr "戻る"
+
+#: ../pid_panel.cpp:28
+msgid "Bed"
+msgstr "ベッド"
+
+#: ../printertune_panel.cpp:46
+msgid "Bed Mesh"
+msgstr "ベッドメッシュ"
+
+#: ../printertune_panel.cpp:49 ../printertune_panel.cpp:51
+msgid "Belts/Shake"
+msgstr "ベルト/シェイク"
+
+#: ../inputshaper_panel.cpp:526
+#, c++-format
+msgid "Best shaper is {} @ {:.2f} Hz\n"
+msgstr "最適なシェイパーは {} で、周波数は {:.2f} Hz\n"
+
+#: ../sysinfo_panel.cpp:145
+msgid "Brightness"
+msgstr "明るさ"
+
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+msgid "Calibrate"
+msgstr "校正する"
+
+#: ../bedmesh_panel.cpp:141 ../print_panel.cpp:135 ../print_status_panel.cpp:54
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: ../setting_panel.cpp:55
+msgid "Change WEB"
+msgstr "WEBを変更"
+
+#: ../bedmesh_panel.cpp:36
+msgid "Clean"
+msgstr "クリーニング"
+
+#: ../pid_panel.cpp:34
+msgid "Clear nozzle"
+msgstr "ノズルを清掃"
+
+#: ../prompt_panel.cpp:184 ../prompt_panel.cpp:393
+msgid "Close"
+msgstr "閉じる"
+
+#: ../bedmesh_panel.cpp:38
+msgid "Cold"
+msgstr "冷却"
+
+#: ../prompt_panel.cpp:160 ../prompt_panel.cpp:170
+msgid "Configuration change detected"
+msgstr "設定変更が検出されました"
+
+#: ../extruder_panel.cpp:40
+msgid "Cool down"
+msgstr "冷却する"
+
+#: ../print_status_panel.cpp:55
+msgid "Do you want to cancel the print?"
+msgstr "印刷をキャンセルしますか？"
+
+#: ../inputshaper_panel.cpp:74 ../main_panel.cpp:62
+#: ../print_status_panel.cpp:63
+msgid "Do you want to emergency stop?"
+msgstr "緊急停止しますか？"
+
+#: ../homing_panel.cpp:32
+msgid "Do you want to make an emergency stop?"
+msgstr "緊急停止を実行しますか？"
+
+#: ../mini_print_status.cpp:43 ../mini_print_status.cpp:84
+#: ../mini_print_status.cpp:89
+#, c++-format
+msgid ""
+"ETA: {}\n"
+"Status: {}"
+msgstr ""
+"ETA: {}\n"
+"状態: {}"
+
+#: ../belts_calibration_panel.cpp:39
+msgid "Emergency printer shutdown?"
+msgstr "プリンターを緊急シャットダウンしますか？"
+
+#: ../sysinfo_panel.cpp:198
+msgid "Emergency stop confirmation"
+msgstr "緊急停止の確認"
+
+#: ../belts_calibration_panel.cpp:37
+msgid "Excitate"
+msgstr "励起する"
+
+#: ../pro_panel.cpp:15
+msgid "External circulation"
+msgstr "外部循環"
+
+#: ../main_panel.cpp:57
+msgid "Extrude"
+msgstr "押出す"
+
+#: ../extruder_panel.cpp:27 ../pid_panel.cpp:26
+msgid "Extruder"
+msgstr "押出機"
+
+#: ../extruder_panel.cpp:28
+msgid "Extruder temperature"
+msgstr "押出機温度"
+
+#: ../extruder_panel.cpp:30
+msgid "Extrusion length"
+msgstr "押出長"
+
+#: ../extruder_panel.cpp:32
+msgid "Extrusion speed (mm/s)"
+msgstr "押し出し速度（mm/s）"
+
+#: ../main_panel.cpp:58
+msgid "Fans"
+msgstr "ファン"
+
+#: ../printertune_panel.cpp:43 ../print_status_panel.cpp:50
+msgid "Fine Tune"
+msgstr "微調整"
+
+#: ../setting_panel.cpp:45
+msgid "Firmware Restart"
+msgstr "ファームウェア再起動"
+
+#: ../finetune_panel.cpp:34
+msgid "Flow Reset"
+msgstr "フローリセット"
+
+#: ../finetune_panel.cpp:35
+msgid "Flow+"
+msgstr "フロー+"
+
+#: ../finetune_panel.cpp:36
+msgid "Flow-"
+msgstr "フロー-"
+
+#: ../belts_calibration_panel.cpp:75
+msgid "Frequency"
+msgstr "周波数"
+
+#: ../inputshaper_panel.cpp:155
+msgid "Graph"
+msgstr "グラフ"
+
+#: ../setting_panel.cpp:52
+msgid "Guppy Restart"
+msgstr "Guppy再起動"
+
+#: ../prompt_panel.cpp:411
+msgid "Home"
+msgstr "ホーム"
+
+#: ../main_panel.cpp:56
+msgid "Homing"
+msgstr "ホーム移動"
+
+#: ../pro_panel.cpp:14
+msgid "Internal circulation"
+msgstr "内部循環"
+
+#: ../setting_panel.cpp:44
+msgid "Klipper Restart"
+msgstr "Klipper再起動"
+
+#: ../printertune_panel.cpp:44
+msgid "Limits"
+msgstr "リミット"
+
+#: ../extruder_panel.cpp:36
+msgid "Load"
+msgstr "ロード"
+
+#: ../pid_panel.cpp:35
+msgid "Load Cell"
+msgstr "ロードセル"
+
+#: ../sysinfo_panel.cpp:172
+msgid "Log level"
+msgstr "ログレベル"
+
+#: ../extruder_panel.cpp:38
+msgid "Macro"
+msgstr "マクロ"
+
+#: ../fan_panel.cpp:76 ../led_panel.cpp:80
+msgid "Max"
+msgstr "最大"
+
+#: ../homing_panel.cpp:37
+msgid "Motor off"
+msgstr "モーターオフ"
+
+#: ../finetune_panel.cpp:40
+msgid "Multipler Step"
+msgstr "乗数ステップ"
+
+#: ../spoolman_panel.cpp:142
+msgid "Name"
+msgstr "名前"
+
+#: ../setting_panel.cpp:54
+msgid "Native screen"
+msgstr "ネイティブスクリーン"
+
+#: ../sysinfo_panel.cpp:281
+msgid "Network"
+msgstr "ネットワーク"
+
+#: ../fan_panel.cpp:75 ../led_panel.cpp:79
+msgid "Off"
+msgstr "オフ"
+
+#: ../pid_panel.cpp:33
+msgid "PID Bed"
+msgstr "PIDベッド"
+
+#: ../pid_panel.cpp:32
+msgid "PID Extruder"
+msgstr "PID押出機"
+
+#: ../print_status_panel.cpp:52
+msgid "Pause"
+msgstr "一時停止"
+
+#: ../setting_panel.cpp:53
+msgid "Power Off"
+msgstr "電源オフ"
+
+#: ../main_panel.cpp:60 ../print_panel.cpp:36
+msgid "Print"
+msgstr "印刷"
+
+#: ../print_panel.cpp:143
+msgid "Printing..."
+msgstr "印刷中..."
+
+#: ../print_panel.cpp:139
+msgid "Queue"
+msgstr "キュー"
+
+#: ../bedmesh_panel.cpp:283 ../bedmesh_panel.cpp:302 ../bedmesh_panel.cpp:367
+msgid "Range"
+msgstr "レンジ"
+
+#: ../spoolman_panel.cpp:22
+msgid "Refresh"
+msgstr "更新"
+
+#: ../spoolman_panel.cpp:145
+msgid ""
+"Remain\n"
+"Length"
+msgstr ""
+"残り\n"
+"長さ"
+
+#: ../spoolman_panel.cpp:144
+msgid ""
+"Remain\n"
+"Weight"
+msgstr ""
+"残り\n"
+"重量"
+
+#: ../limits_panel.cpp:13 ../limits_panel.cpp:14 ../limits_panel.cpp:15
+#: ../limits_panel.cpp:16 ../retract_panel.cpp:13 ../retract_panel.cpp:14
+#: ../retract_panel.cpp:15 ../retract_panel.cpp:16
+msgid "Reset"
+msgstr "リセット"
+
+#: ../finetune_panel.cpp:28
+msgid "Reset PA"
+msgstr "PAリセット"
+
+#: ../finetune_panel.cpp:25
+msgid "Reset Z"
+msgstr "Zリセット"
+
+#: ../setting_panel.cpp:56
+msgid "Restore Print"
+msgstr "印刷を復元"
+
+#: ../print_status_panel.cpp:53
+msgid "Resume"
+msgstr "再開"
+
+#: ../printertune_panel.cpp:45 ../print_status_panel.cpp:51
+msgid "Retract"
+msgstr "リトラクト"
+
+#: ../retract_panel.cpp:13
+msgid "Retract Length"
+msgstr "リトラクション長"
+
+#: ../retract_panel.cpp:14
+msgid "Retract Speed"
+msgstr "リトラクション速度"
+
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:138 ../inputshaper_panel.cpp:72
+msgid "Save"
+msgstr "保存"
+
+#: ../bedmesh_panel.cpp:132
+msgid "Saving the profile will restart the printer."
+msgstr "プロファイルを保存するとプリンターが再起動します。"
+
+#: ../sysinfo_panel.cpp:117
+msgid "Screen off"
+msgstr "画面オフ"
+
+#: ../pid_panel.cpp:36
+msgid "Screw adjustment"
+msgstr "ネジ調整"
+
+#: ../belts_calibration_panel.cpp:36
+msgid "Shake Belts"
+msgstr "ベルトを振る"
+
+#: ../spoolman_panel.cpp:63
+msgid "Show Archived"
+msgstr "アーカイブを表示"
+
+#: ../macros_panel.cpp:25
+msgid "Show Hidden"
+msgstr "非表示を表示"
+
+#: ../print_panel.cpp:131
+msgid "Show task"
+msgstr "タスクを表示"
+
+#: ../finetune_panel.cpp:31
+msgid "Speed Reset"
+msgstr "速度リセット"
+
+#: ../finetune_panel.cpp:32
+msgid "Speed+"
+msgstr "速度＋"
+
+#: ../finetune_panel.cpp:33
+msgid "Speed-"
+msgstr "速度－"
+
+#: ../limits_panel.cpp:15
+msgid "Square Corner Velocity (mm/s)"
+msgstr "直角コーナー速度 (mm/s)"
+
+#: ../print_panel.cpp:35
+msgid "Status"
+msgstr "状態"
+
+#: ../belts_calibration_panel.cpp:38 ../homing_panel.cpp:31
+#: ../inputshaper_panel.cpp:73 ../main_panel.cpp:61
+#: ../print_status_panel.cpp:62
+msgid "Stop"
+msgstr "停止"
+
+#: ../pro_panel.cpp:16
+msgid "Stop circulation"
+msgstr "循環停止"
+
+#: ../setting_panel.cpp:47 ../setting_panel.cpp:49
+msgid "System"
+msgstr "システム"
+
+#: ../homing_panel.cpp:39
+msgid "Travel distance (mm)"
+msgstr "移動距離 (mm)"
+
+#: ../extruder_panel.cpp:37
+msgid "Unload"
+msgstr "アンロード"
+
+#: ../retract_panel.cpp:15
+msgid "Unretract Extra Length"
+msgstr "追加リトラクション長の解除"
+
+#: ../retract_panel.cpp:16
+msgid "Unretract Speed"
+msgstr "リトラクション速度の解除"
+
+#: ../limits_panel.cpp:13
+msgid "Velocity (mm/s)"
+msgstr "速度 (mm/s)"
+
+#: ../pid_panel.cpp:31
+msgid "Weight"
+msgstr "重量"
+
+#: ../file_panel.cpp:70
+#, c++-format
+msgid ""
+"Weight: {} г|{}\n"
+"Time: {}\n"
+"Size: {} MB"
+msgstr ""
+"重量: {} g|{}\n"
+"時間: {}\n"
+"サイズ: {} MB"
+
+#: ../inputshaper_panel.cpp:90
+msgid "X Frequency Response"
+msgstr "X軸周波数応答"
+
+#: ../inputshaper_panel.cpp:100
+msgid "Y Frequency Response"
+msgstr "Y軸周波数応答"
+
+#: ../utils.cpp:251
+msgid "д "
+msgstr "d "
+
+#: ../utils.cpp:257
+msgid "м "
+msgstr "min "
+
+#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:42 ../finetune_panel.cpp:43
+#: ../finetune_panel.cpp:106 ../finetune_panel.cpp:112
+#: ../finetune_panel.cpp:149 ../finetune_panel.cpp:154
+#: ../print_status_panel.cpp:78 ../print_status_panel.cpp:79
+#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:207
+#: ../print_status_panel.cpp:208 ../print_status_panel.cpp:312
+#: ../print_status_panel.cpp:422 ../print_status_panel.cpp:428
+#: ../print_status_panel.cpp:477
+msgid "мм"
+msgstr "mm"
+
+#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:43 ../finetune_panel.cpp:112
+#: ../finetune_panel.cpp:154 ../print_status_panel.cpp:78
+#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:83
+#: ../print_status_panel.cpp:207 ../print_status_panel.cpp:208
+#: ../print_status_panel.cpp:209 ../print_status_panel.cpp:422
+#: ../print_status_panel.cpp:477 ../utils.cpp:259
+msgid "с"
+msgstr "s"
+
+#: ../utils.cpp:254
+msgid "ч "
+msgstr "h "

@@ -2,7 +2,9 @@
 #define __INPUTSHAPER_PANEL_H__
 
 #include "websocket_client.h"
+#include "spinbox_selector.h"
 #include "button_container.h"
+#include "prompt_panel.h"
 #include "lvgl/lvgl.h"
 
 #include <vector>
@@ -10,7 +12,7 @@
 
 class InputShaperPanel {
  public:
-  InputShaperPanel(KWebSocketClient &c, std::mutex &l);
+  InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPanel &p);
   ~InputShaperPanel();
 
   void foreground();
@@ -18,7 +20,7 @@ class InputShaperPanel {
   void handle_image_clicked(lv_event_t *event);
   void handle_macro_response(json &j);
   void handle_update_slider(lv_event_t *event);
-  
+
   static void _handle_callback(lv_event_t *event) {
     InputShaperPanel *panel = (InputShaperPanel*)event->user_data;
     panel->handle_callback(event);
@@ -35,17 +37,17 @@ class InputShaperPanel {
   };
 
   uint32_t find_shaper_index(const std::vector<std::string> &s,
-			     const std::string &shaper);
+                             const std::string &shaper);
 
   void set_shaper_detail(json &res,
-			 lv_obj_t *label,
-			 lv_obj_t *slider,
-			 lv_obj_t *slider_label,
-			 lv_obj_t *dd);
-  
+                         lv_obj_t *label,
+                         SpinBoxSelector *spinbox,
+                         lv_obj_t *dd);
+
  private:
   KWebSocketClient &ws;
   std::mutex &lv_lock;
+  PromptPanel *prompt_panel;
   lv_obj_t *cont;
 
   // xgraph
@@ -64,18 +66,16 @@ class InputShaperPanel {
   lv_obj_t *xcontrol;
   lv_obj_t *xaxis_label;
   lv_obj_t *x_switch;
-  lv_obj_t *xslider_cont;
-  lv_obj_t *xslider;
-  lv_obj_t *xlabel;
+  lv_obj_t *xspinbox_cont;
+  SpinBoxSelector xspinbox;
   lv_obj_t *xshaper_dd;
 
   // y controls
   lv_obj_t *ycontrol;
   lv_obj_t *yaxis_label;
   lv_obj_t *y_switch;
-  lv_obj_t *yslider_cont;
-  lv_obj_t *yslider;
-  lv_obj_t *ylabel;
+  lv_obj_t *yspinbox_cont;
+  SpinBoxSelector yspinbox;
   lv_obj_t *yshaper_dd;
 
   lv_obj_t *button_cont;
@@ -91,7 +91,7 @@ class InputShaperPanel {
   json calibrate_output;
 
   static std::vector<std::string> shapers;
-  
+
 };
 
 #endif // __INPUTSHAPER_PANEL_H__

@@ -1,0 +1,510 @@
+# French translations for buildroot package.
+# Copyright (C) 2025 THE buildroot'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the buildroot package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: buildroot 2024.11.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-28 17:04+0500\n"
+"PO-Revision-Date: 2025-04-16 14:44+0500\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../print_panel.cpp:71
+msgid " A-Z"
+msgstr " A-Z"
+
+#: ../print_panel.cpp:67
+msgid " Changed"
+msgstr " Modifié"
+
+#: ../print_panel.cpp:63
+msgid " Refresh"
+msgstr " Actualiser"
+
+#: ../guppyscreen.cpp:105 ../guppyscreen.cpp:275
+msgid " Waiting for the Klipper launch..."
+msgstr " En attente du lancement de Klipper..."
+
+#: ../file_panel.cpp:56
+msgid "%Y-%m-%d %H:%M"
+msgstr "%Y-%m-%d %H:%M"
+
+#: ../file_panel.cpp:58 ../file_panel.cpp:71 ../file_panel.cpp:73
+msgid "(Unknown)"
+msgstr "(Inconnu)"
+
+#: ../limits_panel.cpp:14
+msgid "Acceleration (mm/s2)"
+msgstr "Accélération (mm/s²)"
+
+#: ../limits_panel.cpp:16
+msgid "Acceleration to Deceleration (mm/s2)"
+msgstr "De l'accélération à la décélération (mm/s²)"
+
+#: ../bedmesh_panel.cpp:374
+msgid "Algorithm"
+msgstr "Algorithme"
+
+#: ../prompt_panel.cpp:368
+msgid "Attention!"
+msgstr "Attention !"
+
+#: ../bedmesh_panel.cpp:39 ../belts_calibration_panel.cpp:44
+#: ../exclude_panel.cpp:13 ../extruder_panel.cpp:42 ../fan_panel.cpp:15
+#: ../finetune_panel.cpp:37 ../homing_panel.cpp:38 ../inputshaper_panel.cpp:79
+#: ../led_panel.cpp:15 ../limits_panel.cpp:17 ../pid_panel.cpp:37
+#: ../print_panel.cpp:37 ../print_status_panel.cpp:68 ../pro_panel.cpp:17
+#: ../retract_panel.cpp:17 ../spoolman_panel.cpp:23 ../sysinfo_panel.cpp:96
+msgid "Back"
+msgstr "Retour"
+
+#: ../pid_panel.cpp:28
+msgid "Bed"
+msgstr "Plateau"
+
+#: ../printertune_panel.cpp:46
+msgid "Bed Mesh"
+msgstr "Maillage du plateau"
+
+#: ../printertune_panel.cpp:49 ../printertune_panel.cpp:51
+msgid "Belts/Shake"
+msgstr "Courroies/Agitation"
+
+#: ../inputshaper_panel.cpp:526
+#, c++-format
+msgid "Best shaper is {} @ {:.2f} Hz\n"
+msgstr "Le meilleur shaper est {} à {:.2f} Hz\n"
+
+#: ../sysinfo_panel.cpp:145
+msgid "Brightness"
+msgstr "Luminosité"
+
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+msgid "Calibrate"
+msgstr "Calibrer"
+
+#: ../bedmesh_panel.cpp:141 ../print_panel.cpp:135 ../print_status_panel.cpp:54
+msgid "Cancel"
+msgstr "Annuler"
+
+#: ../setting_panel.cpp:55
+msgid "Change WEB"
+msgstr "Changer le WEB"
+
+#: ../bedmesh_panel.cpp:36
+msgid "Clean"
+msgstr "Nettoyer"
+
+#: ../pid_panel.cpp:34
+msgid "Clear nozzle"
+msgstr "Nettoyer la buse"
+
+#: ../prompt_panel.cpp:184 ../prompt_panel.cpp:393
+msgid "Close"
+msgstr "Fermer"
+
+#: ../bedmesh_panel.cpp:38
+msgid "Cold"
+msgstr "Froid"
+
+#: ../prompt_panel.cpp:160 ../prompt_panel.cpp:170
+msgid "Configuration change detected"
+msgstr "Changement de configuration détecté"
+
+#: ../extruder_panel.cpp:40
+msgid "Cool down"
+msgstr "Refroidir"
+
+#: ../print_status_panel.cpp:55
+msgid "Do you want to cancel the print?"
+msgstr "Voulez-vous annuler l'impression ?"
+
+#: ../inputshaper_panel.cpp:74 ../main_panel.cpp:62
+#: ../print_status_panel.cpp:63
+msgid "Do you want to emergency stop?"
+msgstr "Voulez-vous déclencher un arrêt d'urgence ?"
+
+#: ../homing_panel.cpp:32
+msgid "Do you want to make an emergency stop?"
+msgstr "Voulez-vous effectuer un arrêt d'urgence ?"
+
+#: ../mini_print_status.cpp:43 ../mini_print_status.cpp:84
+#: ../mini_print_status.cpp:89
+#, c++-format
+msgid ""
+"ETA: {}\n"
+"Status: {}"
+msgstr ""
+"ETA : {}\n"
+"Statut : {}"
+
+#: ../belts_calibration_panel.cpp:39
+msgid "Emergency printer shutdown?"
+msgstr "Arrêt d'urgence de l'imprimante ?"
+
+#: ../sysinfo_panel.cpp:198
+msgid "Emergency stop confirmation"
+msgstr "Confirmation de l'arrêt d'urgence"
+
+#: ../belts_calibration_panel.cpp:37
+msgid "Excitate"
+msgstr "Exciter"
+
+#: ../pro_panel.cpp:15
+msgid "External circulation"
+msgstr "Circulation externe"
+
+#: ../main_panel.cpp:57
+msgid "Extrude"
+msgstr "Extruder"
+
+#: ../extruder_panel.cpp:27 ../pid_panel.cpp:26
+msgid "Extruder"
+msgstr "Extrudeuse"
+
+#: ../extruder_panel.cpp:28
+msgid "Extruder temperature"
+msgstr "Température de l'extrudeuse"
+
+#: ../extruder_panel.cpp:30
+msgid "Extrusion length"
+msgstr "Longueur d'extrusion"
+
+#: ../extruder_panel.cpp:32
+msgid "Extrusion speed (mm/s)"
+msgstr "Vitesse d'extrusion (mm/s)"
+
+#: ../main_panel.cpp:58
+msgid "Fans"
+msgstr "Ventilateurs"
+
+#: ../printertune_panel.cpp:43 ../print_status_panel.cpp:50
+msgid "Fine Tune"
+msgstr "Ajustement fin"
+
+#: ../setting_panel.cpp:45
+msgid "Firmware Restart"
+msgstr "Redémarrage du firmware"
+
+#: ../finetune_panel.cpp:34
+msgid "Flow Reset"
+msgstr "Réinitialiser le débit"
+
+#: ../finetune_panel.cpp:35
+msgid "Flow+"
+msgstr "Débit+"
+
+#: ../finetune_panel.cpp:36
+msgid "Flow-"
+msgstr "Débit-"
+
+#: ../belts_calibration_panel.cpp:75
+msgid "Frequency"
+msgstr "Fréquence"
+
+#: ../inputshaper_panel.cpp:155
+msgid "Graph"
+msgstr "Graphique"
+
+#: ../setting_panel.cpp:52
+msgid "Guppy Restart"
+msgstr "Redémarrage de Guppy"
+
+#: ../prompt_panel.cpp:411
+msgid "Home"
+msgstr "Accueil"
+
+#: ../main_panel.cpp:56
+msgid "Homing"
+msgstr "Retour à l'origine"
+
+#: ../pro_panel.cpp:14
+msgid "Internal circulation"
+msgstr "Circulation interne"
+
+#: ../setting_panel.cpp:44
+msgid "Klipper Restart"
+msgstr "Redémarrage de Klipper"
+
+#: ../printertune_panel.cpp:44
+msgid "Limits"
+msgstr "Limites"
+
+#: ../extruder_panel.cpp:36
+msgid "Load"
+msgstr "Charger"
+
+#: ../pid_panel.cpp:35
+msgid "Load Cell"
+msgstr "Cellule de charge"
+
+#: ../sysinfo_panel.cpp:172
+msgid "Log level"
+msgstr "Niveau de log"
+
+#: ../extruder_panel.cpp:38
+msgid "Macro"
+msgstr "Macro"
+
+#: ../fan_panel.cpp:76 ../led_panel.cpp:80
+msgid "Max"
+msgstr "Max"
+
+#: ../homing_panel.cpp:37
+msgid "Motor off"
+msgstr "Moteur éteint"
+
+#: ../finetune_panel.cpp:40
+msgid "Multipler Step"
+msgstr "Pas multiplicateur"
+
+#: ../spoolman_panel.cpp:142
+msgid "Name"
+msgstr "Nom"
+
+#: ../setting_panel.cpp:54
+msgid "Native screen"
+msgstr "Écran natif"
+
+#: ../sysinfo_panel.cpp:281
+msgid "Network"
+msgstr "Réseau"
+
+#: ../fan_panel.cpp:75 ../led_panel.cpp:79
+msgid "Off"
+msgstr "Éteint"
+
+#: ../pid_panel.cpp:33
+msgid "PID Bed"
+msgstr "PID Plateau"
+
+#: ../pid_panel.cpp:32
+msgid "PID Extruder"
+msgstr "PID Extrudeuse"
+
+#: ../print_status_panel.cpp:52
+msgid "Pause"
+msgstr "Pause"
+
+#: ../setting_panel.cpp:53
+msgid "Power Off"
+msgstr "Éteindre"
+
+#: ../main_panel.cpp:60 ../print_panel.cpp:36
+msgid "Print"
+msgstr "Imprimer"
+
+#: ../print_panel.cpp:143
+msgid "Printing..."
+msgstr "Impression en cours..."
+
+#: ../print_panel.cpp:139
+msgid "Queue"
+msgstr "File d'attente"
+
+#: ../bedmesh_panel.cpp:283 ../bedmesh_panel.cpp:302 ../bedmesh_panel.cpp:367
+msgid "Range"
+msgstr "Plage"
+
+#: ../spoolman_panel.cpp:22
+msgid "Refresh"
+msgstr "Actualiser"
+
+#: ../spoolman_panel.cpp:145
+msgid ""
+"Remain\n"
+"Length"
+msgstr ""
+"Longueur\n"
+"restante"
+
+#: ../spoolman_panel.cpp:144
+msgid ""
+"Remain\n"
+"Weight"
+msgstr ""
+"Poids\n"
+"restant"
+
+#: ../limits_panel.cpp:13 ../limits_panel.cpp:14 ../limits_panel.cpp:15
+#: ../limits_panel.cpp:16 ../retract_panel.cpp:13 ../retract_panel.cpp:14
+#: ../retract_panel.cpp:15 ../retract_panel.cpp:16
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#: ../finetune_panel.cpp:28
+msgid "Reset PA"
+msgstr "Réinitialiser PA"
+
+#: ../finetune_panel.cpp:25
+msgid "Reset Z"
+msgstr "Réinitialiser Z"
+
+#: ../setting_panel.cpp:56
+msgid "Restore Print"
+msgstr "Restaurer l'impression"
+
+#: ../print_status_panel.cpp:53
+msgid "Resume"
+msgstr "Reprendre"
+
+#: ../printertune_panel.cpp:45 ../print_status_panel.cpp:51
+msgid "Retract"
+msgstr "Rétracter"
+
+#: ../retract_panel.cpp:13
+msgid "Retract Length"
+msgstr "Longueur de rétraction"
+
+#: ../retract_panel.cpp:14
+msgid "Retract Speed"
+msgstr "Vitesse de rétraction"
+
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:138 ../inputshaper_panel.cpp:72
+msgid "Save"
+msgstr "Enregistrer"
+
+#: ../bedmesh_panel.cpp:132
+msgid "Saving the profile will restart the printer."
+msgstr "L'enregistrement du profil redémarrera l'imprimante."
+
+#: ../sysinfo_panel.cpp:117
+msgid "Screen off"
+msgstr "Éteindre l'écran"
+
+#: ../pid_panel.cpp:36
+msgid "Screw adjustment"
+msgstr "Réglage de la vis"
+
+#: ../belts_calibration_panel.cpp:36
+msgid "Shake Belts"
+msgstr "Secouer les courroies"
+
+#: ../spoolman_panel.cpp:63
+msgid "Show Archived"
+msgstr "Afficher les archivés"
+
+#: ../macros_panel.cpp:25
+msgid "Show Hidden"
+msgstr "Afficher les éléments masqués"
+
+#: ../print_panel.cpp:131
+msgid "Show task"
+msgstr "Afficher la tâche"
+
+#: ../finetune_panel.cpp:31
+msgid "Speed Reset"
+msgstr "Réinitialiser la vitesse"
+
+#: ../finetune_panel.cpp:32
+msgid "Speed+"
+msgstr "Vitesse+"
+
+#: ../finetune_panel.cpp:33
+msgid "Speed-"
+msgstr "Vitesse-"
+
+#: ../limits_panel.cpp:15
+msgid "Square Corner Velocity (mm/s)"
+msgstr "Vitesse aux angles carrés (mm/s)"
+
+#: ../print_panel.cpp:35
+msgid "Status"
+msgstr "Statut"
+
+#: ../belts_calibration_panel.cpp:38 ../homing_panel.cpp:31
+#: ../inputshaper_panel.cpp:73 ../main_panel.cpp:61
+#: ../print_status_panel.cpp:62
+msgid "Stop"
+msgstr "Arrêter"
+
+#: ../pro_panel.cpp:16
+msgid "Stop circulation"
+msgstr "Arrêter la circulation"
+
+#: ../setting_panel.cpp:47 ../setting_panel.cpp:49
+msgid "System"
+msgstr "Système"
+
+#: ../homing_panel.cpp:39
+msgid "Travel distance (mm)"
+msgstr "Distance de déplacement (mm)"
+
+#: ../extruder_panel.cpp:37
+msgid "Unload"
+msgstr "Décharger"
+
+#: ../retract_panel.cpp:15
+msgid "Unretract Extra Length"
+msgstr "Restaurer la longueur de rétraction supplémentaire"
+
+#: ../retract_panel.cpp:16
+msgid "Unretract Speed"
+msgstr "Restaurer la vitesse de rétraction"
+
+#: ../limits_panel.cpp:13
+msgid "Velocity (mm/s)"
+msgstr "Vitesse (mm/s)"
+
+#: ../pid_panel.cpp:31
+msgid "Weight"
+msgstr "Poids"
+
+#: ../file_panel.cpp:70
+#, c++-format
+msgid ""
+"Weight: {} г|{}\n"
+"Time: {}\n"
+"Size: {} MB"
+msgstr ""
+"Poids : {} g|{}\n"
+"Temps : {}\n"
+"Taille : {} MB"
+
+#: ../inputshaper_panel.cpp:90
+msgid "X Frequency Response"
+msgstr "Réponse en fréquence X"
+
+#: ../inputshaper_panel.cpp:100
+msgid "Y Frequency Response"
+msgstr "Réponse en fréquence Y"
+
+#: ../utils.cpp:251
+msgid "д "
+msgstr "d "
+
+#: ../utils.cpp:257
+msgid "м "
+msgstr "min "
+
+#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:42 ../finetune_panel.cpp:43
+#: ../finetune_panel.cpp:106 ../finetune_panel.cpp:112
+#: ../finetune_panel.cpp:149 ../finetune_panel.cpp:154
+#: ../print_status_panel.cpp:78 ../print_status_panel.cpp:79
+#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:207
+#: ../print_status_panel.cpp:208 ../print_status_panel.cpp:312
+#: ../print_status_panel.cpp:422 ../print_status_panel.cpp:428
+#: ../print_status_panel.cpp:477
+msgid "мм"
+msgstr "mm"
+
+#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:43 ../finetune_panel.cpp:112
+#: ../finetune_panel.cpp:154 ../print_status_panel.cpp:78
+#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:83
+#: ../print_status_panel.cpp:207 ../print_status_panel.cpp:208
+#: ../print_status_panel.cpp:209 ../print_status_panel.cpp:422
+#: ../print_status_panel.cpp:477 ../utils.cpp:259
+msgid "с"
+msgstr "s"
+
+#: ../utils.cpp:254
+msgid "ч "
+msgstr "h "

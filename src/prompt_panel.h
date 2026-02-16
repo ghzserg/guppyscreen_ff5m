@@ -5,6 +5,7 @@
 #include "websocket_client.h"
 #include "notify_consumer.h"
 #include "button_container.h"
+#include "extruder_panel.h"
 
 #include <map>
 #include <memory>
@@ -17,7 +18,7 @@ struct SharedButton {
 
 class PromptPanel : public NotifyConsumer {
     public:
-        PromptPanel(KWebSocketClient &ws, std::mutex &lock, lv_obj_t *parent);
+        PromptPanel(KWebSocketClient &ws, std::mutex &lock, lv_obj_t *parent, ExtruderPanel &ep);
         ~PromptPanel();
 
         void handle_macro_response(json &j);
@@ -25,17 +26,46 @@ class PromptPanel : public NotifyConsumer {
 
         lv_obj_t *get_container();
         void handle_callback(lv_event_t *event);
+        void handle_callback_close(lv_event_t *event);
+        void handle_callback_close_filament(lv_event_t *event);
+        void handle_callback_save(lv_event_t *event);
+        void handle_callback_firmware_restart(lv_event_t *event);
+        void handle_callback_g28(lv_event_t *event);
 
         static void _handle_callback(lv_event_t *event) {
             PromptPanel *panel = (PromptPanel*)event->user_data;
             panel->handle_callback(event);
         };
 
+        static void _handle_callback_close(lv_event_t *event) {
+            PromptPanel *panel = (PromptPanel*)event->user_data;
+            panel->handle_callback_close(event);
+        };
+
+        static void _handle_callback_close_filament(lv_event_t *event) {
+            PromptPanel *panel = (PromptPanel*)event->user_data;
+            panel->handle_callback_close_filament(event);
+        };
+
+        static void _handle_callback_save(lv_event_t *event) {
+            PromptPanel *panel = (PromptPanel*)event->user_data;
+            panel->handle_callback_save(event);
+        };
+
+        static void _handle_callback_firmware_restart(lv_event_t *event) {
+            PromptPanel *panel = (PromptPanel*)event->user_data;
+            panel->handle_callback_firmware_restart(event);
+        };
+
+        static void _handle_callback_g28(lv_event_t *event) {
+            PromptPanel *panel = (PromptPanel*)event->user_data;
+            panel->handle_callback_g28(event);
+        };
+
         void foreground();
         void background();
-
+        void ignore_save_config(bool ignore);
     private:
-
         void check_height();
 
         KWebSocketClient &ws;
@@ -45,6 +75,9 @@ class PromptPanel : public NotifyConsumer {
         lv_obj_t *header;
         lv_obj_t *button_group_cont;
         lv_obj_t *footer_cont;
+        ExtruderPanel *extruder_panel;
+        bool i;
+        bool kamp;
 
 };
 

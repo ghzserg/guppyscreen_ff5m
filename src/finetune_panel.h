@@ -21,8 +21,8 @@ class FineTunePanel : public NotifyConsumer {
   void handle_speed(lv_event_t *event);
   void handle_flow(lv_event_t *event);
 
-  void consume(json &j);  
-  
+  void consume(json &j);
+
   static void _handle_callback(lv_event_t *event) {
     FineTunePanel *panel = (FineTunePanel*)event->user_data;
     panel->handle_callback(event);
@@ -42,7 +42,7 @@ class FineTunePanel : public NotifyConsumer {
     FineTunePanel *panel = (FineTunePanel*)event->user_data;
     panel->handle_speed(event);
   };
-  
+
   static void _handle_flow(lv_event_t *event) {
     FineTunePanel *panel = (FineTunePanel*)event->user_data;
     panel->handle_flow(event);
@@ -60,7 +60,7 @@ class FineTunePanel : public NotifyConsumer {
   ButtonContainer padown_btn;
   ButtonContainer speed_reset_btn;
   ButtonContainer speed_up_btn;
-  ButtonContainer speed_down_btn;  
+  ButtonContainer speed_down_btn;
   ButtonContainer flow_reset_btn;
   ButtonContainer flow_up_btn;
   ButtonContainer flow_down_btn;

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Создаем POT-файл
+xgettext -d guppyscreen -s -o guppyscreen.pot --from-code=UTF-8 --keyword=_ ../*.cpp
+
+# Список языков
+langs=("ru" "en" "de" "it" "fr" "es" "zh" "ja" "ko" "pt" "cs" "tr")
+
+# Проходим по каждому языку
+for lang in "${langs[@]}"; do
+  # Создаем структуру каталогов
+  mkdir -p ${lang}/LC_MESSAGES
+
+  # Генерируем PO-файл
+  #msginit --no-translator -i guppyscreen.pot -o ${lang}/LC_MESSAGES/guppyscreen.po -l ${lang}_${lang^^}
+  msgmerge -U ${lang}/LC_MESSAGES/guppyscreen.po guppyscreen.pot
+
+  # Компилируем MO-файл
+  msgfmt ${lang}/LC_MESSAGES/guppyscreen.po -o ${lang}/LC_MESSAGES/guppyscreen.mo
+done

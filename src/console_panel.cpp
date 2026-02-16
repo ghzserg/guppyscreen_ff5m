@@ -42,15 +42,15 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_set_size(input_cont, LV_PCT(100), LV_SIZE_CONTENT);
 
   lv_obj_t *send_btn = lv_btn_create(input_cont);
-  lv_obj_set_style_text_font(send_btn, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+  lv_obj_set_style_text_font(send_btn, &notosemi_16, LV_STATE_DEFAULT);
   lv_obj_set_width(send_btn, 100);
   lv_obj_t *send_btn_label = lv_label_create(send_btn);
   lv_label_set_text(send_btn_label, LV_SYMBOL_NEW_LINE);
   lv_obj_center(send_btn_label);
-  lv_obj_add_event_cb(send_btn , &ConsolePanel::_handle_send_macro, LV_EVENT_CLICKED, this);
+  lv_obj_add_event_cb(send_btn , &ConsolePanel::_handle_send_macro, LV_EVENT_SHORT_CLICKED, this);
 
   lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_set_style_text_font(kb, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+  lv_obj_set_style_text_font(kb, &notosemi_16, LV_STATE_DEFAULT);
   lv_obj_add_event_cb(input, &ConsolePanel::_handle_kb_input, LV_EVENT_ALL, this);
 
   lv_obj_set_size(macro_list, LV_PCT(40), LV_PCT(100));
@@ -61,16 +61,16 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_set_scroll_dir(macro_list, LV_DIR_TOP | LV_DIR_BOTTOM);
 
   lv_obj_t *label = lv_label_create(input);
-  lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+  lv_obj_set_style_text_font(label, &notosemi_16, LV_STATE_DEFAULT);
   lv_label_set_text(label, "      " LV_SYMBOL_CLOSE "      ");
   lv_obj_align(label, LV_ALIGN_RIGHT_MID, 0, 0);
   lv_obj_add_flag(label, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_add_event_cb(label, &ConsolePanel::_handle_clear_input, LV_EVENT_CLICKED, this);
+  lv_obj_add_event_cb(label, &ConsolePanel::_handle_clear_input, LV_EVENT_SHORT_CLICKED, this);
 
   // ws.register_gcode_resp([this](json& d) { this->handle_macro_response(d); });
   ws.register_method_callback("notify_gcode_response",
-			      "ConsolePanel",
-			      [this](json& d) { this->handle_macro_response(d); });
+                              "ConsolePanel",
+                              [this](json& d) { this->handle_macro_response(d); });
 }
 
 ConsolePanel::~ConsolePanel() {
@@ -92,7 +92,7 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
     lv_keyboard_set_textarea(kb, input);
     lv_obj_clear_flag(kb, LV_OBJ_FLAG_HIDDEN);
   }
-  
+
   if(code == LV_EVENT_DEFOCUSED) {
     lv_keyboard_set_textarea(kb, NULL);
     lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
@@ -105,27 +105,27 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
     if (cmd.find_first_of(' ') == std::string::npos) {
       std::string upper_cmd;
       std::transform(cmd.begin(), cmd.end(), std::back_inserter(upper_cmd),
-		     [](unsigned char c){ return std::toupper(c); });
+                     [](unsigned char c){ return std::toupper(c); });
 
       if (!all_macros.empty() || !history.empty()) {
-	uint16_t index = 0;
-	for (const auto &m : history) {
-	  if (m.rfind(upper_cmd, 0) == 0 || m.rfind(cmd, 0) == 0) {
-	    lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
-	  }
-	}
-	
-	for (const auto &m : all_macros) {
-	  if (m.rfind(upper_cmd, 0) == 0 || m.rfind(cmd, 0) == 0) {
-	    lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
-	  }
-	}
+        uint16_t index = 0;
+        for (const auto &m : history) {
+          if (m.rfind(upper_cmd, 0) == 0 || m.rfind(cmd, 0) == 0) {
+            lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+          }
+        }
 
-	lv_table_set_row_cnt(macro_list, index);
+        for (const auto &m : all_macros) {
+          if (m.rfind(upper_cmd, 0) == 0 || m.rfind(cmd, 0) == 0) {
+            lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+          }
+        }
+
+        lv_table_set_row_cnt(macro_list, index);
       }
     }
   }
-  
+
   if (code == LV_EVENT_READY) {
     spdlog::debug("keyboard ready");
     const char *cmd = lv_textarea_get_text(input);
@@ -140,23 +140,23 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
 
     if (!history.empty()) {
       const auto &front = history.front();
-      
+
       if (front != std::string(cmd)) {
-	if (history.size() >= 20) {
-	  history.pop_back();
-	}
-	history.push_front(cmd);
+        if (history.size() >= 20) {
+          history.pop_back();
+        }
+        history.push_front(cmd);
 
-	json h = {
-	  {"namespace", "fluidd"}, // leverage history from fluidd
-	  {"key", "console.commandHistory"},
-	  {"value", history}
-	};
+        json h = {
+          {"namespace", "fluidd"}, // leverage history from fluidd
+          {"key", "console.commandHistory"},
+          {"value", history}
+        };
 
-	ws.send_jsonrpc("server.database.post_item", h);
+        ws.send_jsonrpc("server.database.post_item", h);
       }
     }
-		    
+
     lv_textarea_set_text(input, "");
 
     uint32_t index = 0;
@@ -167,7 +167,7 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
     for (const auto &m : all_macros) {
       lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
     }
-    
+
   }
 }
 
@@ -181,7 +181,7 @@ void ConsolePanel::handle_select_macro(lv_event_t *e) {
     const char * macro = lv_table_get_cell_value(macro_list, row, col);
     lv_textarea_set_text(input, macro);
   }
-  
+
 }
 
 void ConsolePanel::handle_macros(json &j) {
@@ -205,7 +205,7 @@ void ConsolePanel::handle_macros(json &j) {
   for (const auto &m : history) {
     lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
   }
-  
+
   for (const auto &m : all_macros) {
     lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
   }
@@ -223,7 +223,7 @@ void ConsolePanel::handle_macro_response(json &j) {
 
 void ConsolePanel::handle_send_macro(lv_event_t *e) {
   lv_event_code_t code = lv_event_get_code(e);
-  if (code == LV_EVENT_CLICKED) {
+  if (code == LV_EVENT_SHORT_CLICKED) {
     lv_event_send(input, LV_EVENT_READY, this);
   }
 }

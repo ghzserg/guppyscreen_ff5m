@@ -3,12 +3,12 @@
 #include "spdlog/spdlog.h"
 
 ButtonContainer::ButtonContainer(lv_obj_t *parent,
-				 const void *btn_img,
-				 const char *text,
-				 lv_event_cb_t cb,
-				 void* user_data,
-				 const std::string &prompt,
-				 const std::function<void()> &pcb)
+                                 const void *btn_img,
+                                 const char *text,
+                                 lv_event_cb_t cb,
+                                 void* user_data,
+                                 const std::string &prompt,
+                                 const std::function<void()> &pcb)
   : btn_cont(lv_obj_create(parent))
   , btn(lv_imgbtn_create(btn_cont))
   , label(lv_label_create(btn_cont))
@@ -36,22 +36,22 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
   if (cb != NULL && !pcb) {
     lv_obj_add_event_cb(btn_cont, &ButtonContainer::_handle_callback, LV_EVENT_PRESSED, this);
     lv_obj_add_event_cb(btn_cont, &ButtonContainer::_handle_callback, LV_EVENT_RELEASED, this);
-    
-    lv_obj_add_event_cb(btn_cont, cb, LV_EVENT_CLICKED, user_data);
+
+    lv_obj_add_event_cb(btn_cont, cb, LV_EVENT_SHORT_CLICKED, user_data);
   }
   else if (cb != NULL && pcb) {
     if (prompt_estop) {
       lv_obj_add_event_cb(btn_cont, [](lv_event_t *e) {
-	lv_event_code_t code = lv_event_get_code(e);
-	if (code == LV_EVENT_CLICKED) {
-	  ((ButtonContainer*)e->user_data)->handle_prompt();
-	}
-      }, LV_EVENT_CLICKED, this);
+        lv_event_code_t code = lv_event_get_code(e);
+        if (code == LV_EVENT_SHORT_CLICKED) {
+          ((ButtonContainer*)e->user_data)->handle_prompt();
+        }
+      }, LV_EVENT_SHORT_CLICKED, this);
     } else {
       lv_obj_add_event_cb(btn_cont, &ButtonContainer::_handle_callback, LV_EVENT_PRESSED, this);
       lv_obj_add_event_cb(btn_cont, &ButtonContainer::_handle_callback, LV_EVENT_RELEASED, this);
-    
-      lv_obj_add_event_cb(btn_cont, cb, LV_EVENT_CLICKED, user_data);
+
+      lv_obj_add_event_cb(btn_cont, cb, LV_EVENT_SHORT_CLICKED, user_data);
     }
   }
 
@@ -80,7 +80,7 @@ void ButtonContainer::disable() {
   lv_obj_add_state(btn, LV_STATE_DISABLED);
   lv_obj_add_state(btn_cont, LV_STATE_DISABLED);
   lv_obj_add_state(label, LV_STATE_DISABLED);
-  
+
 }
 
 void ButtonContainer::enable() {
@@ -107,20 +107,20 @@ void ButtonContainer::handle_callback(lv_event_t *e) {
 }
 
 void ButtonContainer::handle_prompt() {
-  static const char * btns[] = {"Confirm", "Cancel", ""};
+  static const char * btns[] = {"Ok", "Cancel/Отмена", ""};
 
   lv_obj_t *mbox1 = lv_msgbox_create(NULL, NULL, prompt_text.c_str(), btns, false);
   lv_obj_t *msg = ((lv_msgbox_t*)mbox1)->text;
-  lv_obj_set_style_text_align(msg, LV_TEXT_ALIGN_CENTER, 0);  
+  lv_obj_set_style_text_align(msg, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_set_width(msg, LV_PCT(100));
   lv_obj_center(msg);
-  
+
   lv_obj_t *btnm = lv_msgbox_get_btns(mbox1);
   lv_btnmatrix_set_btn_ctrl(btnm, 0, LV_BTNMATRIX_CTRL_CHECKED);
   lv_btnmatrix_set_btn_ctrl(btnm, 1, LV_BTNMATRIX_CTRL_CHECKED);
   lv_obj_add_flag(btnm, LV_OBJ_FLAG_FLOATING);
   lv_obj_align(btnm, LV_ALIGN_BOTTOM_MID, 0, 0);
-  
+
   auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
 
   lv_obj_set_size(btnm, LV_PCT(90), 50 *hscale);
@@ -132,7 +132,7 @@ void ButtonContainer::handle_prompt() {
     if(clicked_btn == 0) {
       ((ButtonContainer*)e->user_data)->run_callback();
     }
-    
+
     lv_msgbox_close(obj);
 
   }, LV_EVENT_VALUE_CHANGED, this);

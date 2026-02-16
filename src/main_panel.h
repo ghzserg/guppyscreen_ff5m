@@ -12,6 +12,7 @@
 #include "fan_panel.h"
 #include "led_panel.h"
 #include "print_panel.h"
+#include "print_status_panel.h"
 #include "macros_panel.h"
 #include "console_panel.h"
 #include "printertune_panel.h"
@@ -23,12 +24,27 @@
 #include <mutex>
 #include <map>
 #include <memory>
+#include <vector>
+
+typedef struct prompt_button_t {
+    char *text;
+    char *command;
+    int type;
+} prompt_button;
+
+typedef struct prompt_data_t {
+    char *header;
+    char *text;
+    prompt_button *buttons;
+    int button_size;
+} prompt_data;
 
 class MainPanel : public NotifyConsumer {
  public:
   MainPanel(KWebSocketClient &ws,
-	    std::mutex &lv_lock,
-	    SpoolmanPanel &sm);
+            std::mutex &lv_lock
+            ,SpoolmanPanel &sm
+);
 
   ~MainPanel();
   void consume(json &data);
@@ -36,7 +52,8 @@ class MainPanel : public NotifyConsumer {
   void subscribe();
   PrinterTunePanel& get_tune_panel();
   void enable_spoolman();
-  
+  void foreground();
+
   void create_panel();
   void create_sensors(json &temp_sensors);
   void create_fans(json &temp_fans);
@@ -46,17 +63,18 @@ class MainPanel : public NotifyConsumer {
   void handle_fanpanel_cb(lv_event_t *event);
   void handle_ledpanel_cb(lv_event_t *event);
   void handle_print_cb(lv_event_t *event);
+  void handle_emergency_cb(lv_event_t *event);
 
   lv_obj_t *create_button(lv_obj_t *parent,
-			  const void *btn_img,
-			  const char* text,
-			  lv_event_cb_t cb);
+                          const void *btn_img,
+                          const char* text,
+                          lv_event_cb_t cb);
 
   lv_obj_t *create_heater_info(lv_obj_t *parent,
-			       const void *heater_img,
-			       const char* text,
-			       lv_color_t color);
-  
+                               const void *heater_img,
+                               const char* text,
+                               lv_color_t color);
+
   static void _handle_homing_cb(lv_event_t *event) {
     MainPanel *panel = (MainPanel*)event->user_data;
     panel->handle_homing_cb(event);
@@ -82,6 +100,11 @@ class MainPanel : public NotifyConsumer {
     panel->handle_print_cb(event);
   };
 
+  static void _handle_emergency_cb(lv_event_t *event) {
+    MainPanel *panel = (MainPanel*)event->user_data;
+    panel->handle_emergency_cb(event);
+  };
+
  private:
   void create_main(lv_obj_t *parent);
   KWebSocketClient &ws;
@@ -90,33 +113,34 @@ class MainPanel : public NotifyConsumer {
   LedPanel led_panel;
   lv_obj_t *tabview;
   lv_obj_t *main_tab;
+  lv_obj_t *printertune_tab;
+  lv_obj_t *setting_tab;
   lv_obj_t *macros_tab;
   MacrosPanel macros_panel;
   lv_obj_t *console_tab;
   ConsolePanel console_panel;
-  lv_obj_t *printertune_tab;
-  lv_obj_t *setting_tab;
   SettingPanel setting_panel;
   lv_obj_t *main_cont;
   PrintStatusPanel print_status_panel;
   PrintPanel print_panel;
-  PrinterTunePanel printertune_panel;
   Numpad numpad;
   ExtruderPanel extruder_panel;
   PromptPanel prompt_panel;
+  PrinterTunePanel printertune_panel;
   SpoolmanPanel &spoolman_panel;
-  
   lv_style_t style;
 
   lv_obj_t *temp_cont;
   lv_obj_t *temp_chart;
 
   std::map<std::string, std::shared_ptr<SensorContainer>> sensors;
-  
+
   ButtonContainer homing_btn;
   ButtonContainer extrude_btn;
   ButtonContainer action_btn;
   ButtonContainer led_btn;
   ButtonContainer print_btn;
+  ButtonContainer emergency_btn;
+
 };
 #endif // __MAIN_PANEL_H__

@@ -35,12 +35,12 @@ class BedMeshPanel : public NotifyConsumer {
     BedMeshPanel *panel = (BedMeshPanel*)event->user_data;
     panel->handle_profile_action(event);
   };
-  
+
   static void _handle_prompt_save(lv_event_t *event) {
     BedMeshPanel *panel = (BedMeshPanel*)event->user_data;
     panel->handle_prompt_save(event);
   };
-  
+
   static void _handle_prompt_cancel(lv_event_t *event) {
     BedMeshPanel *panel = (BedMeshPanel*)event->user_data;
     panel->handle_prompt_cancel(event);
@@ -56,7 +56,14 @@ class BedMeshPanel : public NotifyConsumer {
     panel->mesh_draw_cb(e);
   };
 
+  static void _table_event_cb(lv_event_t *e) {
+    BedMeshPanel *panel = (BedMeshPanel*)e->user_data;
+    panel->table_event_cb(e);
+  };
+
  private:
+  void getCoordinates(int row, int col);
+  void table_event_cb(lv_event_t *e);
   KWebSocketClient &ws;
   lv_obj_t *cont;
   lv_obj_t *prompt;
@@ -68,6 +75,7 @@ class BedMeshPanel : public NotifyConsumer {
   lv_obj_t *controls_cont;
   ButtonContainer save_btn;
   ButtonContainer clear_btn;
+  ButtonContainer auto_btn;
   ButtonContainer calibrate_btn;
   ButtonContainer back_btn;
   lv_obj_t *msgbox;
@@ -75,6 +83,16 @@ class BedMeshPanel : public NotifyConsumer {
   lv_obj_t *kb;
   std::string active_profile;
   std::vector<std::vector<double>> mesh;
+  double sr_offset;
+  double delta;
+  double min_x;
+  double max_x;
+  double min_y;
+  double max_y;
+  int x_count;
+  int y_count;
+  lv_color_t color_gradient(double offset);
+  lv_color_t color_gradient2(double offset);
 };
 
 #endif // __BEDMESH_PANEL_H__

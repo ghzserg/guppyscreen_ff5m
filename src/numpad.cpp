@@ -14,7 +14,7 @@ Numpad::Numpad(lv_obj_t *parent)
   lv_obj_add_flag(edit_cont, LV_OBJ_FLAG_HIDDEN | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_CLICKABLE);
 
   lv_obj_clear_flag(edit_cont, LV_OBJ_FLAG_SCROLLABLE);
-  
+
   lv_obj_move_background(edit_cont);
   lv_obj_set_size(edit_cont, LV_PCT(48), LV_PCT(100));
 
@@ -31,7 +31,7 @@ Numpad::Numpad(lv_obj_t *parent)
   static const char * kb_map[] = {"1", "2", "3", "\n", "4", "5", "6", "\n", "7", "8", "9", "\n", LV_SYMBOL_BACKSPACE, "0", LV_SYMBOL_OK, NULL };
   static const lv_btnmatrix_ctrl_t kb_ctrl[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
   lv_keyboard_set_map(kb, LV_KEYBOARD_MODE_USER_1, kb_map, kb_ctrl);
-  
+
   lv_keyboard_set_mode(kb, LV_KEYBOARD_MODE_USER_1);
   lv_keyboard_set_textarea(kb, input);
 
@@ -58,7 +58,7 @@ void Numpad::handle_input(lv_event_t *e) {
   //   lv_keyboard_set_textarea(kb, input);
   //   // lv_obj_clear_flag(kb, LV_OBJ_FLAG_HIDDEN);
   // }
-  
+
 
   // if(code == LV_EVENT_DEFOCUSED) {
   //   // lv_keyboard_set_textarea(kb, NULL);
@@ -78,7 +78,7 @@ void Numpad::handle_input(lv_event_t *e) {
     lv_obj_add_flag(edit_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_background(edit_cont);
   }
-  
+
   if (code == LV_EVENT_READY) {
     // input validation, e.g. range
     std::string value = std::string(lv_textarea_get_text(input));

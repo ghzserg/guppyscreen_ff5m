@@ -9,6 +9,7 @@ LV_IMG_DECLARE(filament_img);
 LV_IMG_DECLARE(light_img);
 LV_IMG_DECLARE(move);
 LV_IMG_DECLARE(print);
+LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(fan);
@@ -21,38 +22,48 @@ LV_FONT_DECLARE(materialdesign_font_40);
 #define HOME_SYMBOL "\xF3\xB0\x8B\x9C"
 #define SETTING_SYMBOL "\xF3\xB0\x92\x93"
 
+
+prompt_data *pdata;
+
 MainPanel::MainPanel(KWebSocketClient &websocket,
-		     std::mutex &lock,
-		     SpoolmanPanel &sm)
+                     std::mutex &lock
+                     ,SpoolmanPanel &sm
+)
   : NotifyConsumer(lock)
   , ws(websocket)
   , homing_panel(ws, lock)
   , fan_panel(ws, lock)
-  , led_panel(ws, lock)    
+  , led_panel(ws, lock)
   , tabview(lv_tabview_create(lv_scr_act(), LV_DIR_LEFT, 60))
   , main_tab(lv_tabview_add_tab(tabview, HOME_SYMBOL))
+  , printertune_tab(lv_tabview_add_tab(tabview, TUNE_SYMBOL))
+  , setting_tab(lv_tabview_add_tab(tabview, SETTING_SYMBOL))
   , macros_tab(lv_tabview_add_tab(tabview, MACROS_SYMBOL))
   , macros_panel(ws, lock, macros_tab)
   , console_tab(lv_tabview_add_tab(tabview, CONSOLE_SYMBOL))
   , console_panel(ws, lock, console_tab)
-  , printertune_tab(lv_tabview_add_tab(tabview, TUNE_SYMBOL))
-  , setting_tab(lv_tabview_add_tab(tabview, SETTING_SYMBOL))
-  , setting_panel(websocket, lock, setting_tab, sm)
+  , setting_panel(websocket, lock, setting_tab/*, sm*/)
   , main_cont(lv_obj_create(main_tab))
-  , print_status_panel(websocket, lock, main_cont)
+  , print_status_panel(websocket, lock, main_cont, *this)
   , print_panel(ws, lock, print_status_panel)
-  , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel())
-  , numpad(Numpad(main_cont))
   , extruder_panel(ws, lock, numpad, sm)
-  , prompt_panel(websocket, lock, main_cont)
+  , prompt_panel(websocket, lock, main_cont, extruder_panel)
+  , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel(), print_status_panel.get_retract_panel(), print_status_panel.get_pro_panel(), print_status_panel.get_pid_panel(), prompt_panel)
+  , numpad(Numpad(main_cont))
   , spoolman_panel(sm)
   , temp_cont(lv_obj_create(main_cont))
   , temp_chart(lv_chart_create(main_cont))
-  , homing_btn(main_cont, &move, "Homing", &MainPanel::_handle_homing_cb, this)
-  , extrude_btn(main_cont, &filament_img, "Extrude", &MainPanel::_handle_extrude_cb, this)
-  , action_btn(main_cont, &fan, "Fans", &MainPanel::_handle_fanpanel_cb, this)
+  , homing_btn(main_cont, &move, _("Homing") /* "Домой" */, &MainPanel::_handle_homing_cb, this)
+  , extrude_btn(main_cont, &filament_img, _("Extrude") /* "Экструдер" */, &MainPanel::_handle_extrude_cb, this)
+  , action_btn(main_cont, &fan, _("Fans") /* "Обдув" */, &MainPanel::_handle_fanpanel_cb, this)
   , led_btn(main_cont, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
-  , print_btn(main_cont, &print, "Print", &MainPanel::_handle_print_cb, this)
+  , print_btn(main_cont, &print, _("Print") /* "Печать" */, &MainPanel::_handle_print_cb, this)
+  , emergency_btn(main_cont, &emergency, _("Stop") /* "Стоп" */, &MainPanel::_handle_emergency_cb, this,
+                  _("Do you want to emergency stop?") /* "Выполнить аварийную остановку?" */,
+                  [&websocket]() {
+                    spdlog::debug("emergency stop pressed");
+                    websocket.send_jsonrpc("printer.emergency_stop");
+                  })
 {
     lv_style_init(&style);
     lv_style_set_img_recolor_opa(&style, LV_OPA_30);
@@ -60,7 +71,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_style_set_border_width(&style, 0);
     lv_style_set_bg_color(&style, lv_palette_darken(LV_PALETTE_GREY, 4));
 
-    ws.register_notify_update(this);    
+    ws.register_notify_update(this);
 }
 
 MainPanel::~MainPanel() {
@@ -70,6 +81,11 @@ MainPanel::~MainPanel() {
   }
 
   sensors.clear();
+}
+
+void MainPanel::foreground() {
+  lv_obj_move_foreground(tabview);
+  lv_tabview_set_act(tabview, 0, LV_ANIM_OFF);
 }
 
 void MainPanel::subscribe() {
@@ -104,9 +120,11 @@ void MainPanel::init(json &j) {
   auto fans = State::get_instance()->get_display_fans();
   print_status_panel.init(fans);
   printertune_panel.init(j);
+//  print_status_panel.get_exclude_panel().init(j);
+  print_status_panel.get_retract_panel().init(j);
 }
 
-void MainPanel::consume(json &j) {  
+void MainPanel::consume(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
   for (const auto &el : sensors) {
     auto target_value = j[json::json_pointer(fmt::format("/params/0/{}/target", el.first))];
@@ -121,7 +139,7 @@ void MainPanel::consume(json &j) {
       el.second->update_series(value);
       el.second->update_value(value);
     }
-  }  
+  }
 }
 
 static void scroll_begin_event(lv_event_t * e)
@@ -136,7 +154,7 @@ static void scroll_begin_event(lv_event_t * e)
 void MainPanel::create_panel() {
   lv_obj_clear_flag(lv_tabview_get_content(tabview), LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_add_event_cb(lv_tabview_get_content(tabview), scroll_begin_event, LV_EVENT_SCROLL_BEGIN, NULL);
-  
+
   lv_obj_t * tab_btns = lv_tabview_get_tab_btns(tabview);
   lv_obj_set_style_bg_color(tab_btns, lv_palette_main(LV_PALETTE_GREY), LV_STATE_CHECKED | LV_PART_ITEMS);
   lv_obj_set_style_outline_width(tab_btns, 0, LV_PART_ITEMS | LV_STATE_FOCUS_KEY | LV_STATE_FOCUS_KEY);
@@ -146,48 +164,54 @@ void MainPanel::create_panel() {
   // lv_obj_set_style_text_font(lv_scr_act(), LV_FONT_DEFAULT, 0);
 
   lv_obj_set_style_pad_all(main_tab, 0, 0);
+  lv_obj_set_style_pad_all(printertune_tab, 0, 0);
   lv_obj_set_style_pad_all(macros_tab, 0, 0);
   lv_obj_set_style_pad_all(console_tab, 0, 0);
-  lv_obj_set_style_pad_all(printertune_tab, 0, 0);
   lv_obj_set_style_pad_all(setting_tab, 0, 0);
 
   create_main(main_tab);
-  
 }
 
 void MainPanel::handle_homing_cb(lv_event_t *event) {
   spdlog::trace("clicked homing1");
-  if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
+  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
     spdlog::trace("clicked homing");
     homing_panel.foreground();
   }
 }
 
 void MainPanel::handle_extrude_cb(lv_event_t *event) {
-  if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
+  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
     spdlog::trace("clicked extruder");
     extruder_panel.foreground();
   }
 }
 
 void MainPanel::handle_fanpanel_cb(lv_event_t *event) {
-  if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
+  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
     spdlog::trace("clicked fan panel");
     fan_panel.foreground();
   }
 }
 
 void MainPanel::handle_ledpanel_cb(lv_event_t *event) {
-  if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
+  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
     spdlog::trace("clicked led panel");
     led_panel.foreground();
   }
 }
 
 void MainPanel::handle_print_cb(lv_event_t *event) {
-  if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
+  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
     spdlog::trace("clicked print");
     print_panel.foreground();
+  }
+}
+
+void MainPanel::handle_emergency_cb(lv_event_t *event) {
+  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
+    spdlog::trace("clicked emergency");
+    ws.send_jsonrpc("printer.emergency_stop");
   }
 }
 
@@ -203,23 +227,40 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_height(main_cont, LV_PCT(100));
 
     lv_obj_set_flex_grow(main_cont, 1);
-    lv_obj_set_grid_dsc_array(main_cont, grid_main_col_dsc, grid_main_row_dsc);    
+    lv_obj_set_grid_dsc_array(main_cont, grid_main_col_dsc, grid_main_row_dsc);
+#ifdef GUPPY_FF5M
+    lv_obj_set_style_pad_top(main_cont, 0, 0);
+    lv_obj_set_style_pad_bottom(main_cont, 0, 0);
+#endif
 
-    lv_obj_set_grid_cell(homing_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-    lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-    lv_obj_set_grid_cell(action_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(led_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(print_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+
+    lv_obj_set_grid_cell(homing_btn.get_container(),    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    lv_obj_set_grid_cell(extrude_btn.get_container(),   LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    lv_obj_set_grid_cell(action_btn.get_container(),    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_set_grid_cell(led_btn.get_container(),       LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_set_grid_cell(print_btn.get_container(),     LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+    lv_obj_set_grid_cell(emergency_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
     lv_obj_clear_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
+#ifdef GUPPY_FF5M
+    lv_obj_set_size(temp_cont, LV_PCT(50), LV_PCT(62));
+    lv_obj_set_style_pad_top(temp_cont, 4, 0);
+    lv_obj_set_style_pad_bottom(temp_cont, 0, 0);
+#else
     lv_obj_set_size(temp_cont, LV_PCT(50), LV_PCT(50));
+#endif
+
     lv_obj_set_style_pad_all(temp_cont, 0, 0);
 
     lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_ROW_WRAP);
-    lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 0, 2);
-    
+    lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 2);
+
     lv_obj_align(temp_chart, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_size(temp_chart, LV_PCT(45), LV_PCT(40));
+#ifdef GUPPY_FF5M
+    lv_obj_set_style_pad_top(temp_chart, 0, 0);
+    lv_obj_set_style_pad_bottom(temp_chart, 4, 0);
+#endif
     lv_obj_set_style_size(temp_chart, 0, LV_PART_INDICATOR);
 
     lv_chart_set_range(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 300);
@@ -243,11 +284,11 @@ void MainPanel::create_sensors(json &temp_sensors) {
     if (!sensor.value()["color"].is_number()) {
       std::string color = sensor.value()["color"].template get<std::string>();
       if (color == "red") {
-	color_code = lv_palette_main(LV_PALETTE_RED);
+        color_code = lv_palette_main(LV_PALETTE_RED);
       } else if (color == "purple") {
-	color_code = lv_palette_main(LV_PALETTE_PURPLE);
+        color_code = lv_palette_main(LV_PALETTE_PURPLE);
       } else if (color == "blue") {
-	color_code = lv_palette_main(LV_PALETTE_BLUE);	
+        color_code = lv_palette_main(LV_PALETTE_BLUE);
       }
     } else {
       color_code = lv_palette_main((lv_palette_t)sensor.value()["color"].template get<int>());
@@ -266,8 +307,8 @@ void MainPanel::create_sensors(json &temp_sensors) {
       lv_chart_add_series(temp_chart, color_code, LV_CHART_AXIS_PRIMARY_Y);
 
     sensors.insert({key, std::make_shared<SensorContainer>(ws, temp_cont, sensor_img, 150,
-			   display_name.c_str(), color_code, controllable, false, numpad, key,
-        		   temp_chart, temp_series)});
+                           display_name.c_str(), color_code, controllable, false, numpad, key,
+                           temp_chart, temp_series)});
   }
 }
 
@@ -281,6 +322,6 @@ void MainPanel::create_leds(json &leds) {
 
 void MainPanel::enable_spoolman() {
   spoolman_panel.init();
-  setting_panel.enable_spoolman();
+//  setting_panel.enable_spoolman();
   extruder_panel.enable_spoolman();
 }

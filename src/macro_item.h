@@ -12,12 +12,12 @@
 class MacroItem {
  public:
   MacroItem(KWebSocketClient &c,
-	    lv_obj_t *parent,
-	    std::string macro_name,
-	    const std::map<std::string, std::string> &m_params,
-	    lv_obj_t *keyboard,
-	    // lv_color_t bg_color,
-	    bool hide);
+            lv_obj_t *parent,
+            std::string macro_name,
+            const std::map<std::string, std::string> &m_params,
+            lv_obj_t *keyboard,
+            // lv_color_t bg_color,
+            bool hide);
 
   ~MacroItem();
 

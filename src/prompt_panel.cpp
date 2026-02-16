@@ -1,3 +1,4 @@
+#include "guppyscreen.h"
 #include "prompt_panel.h"
 #include "state.h"
 #include "utils.h"
@@ -6,6 +7,8 @@
 // uncomment for helper boxes
 // #define DEBUG_LINES
 
+#define max_h 64
+
 static lv_style_t style_btn_grey;
 static lv_style_t style_btn_blue;
 static lv_style_t style_btn_red;
@@ -13,22 +16,25 @@ static lv_style_t style_btn_orange;
 static lv_style_t style_btn_dark_grey;
 static lv_style_t button_group_flex_style;
 
-PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, lv_obj_t *parent)
+PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, lv_obj_t *parent, ExtruderPanel &ep)
     : NotifyConsumer(lock)
     , ws(websocket_client)
     , prompt_cont(lv_obj_create(lv_scr_act()))
     , flex(lv_obj_create(prompt_cont))
     , header(lv_label_create(prompt_cont))
     , footer_cont(lv_obj_create(prompt_cont))
-//  , back_btn(promptpanel_cont, &back, "Back", &PromptPanel::_handle_callback, this)
+    , i(false)
+    , kamp(false)
+    , extruder_panel(&ep)
+//  , back_btn(promptpanel_cont, &back, _("Back") /* "Назад" */, &PromptPanel::_handle_callback, this)
 {
     lv_obj_set_style_pad_all(prompt_cont, 0, 0);
-    
+
     // lv_obj_clear_flag(promptpanel_cont, LV_OBJ_FLAG_SCROLLABLE);
 
     static lv_coord_t grid_main_row_dsc_detail[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
     // header, flex, buttons
-    static lv_coord_t grid_main_col_dsc_detail[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST}; 
+    static lv_coord_t grid_main_col_dsc_detail[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
     // single column
 
     lv_obj_center(prompt_cont);
@@ -36,18 +42,26 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_obj_set_style_radius(prompt_cont, 5, LV_PART_MAIN);
     lv_obj_set_style_border_width(prompt_cont, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_color(prompt_cont, lv_palette_main(LV_PALETTE_GREY), LV_PART_MAIN | LV_STATE_DEFAULT);
+/*
     lv_obj_set_style_max_height(prompt_cont, lv_pct(80), 0);
     lv_obj_set_style_max_width(prompt_cont, lv_pct(75), 0);
     lv_obj_set_style_min_height(prompt_cont, lv_pct(50), 0);
     lv_obj_set_style_min_width(prompt_cont, lv_pct(60), 0);
     lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+*/
+    lv_obj_set_style_max_height(prompt_cont, lv_pct(100), 0);
+    lv_obj_set_style_max_width(prompt_cont, lv_pct(100), 0);
+    lv_obj_set_style_min_height(prompt_cont, lv_pct(100), 0);
+    lv_obj_set_style_min_width(prompt_cont, lv_pct(100), 0);
+    lv_obj_set_size(prompt_cont, lv_pct(100), lv_pct(100));
+
     lv_obj_set_grid_dsc_array(prompt_cont, grid_main_col_dsc_detail, grid_main_row_dsc_detail);
 
     lv_obj_set_style_pad_all(flex, 0, 0);
 
     lv_obj_set_grid_cell(header,                LV_GRID_ALIGN_START,    0, 1, LV_GRID_ALIGN_START,  0, 1);
     lv_obj_set_grid_cell(flex,                  LV_GRID_ALIGN_START,    0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(footer_cont,          LV_GRID_ALIGN_CENTER,   0, 1, LV_GRID_ALIGN_END,    2, 1);
+    lv_obj_set_grid_cell(footer_cont,           LV_GRID_ALIGN_CENTER,   0, 1, LV_GRID_ALIGN_END,    2, 1);
 
     lv_obj_set_size(header, lv_pct(100), lv_pct(10));
     lv_obj_set_size(flex, lv_pct(100), lv_pct(60));
@@ -57,7 +71,6 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(flex, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(footer_cont, LV_OBJ_FLAG_SCROLLABLE);
-
 
     // set buttons horizontal
     //
@@ -123,12 +136,81 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_style_init(&style_btn_dark_grey);
     lv_style_set_bg_color(&style_btn_dark_grey, lv_palette_darken(LV_PALETTE_GREY, 1));
     lv_style_set_bg_opa(&style_btn_dark_grey, LV_OPA_COVER);
-    
+
     background(); // hide ourselves
 }
-
+void PromptPanel::ignore_save_config(bool ignore) {
+    i=ignore;
+}
 
 void PromptPanel::consume(json &j) {
+    auto v = j["/params/0/configfile/save_config_pending"_json_pointer];
+    if (!i && !v.is_null() && v.template get<bool>()) {
+        spdlog::debug("SAVE_CONFIG");
+
+        // remove buttons
+        lv_obj_clean(footer_cont);
+        lv_obj_clean(flex);
+        // remove button commands
+
+        lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+        lv_obj_set_height(flex, lv_pct(70));
+
+        // set header here
+        lv_label_set_text(header, _("Configuration change detected") /* "Обнаружено изменение конфигурации!" */);
+
+        // create label and add to flex field
+        lv_obj_t *textfield = lv_label_create(flex);
+        lv_obj_set_width(textfield, lv_pct(96));
+        lv_obj_set_height(textfield, 40);
+        // lv_obj_set_style_min_height(textfield, 32, 0);
+        lv_label_set_long_mode(textfield, LV_LABEL_LONG_WRAP);
+        lv_obj_set_flex_grow(textfield, 1);
+        lv_obj_set_style_outline_pad(textfield, 0, 0);
+        lv_label_set_text(textfield, _("Configuration change detected") /* "Обнаружено изменение конфигурации" */);
+        lv_obj_center(textfield);
+
+        lv_obj_t *btn = lv_btn_create(footer_cont);
+        lv_obj_add_style(btn, &style_btn_blue, 0);
+        lv_obj_set_size(btn, lv_pct(45), 32);
+        lv_obj_set_style_max_width(btn, lv_pct(45), 0);
+        lv_obj_set_style_min_width(btn, 32, 0);
+        lv_obj_set_style_max_height(btn, max_h, 0);
+        lv_obj_set_style_min_height(btn, max_h, 0);
+        lv_obj_set_style_outline_pad(btn, 0, -50);
+        lv_obj_center(btn);
+        lv_obj_set_flex_grow(btn, 1);
+        lv_obj_t *label = lv_label_create(btn);
+        lv_label_set_text(label, _("Close") /* "Закрыть" */);
+        lv_obj_set_style_pad_all(btn, 2, 0);
+        lv_obj_center(label);
+
+        lv_obj_add_event_cb(btn, _handle_callback_close, LV_EVENT_SHORT_CLICKED, this);
+
+        lv_obj_t *btn_save = lv_btn_create(footer_cont);
+        lv_obj_add_style(btn_save, &style_btn_red, 0);
+        lv_obj_set_size(btn_save, lv_pct(45), 32);
+        lv_obj_set_style_max_width(btn_save, lv_pct(45), 0);
+        lv_obj_set_style_min_width(btn_save, 32, 0);
+        lv_obj_set_style_max_height(btn_save, max_h, 0);
+        lv_obj_set_style_min_height(btn_save, max_h, 0);
+        lv_obj_set_style_outline_pad(btn_save, 0, 0);
+        lv_obj_center(btn_save);
+        lv_obj_set_flex_grow(btn_save, 1);
+        lv_obj_t *label_save = lv_label_create(btn_save);
+        lv_label_set_text(label_save, "SAVE_CONFIG");
+        lv_obj_set_style_pad_all(btn_save, 2, 0);
+        lv_obj_center(label_save);
+        lv_obj_add_event_cb(btn_save, _handle_callback_save, LV_EVENT_SHORT_CLICKED, this);
+
+        check_height();
+        foreground();
+    }
+    if (i && kamp && !v.is_null() && v.template get<bool>()) {
+        spdlog::debug("KAMP OFF");
+        kamp=false;
+        i=false;
+    }
 }
 
 PromptPanel::~PromptPanel() {
@@ -143,6 +225,8 @@ PromptPanel::~PromptPanel() {
 void PromptPanel::foreground() {
     // shrink wrap
     lv_obj_move_foreground(prompt_cont);
+    GuppyScreen *guppy = GuppyScreen::get();
+    guppy->up(true);
 }
 
 void PromptPanel::background() {
@@ -152,7 +236,7 @@ void PromptPanel::background() {
 void PromptPanel::handle_callback(lv_event_t *event) {
     lv_obj_t *btn = lv_event_get_current_target(event);
 
-    PromptPanel *panel = (PromptPanel*)event->user_data;
+    //PromptPanel *panel = (PromptPanel*)event->user_data;
 
     lv_obj_t *label = lv_obj_get_child(btn, 0);
     lv_obj_t *command = lv_obj_get_child(btn, 1);
@@ -172,14 +256,66 @@ void PromptPanel::handle_callback(lv_event_t *event) {
         spdlog::debug("button: {}", cmd);
         ws.gcode_script(cmd);
     }
+}
 
+void PromptPanel::handle_callback_close(lv_event_t *event) {
+    background();
 
+    // remove buttons
+    lv_obj_clean(footer_cont);
+    lv_obj_clean(flex);
+    lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+    lv_obj_set_height(flex, LV_SIZE_CONTENT);
+}
+
+void PromptPanel::handle_callback_close_filament(lv_event_t *event) {
+    extruder_panel->foreground();
+    background();
+
+    // remove buttons
+    lv_obj_clean(footer_cont);
+    lv_obj_clean(flex);
+    lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+    lv_obj_set_height(flex, LV_SIZE_CONTENT);
+}
+
+void PromptPanel::handle_callback_save(lv_event_t *event) {
+    background();
+
+    // remove buttons
+    lv_obj_clean(footer_cont);
+    lv_obj_clean(flex);
+    lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+    lv_obj_set_height(flex, LV_SIZE_CONTENT);
+    ws.gcode_script("SAVE_CONFIG");
+}
+
+void PromptPanel::handle_callback_firmware_restart(lv_event_t *event) {
+    background();
+
+    // remove buttons
+    lv_obj_clean(footer_cont);
+    lv_obj_clean(flex);
+    lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+    lv_obj_set_height(flex, LV_SIZE_CONTENT);
+    ws.gcode_script("FIRMWARE_RESTART");
+}
+
+void PromptPanel::handle_callback_g28(lv_event_t *event) {
+    background();
+
+    // remove buttons
+    lv_obj_clean(footer_cont);
+    lv_obj_clean(flex);
+    lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+    lv_obj_set_height(flex, LV_SIZE_CONTENT);
+    ws.gcode_script("G28");
 }
 
 void PromptPanel::check_height() {
     // check if we need to increase size of the parent container
     lv_obj_t *last_child = lv_obj_get_child(flex, -1);
-    // iterate max 5 times to enlarge, could probably be done nicer but since it's 
+    // iterate max 5 times to enlarge, could probably be done nicer but since it's
     // based on css auto sizing is terrible.
     if (NULL != last_child) {
         int count = 0;
@@ -211,12 +347,106 @@ void PromptPanel::handle_macro_response(json &j) {
         std::lock_guard<std::mutex> lock(lv_lock);
         spdlog::debug("data: {}", resp);
 
+        if (resp.find("Happy KAMPing") != std::string::npos || resp.find("Счастливого KAMPинга") != std::string::npos) {
+            spdlog::debug("KAMP ON");
+            i=true;
+            kamp=true;
+        }
+        if (resp.find("!! ") == 0) {
+            std::string message = resp.substr(3);
+            spdlog::debug("Error message: {}", message);
+
+            // remove buttons
+            lv_obj_clean(footer_cont);
+            lv_obj_clean(flex);
+            // remove button commands
+
+            lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+            lv_obj_set_height(flex, lv_pct(70));
+
+            // set header here
+            lv_label_set_text(header, _("Attention!") /* "Внимание!" */);
+
+            // create label and add to flex field
+            lv_obj_t *textfield = lv_label_create(flex);
+            lv_obj_set_width(textfield, lv_pct(96));
+            lv_obj_set_height(textfield, 40);
+            // lv_obj_set_style_min_height(textfield, 32, 0);
+            lv_label_set_long_mode(textfield, LV_LABEL_LONG_WRAP);
+            lv_obj_set_flex_grow(textfield, 1);
+            lv_obj_set_style_outline_pad(textfield, 0, 0);
+            lv_label_set_text(textfield, message.c_str());
+            lv_obj_center(textfield);
+
+            lv_obj_t *btn = lv_btn_create(footer_cont);
+            lv_obj_add_style(btn, &style_btn_red, 0);
+
+            lv_obj_set_size(btn, lv_pct(45), 32);
+            lv_obj_set_style_max_width(btn, lv_pct(45), 0);
+            lv_obj_set_style_min_width(btn, 32, 0);
+            lv_obj_set_style_max_height(btn, max_h, 0);
+            lv_obj_set_style_min_height(btn, max_h, 0);
+            lv_obj_set_style_outline_pad(btn, 0, 0);
+            lv_obj_center(btn);
+            lv_obj_set_flex_grow(btn, 1);
+            lv_obj_t *label = lv_label_create(btn);
+            lv_label_set_text(label, _("Close") /* "Закрыть" */);
+            lv_obj_set_style_pad_all(btn, 2, 0);
+            lv_obj_center(label);
+
+            if (message.find("филамент") != std::string::npos || message.find("filament") != std::string::npos) {
+                lv_obj_add_event_cb(btn, _handle_callback_close_filament, LV_EVENT_SHORT_CLICKED, this);
+            } else if (message.find("Must home") != std::string::npos) {
+                lv_obj_t *btn_save = lv_btn_create(footer_cont);
+                lv_obj_add_style(btn_save, &style_btn_red, 0);
+                lv_obj_set_size(btn_save, lv_pct(45), 32);
+                lv_obj_set_style_max_width(btn_save, lv_pct(45), 0);
+                lv_obj_set_style_min_width(btn_save, 32, 0);
+                lv_obj_set_style_max_height(btn_save, max_h, 0);
+                lv_obj_set_style_min_height(btn_save, max_h, 0);
+                lv_obj_set_style_outline_pad(btn_save, 0, 0);
+                lv_obj_center(btn_save);
+                lv_obj_set_flex_grow(btn_save, 1);
+                lv_obj_t *label_save = lv_label_create(btn_save);
+                lv_label_set_text(label_save, _("Home") /* "Домой" */);
+                lv_obj_set_style_pad_all(btn_save, 2, 0);
+                lv_obj_center(label_save);
+                lv_obj_add_event_cb(btn_save, _handle_callback_g28, LV_EVENT_SHORT_CLICKED, this);
+
+                lv_obj_add_style(btn, &style_btn_blue, 0);
+                lv_obj_add_event_cb(btn, _handle_callback_close, LV_EVENT_SHORT_CLICKED, this);
+            } else if (message.find("FIRMWARE_RESTART") != std::string::npos || message.find("сопла о стол") != std::string::npos || message.find("Shutdown") != std::string::npos) {
+                lv_obj_t *btn_save = lv_btn_create(footer_cont);
+                lv_obj_add_style(btn_save, &style_btn_red, 0);
+                lv_obj_set_size(btn_save, lv_pct(45), 32);
+                lv_obj_set_style_max_width(btn_save, lv_pct(45), 0);
+                lv_obj_set_style_min_width(btn_save, 32, 0);
+                lv_obj_set_style_max_height(btn_save, max_h, 0);
+                lv_obj_set_style_min_height(btn_save, max_h, 0);
+                lv_obj_set_style_outline_pad(btn_save, 0, 0);
+                lv_obj_center(btn_save);
+                lv_obj_set_flex_grow(btn_save, 1);
+                lv_obj_t *label_save = lv_label_create(btn_save);
+                lv_label_set_text(label_save, "FIRMWARE_RESTART");
+                lv_obj_set_style_pad_all(btn_save, 2, 0);
+                lv_obj_center(label_save);
+                lv_obj_add_event_cb(btn_save, _handle_callback_firmware_restart, LV_EVENT_SHORT_CLICKED, this);
+
+                lv_obj_add_style(btn, &style_btn_blue, 0);
+                lv_obj_add_event_cb(btn, _handle_callback_close, LV_EVENT_SHORT_CLICKED, this);
+            } else {
+                lv_obj_add_event_cb(btn, _handle_callback_close, LV_EVENT_SHORT_CLICKED, this);
+            }
+
+            check_height();
+            foreground();
+        }
+
         if (resp.find("// action:", 0) == 0) {
             // it is an action
             std::string command = resp.substr(10);
             spdlog::debug("action: {}", command);
 
-            
             if (command.find("prompt_begin") == 0) {
                 std::string prompt_header = command.substr(13);
                 spdlog::debug("PROMPT_BEGIN: {}", prompt_header);
@@ -249,7 +479,7 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_set_style_border_color(textfield, lv_palette_main(LV_PALETTE_GREEN), LV_PART_MAIN | LV_STATE_DEFAULT);
                 lv_obj_set_style_bg_color(textfield, lv_palette_lighten(LV_PALETTE_GREEN, 2), LV_PART_MAIN | LV_STATE_DEFAULT);
 #endif
-            // due to using find, order IS important!  
+            // due to using find, order IS important!
             } else if (command.find("prompt_button_group_start") == 0) {
                 spdlog::debug("Button group created");
                 // create new button group in flex window and mark active
@@ -279,18 +509,28 @@ void PromptPanel::handle_macro_response(json &j) {
                 int index_label = command.find("button", 0) + strlen("button");
                 int index_first = command.find("|", index_label);
                 int index_second = command.find("|", index_first + 1);
-                spdlog::debug("indexes: {} {} {}", index_label, index_first, index_second);
+                int index_third = command.find("|", index_second + 1); // Найти третий разделитель
+
+                spdlog::debug("indexes: {} {} {} {}", index_label, index_first, index_second, index_third);
                 std::string prompt_footer_button = command.substr(index_label, index_first - index_label);
                 std::string prompt_button_command;
                 std::string prompt_button_type = "none";
-                spdlog::debug("button: {} |  {} | {}", prompt_footer_button, prompt_button_command, prompt_button_type);
+                std::string prompt_button_color = ""; // Для хранения цвета из 3-го параметра
+
                 if (index_second > 0) {
                     prompt_button_command = command.substr(index_first + 1, index_second - index_first - 1);
-                    prompt_button_type = command.substr(index_second + 1, command.length() - index_second - 1);
+                    if (index_third > 0) {
+                        prompt_button_type = command.substr(index_second + 1, index_third - index_second - 1);
+                        prompt_button_color = command.substr(index_third + 1);
+                    } else {
+                        prompt_button_type = command.substr(index_second + 1);
+                    }
                 } else {
                     prompt_button_command = command.substr(index_first + 1);
                 }
-                spdlog::debug("PROMPT_FOOTER_BUTTON: {} CMD: {}, type {}", prompt_footer_button, prompt_button_command, prompt_button_type);
+
+                spdlog::debug("PROMPT_FOOTER_BUTTON: {} CMD: {}, type {}, color {}", prompt_footer_button, prompt_button_command, prompt_button_type, prompt_button_color);
+
                 lv_obj_t *btn = NULL;
                 if (command.find("prompt_footer_button") == 0) {
                     btn = lv_btn_create(footer_cont);
@@ -305,43 +545,73 @@ void PromptPanel::handle_macro_response(json &j) {
                     lv_obj_set_size(btn, lv_pct(45), 32);
                     lv_obj_set_style_max_width(btn, lv_pct(45), 0);
                     lv_obj_set_style_min_width(btn, 32, 0);
-                    lv_obj_set_style_max_height(btn, 54, 0);
-                    lv_obj_set_style_min_height(btn, 42, 0);
+                    lv_obj_set_style_max_height(btn, max_h, 0);
+                    lv_obj_set_style_min_height(btn, max_h, 0);
                     lv_obj_set_style_outline_pad(btn, 0, 0);
                     lv_obj_center(btn);
                     lv_obj_set_flex_grow(btn, 1);
                     lv_obj_t *label = lv_label_create(btn);
                     // a hidden label is abused to transfer the command and auto-clean it
-                    lv_obj_t *command = lv_label_create(btn);
-                    lv_obj_set_size(command, 1, 1);
-                    lv_obj_add_flag(command, LV_OBJ_FLAG_HIDDEN);
+                    lv_obj_t *command_label = lv_label_create(btn);
+                    lv_obj_set_size(command_label, 1, 1);
+                    lv_obj_add_flag(command_label, LV_OBJ_FLAG_HIDDEN);
                     lv_label_set_text(label, prompt_footer_button.c_str());
-                    lv_label_set_text(command, prompt_button_command.c_str());
+                    lv_label_set_text(command_label, prompt_button_command.c_str());
                     lv_obj_set_style_pad_all(btn, 2, 0);
                     // lv_obj_set_style_max_width(label, lv_pct(45), 0);
                     lv_obj_center(label);
 
-                    if (!prompt_button_type.compare("secondary")) {
-                        spdlog::debug("type secondary");
-                        lv_obj_add_style(btn, &style_btn_grey, 0);
-                    } else if (!prompt_button_type.compare("warning")) {
-                        spdlog::debug("type warning");
-                        lv_obj_add_style(btn, &style_btn_orange, 0);
-                    } else if (!prompt_button_type.compare("error")) {
-                        spdlog::debug("type error");
-                        lv_obj_add_style(btn, &style_btn_red, 0);
-                    } else if (!prompt_button_type.compare("info")) {
-                        spdlog::debug("type info");
-                        lv_obj_add_style(btn, &style_btn_blue, 0);
-                    } else if (!prompt_button_type.compare("primary")) {
-                        spdlog::debug("type primary");
-                        lv_obj_add_style(btn, &style_btn_blue, 0);
-                    } else { // info and primary as well
-                        spdlog::debug("type default");
-                        lv_obj_add_style(btn, &style_btn_dark_grey, 0);
-                    }
-                    lv_obj_add_event_cb(btn, _handle_callback, LV_EVENT_PRESSED, this);
+                    bool color_applied = false;
+                    if (!prompt_button_color.empty()) {
+                        std::string color_str = prompt_button_color;
+                        if (color_str.length() == 6 && color_str.find_first_not_of("0123456789ABCDEFabcdef") == std::string::npos) {
+                            try {
+                                uint32_t hex_color = std::stoul(color_str, nullptr, 16);
+                                lv_color_t btn_color = lv_color_hex(hex_color);
+                                lv_obj_set_style_bg_color(btn, btn_color, 0);
+                                lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, 0);
 
+                                // Вычисление цвета текста на основе фона
+                                uint8_t r = (hex_color >> 16) & 0xFF;
+                                uint8_t g = (hex_color >> 8) & 0xFF;
+                                uint8_t b = hex_color & 0xFF;
+                                double gray = r * 0.299 + g * 0.587 + b * 0.114;
+
+                                lv_color_t text_color = (gray > 186) ? lv_color_hex(0x000000) : lv_color_hex(0xFFFFFF);
+                                lv_obj_set_style_text_color(btn, text_color, 0);
+
+                                color_applied = true;
+                            } catch (...) {
+                                spdlog::debug("Недействительный цвет в третьем параметре: {}", color_str);
+                            }
+                        } else {
+                            spdlog::debug("Третий параметр не является HEX цветом: {}", prompt_button_color);
+                        }
+                    }
+
+                    if (!color_applied) {
+                        if (!prompt_button_type.compare("secondary")) {
+                            spdlog::debug("type secondary");
+                            lv_obj_add_style(btn, &style_btn_grey, 0);
+                        } else if (!prompt_button_type.compare("warning")) {
+                            spdlog::debug("type warning");
+                            lv_obj_add_style(btn, &style_btn_orange, 0);
+                        } else if (!prompt_button_type.compare("error")) {
+                            spdlog::debug("type error");
+                            lv_obj_add_style(btn, &style_btn_red, 0);
+                        } else if (!prompt_button_type.compare("info")) {
+                            spdlog::debug("type info");
+                            lv_obj_add_style(btn, &style_btn_blue, 0);
+                        } else if (!prompt_button_type.compare("primary")) {
+                            spdlog::debug("type primary");
+                            lv_obj_add_style(btn, &style_btn_blue, 0);
+                        } else { // info and primary as well
+                            spdlog::debug("type default");
+                            lv_obj_add_style(btn, &style_btn_dark_grey, 0);
+                        }
+                    }
+
+                    lv_obj_add_event_cb(btn, _handle_callback, LV_EVENT_SHORT_CLICKED, this);
                 }
             } else if (command.find("prompt_show") == 0) {
                 spdlog::debug("PROMPT_SHOW");
@@ -359,8 +629,8 @@ void PromptPanel::handle_macro_response(json &j) {
             } else {
                 spdlog::debug("action {} --- not supported", command);
             }
-            
+
         }
-        
+
     }
 }

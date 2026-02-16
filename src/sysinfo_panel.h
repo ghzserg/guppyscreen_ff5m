@@ -6,10 +6,11 @@
 
 #include <vector>
 #include <string>
+#include "websocket_client.h"
 
 class SysInfoPanel {
  public:
-  SysInfoPanel();
+  SysInfoPanel(KWebSocketClient &c);
   ~SysInfoPanel();
 
   void foreground();
@@ -21,6 +22,7 @@ class SysInfoPanel {
   };
 
  private:
+  KWebSocketClient &ws;
   lv_obj_t *cont;
   lv_obj_t *left_cont;
   lv_obj_t *right_cont;
@@ -28,6 +30,10 @@ class SysInfoPanel {
 
   lv_obj_t *disp_sleep_cont;
   lv_obj_t *display_sleep_dd;
+#ifdef GUPPY_FF5M
+  lv_obj_t *disp_brightness_cont;
+  lv_obj_t *disp_brightness_dd;
+#endif
 
   lv_obj_t *ll_cont;
   lv_obj_t *loglevel_dd;
@@ -36,13 +42,14 @@ class SysInfoPanel {
   lv_obj_t *estop_toggle_cont;
   lv_obj_t *prompt_estop_toggle;
 
+#ifndef GUPPY_FF5M
   lv_obj_t *z_icon_toggle_cont;
   lv_obj_t *z_icon_toggle;
 
   lv_obj_t *theme_cont;
   lv_obj_t *theme_dd;
   uint32_t theme;
-
+#endif
   ButtonContainer back_btn;
 
   static std::vector<std::string> log_levels;

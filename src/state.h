@@ -9,7 +9,7 @@ class State : public NotifyConsumer {
  private:
   static State *instance;
   static std::mutex lock;
-  
+
  protected:
   json data;
 

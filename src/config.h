@@ -36,7 +36,9 @@ class Config {
   void save();
   std::string& df();
   std::string get_thumbnail_path();
+#ifndef GUPPY_FF5M
   std::string get_wifi_interface();
+#endif
   std::string get_path();
 
   static Config *get_instance();

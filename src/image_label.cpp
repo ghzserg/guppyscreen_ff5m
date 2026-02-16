@@ -17,10 +17,10 @@
 // }
 
 ImageLabel::ImageLabel(lv_obj_t *parent,
-		       const void* img,
-		       int32_t width_pct,
-		       int32_t height_pct,
-		       const char *value)
+                       const void* img,
+                       int32_t width_pct,
+                       int32_t height_pct,
+                       const char *value)
   : cont(lv_obj_create(parent))
   , image(lv_img_create(cont))
   , label(lv_label_create(cont))
@@ -40,11 +40,11 @@ ImageLabel::ImageLabel(lv_obj_t *parent,
 }
 
 ImageLabel::ImageLabel(lv_obj_t *parent,
-		       const void* img,
-		       uint16_t img_scale,
-		       int32_t width_pct,
-		       int32_t height_pct,
-		       const char *v)
+                       const void* img,
+                       uint16_t img_scale,
+                       int32_t width_pct,
+                       int32_t height_pct,
+                       const char *v)
   : ImageLabel(parent, img, width_pct, height_pct, v)
 {
   auto wscale = lv_disp_get_physical_hor_res(NULL) / 800.0;
@@ -53,9 +53,9 @@ ImageLabel::ImageLabel(lv_obj_t *parent,
 }
 
 ImageLabel::ImageLabel(lv_obj_t *parent,
-		       const void* img,
-		       uint16_t img_scale,
-		       const char *v)
+                       const void* img,
+                       uint16_t img_scale,
+                       const char *v)
   : ImageLabel(parent, img, img_scale, 45, 20, v)
 {
 }

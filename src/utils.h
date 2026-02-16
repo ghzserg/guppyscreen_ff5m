@@ -19,8 +19,8 @@ namespace KUtils {
   std::pair<std::string, size_t> get_thumbnail(const std::string &gcode_file, json &j, double scale);
 
   std::string download_file(const std::string &root,
-			    const std::string &fname,
-			    const std::string &dest);
+                            const std::string &fname,
+                            const std::string &dest);
 
   std::vector<std::string> get_interfaces();
   std::string interface_ip(const std::string &interface);
@@ -33,12 +33,13 @@ namespace KUtils {
 
   std::string get_obj_name(const std::string &id);
   std::string to_title(std::string s);
+  std::string end_time(int64_t seconds_to_add);
   std::string eta_string(int64_t s);
   size_t bytes_to_mb(size_t s);
 
   template<typename T, typename U> void sort_map_values(std::map<T, U> v,
-							std::vector<U> &out_vect,
-							std::function<bool(U&, U&)> sorter) {
+                                                        std::vector<U> &out_vect,
+                                                        std::function<bool(U&, U&)> sorter) {
     for (auto &el : v) {
       out_vect.push_back(el.second);
     }

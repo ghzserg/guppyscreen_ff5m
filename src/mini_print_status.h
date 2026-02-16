@@ -3,12 +3,14 @@
 
 #include "lvgl/lvgl.h"
 #include <string>
+#include "websocket_client.h"
 
 class MiniPrintStatus {
  public:
   MiniPrintStatus(lv_obj_t *parent,
-		  lv_event_cb_t cb,
-		  void* user_data);
+                  lv_event_cb_t cb,
+                  void* user_data,
+                    KWebSocketClient &ws);
 
   ~MiniPrintStatus();
 
@@ -23,8 +25,9 @@ class MiniPrintStatus {
   void reset();
 
  private:
+  KWebSocketClient &ws;
   lv_obj_t *cont;
-  lv_obj_t *progress_bar;  
+  lv_obj_t *progress_bar;
   lv_obj_t *thumb;
   lv_obj_t *status_label;
   std::string status;

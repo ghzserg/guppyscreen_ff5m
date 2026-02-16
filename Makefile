@@ -22,8 +22,14 @@ WARNINGS		:= -Wall -Wextra -Wno-unused-function -Wno-error=strict-prototypes -Wp
 					-Wno-unused-value -Wno-unused-parameter -Wno-missing-field-initializers -Wuninitialized -Wmaybe-uninitialized -Wall -Wextra -Wno-unused-parameter \
 					-Wno-missing-field-initializers -Wtype-limits -Wsizeof-pointer-memaccess -Wno-format-nonliteral -Wpointer-arith -Wno-cast-qual \
 					-Wunreachable-code -Wno-switch-default -Wreturn-type -Wmultichar -Wformat-security -Wno-sign-compare
-CFLAGS 			?= -O3 -g0 -MD -MP -I$(LVGL_DIR)/ $(WARNINGS) 
-LDFLAGS 		?= -static -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread -Lwpa_supplicant/wpa_supplicant/ -l:libwpa_client.a -lstdc++fs -l:libspdlog.a
+CFLAGS 			?= -O3 -g0 -MD -MP -I$(LVGL_DIR)/ $(WARNINGS)
+ifndef FF5M
+LDFLAGS 		?= -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread -lstdc++fs -l:libspdlog.a 
+else
+CFLAGS 			?= -O3 -g0 -MD -MP -I$(LVGL_DIR)/ $(WARNINGS) --sysroot=$(SYSROOT)
+FF5M_CMAKE_FLAGS ?= -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX)
+LDFLAGS 		?= --sysroot=$(SYSROOT) -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread  -lstdc++fs -l:libspdlog.a -lts
+endif
 BIN 			= guppyscreen
 BUILD_DIR 		= ./build
 BUILD_OBJ_DIR 	= $(BUILD_DIR)/obj
@@ -46,6 +52,11 @@ ASSET_DIR		= material
 ifdef GUPPY_SMALL_SCREEN
 ASSET_DIR		= material_46
 DEFINES			+= -D GUPPY_SMALL_SCREEN
+endif
+
+ifdef FF5M
+ASSET_DIR		= material
+DEFINES 		+= -D GUPPY_FF5M
 endif
 
 
@@ -76,7 +87,7 @@ DEPS                    = $(addprefix $(BUILD_OBJ_DIR)/, $(patsubst %.o, %.d, $(
 OBJS 			= $(AOBJS) $(COBJS) $(MAINOBJ)
 TARGET 			= $(addprefix $(BUILD_OBJ_DIR)/, $(patsubst ./%, %, $(OBJS)))
 
-INC 				:= -I./ -I./lvgl/ -I./lv_touch_calibration -I./spdlog/include -Ilibhv/include -Iwpa_supplicant/src/common
+INC 				:= -I./ -I./lvgl/ -I./lv_touch_calibration -I./spdlog/include -Ilibhv/include
 LDLIBS	 			:= -lm
 
 DEFINES				+= -D _GNU_SOURCE -DSPDLOG_COMPILED_LIB
@@ -103,11 +114,8 @@ libhv.a:
 
 libspdlog.a:
 	@mkdir -p $(SPDLOG_DIR)/build
-	@cmake -B $(SPDLOG_DIR)/build -S $(SPDLOG_DIR)/ -DCMAKE_CXX_COMPILER=$(CXX)
+	@cmake $(FF5M_CMAKE_FLAGS) -B $(SPDLOG_DIR)/build -S $(SPDLOG_DIR)/
 	$(MAKE) -C $(SPDLOG_DIR)/build -j$(nproc)
-
-wpaclient:
-	$(MAKE) -C wpa_supplicant/wpa_supplicant -j$(nproc) libwpa_client.a
 
 $(BUILD_OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
@@ -138,11 +146,13 @@ spdlogclean:
 libhvclean:
 	$(MAKE) -C libhv clean
 
-wpaclean:
-	$(MAKE) -C wpa_supplicant/wpa_supplicant clean
-
 clean:
 	rm -rf $(BUILD_DIR)
+	find ./ \( -name '*.d' -o -name '*.a' -o -name '*.o' \) -delete
+	rm -rf spdlog/build
+	rm -rf releases/
+
+cleanall: clean libhvclean spdlogclean
 
 install:
 	install -d $(DESTDIR)$(bindir)
@@ -152,8 +162,6 @@ uninstall:
 	$(RM) -r $(addprefix $(DESTDIR)$(bindir)/,$(BIN))
 
 build:
-	$(MAKE) wpaclean
-	$(MAKE) wpaclient
 	$(MAKE) libhvclean
 	$(MAKE) libhv.a
 	$(MAKE) spdlogclean

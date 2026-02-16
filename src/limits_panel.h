@@ -19,7 +19,7 @@ class LimitsPanel : public NotifyConsumer {
   void consume(json &j);
 
   void handle_callback(lv_event_t *event);
-  
+
   static void _handle_callback(lv_event_t *event) {
     LimitsPanel *panel = (LimitsPanel*)event->user_data;
     panel->handle_callback(event);
@@ -38,7 +38,7 @@ class LimitsPanel : public NotifyConsumer {
   int max_accel_default;
   int max_accel_to_decel_default;
   int square_corner_default;
-  
+
 };
 
 #endif // __LIMITS_PANEL_H__

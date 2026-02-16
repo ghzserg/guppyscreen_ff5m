@@ -20,24 +20,24 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   : NotifyConsumer(lock)
   , ws(websocket_client)
   , homing_cont(lv_obj_create(lv_scr_act()))
-  , home_all_btn(homing_cont, &home, "Home All", &HomingPanel::_handle_callback, this)
-  , home_xy_btn(homing_cont, &home, "Home XY", &HomingPanel::_handle_callback, this)
+  , home_all_btn(homing_cont, &home, "G28", &HomingPanel::_handle_callback, this)
+  , home_xy_btn(homing_cont, &home, "G28 XY", &HomingPanel::_handle_callback, this)
   , y_up_btn(homing_cont, &arrow_up, "Y+", &HomingPanel::_handle_callback, this)
-  , y_down_btn(homing_cont, &arrow_down, "Y-", &HomingPanel::_handle_callback, this)    
+  , y_down_btn(homing_cont, &arrow_down, "Y-", &HomingPanel::_handle_callback, this)
   , x_up_btn(homing_cont, &arrow_right, "X+", &HomingPanel::_handle_callback, this)
   , x_down_btn(homing_cont, &arrow_left, "X-", &HomingPanel::_handle_callback, this)
   , z_up_btn(homing_cont, &z_closer, "Z+", &HomingPanel::_handle_callback, this)
   , z_down_btn(homing_cont, &z_farther, "Z-", &HomingPanel::_handle_callback, this)
-  , emergency_btn(homing_cont, &emergency, "Stop", &HomingPanel::_handle_callback, this,
-		  "Do you want to emergency stop?",
-		  [&websocket_client]() {
-		    spdlog::debug("emergency stop pressed");
-		    websocket_client.send_jsonrpc("printer.emergency_stop");
-		  })
-  , motoroff_btn(homing_cont, &motor_off_img, "Motor Off", &HomingPanel::_handle_callback, this)
-  , back_btn(homing_cont, &back, "Back", &HomingPanel::_handle_callback, this)
-  , distance_selector(homing_cont, "Move Distance (mm)",
-		     {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
+  , emergency_btn(homing_cont, &emergency, _("Stop") /* "Стоп" */, &HomingPanel::_handle_callback, this,
+                  _("Do you want to make an emergency stop?") /* "Вы хотите  аварийную остановку?" */,
+                  [&websocket_client]() {
+                    spdlog::debug("emergency stop pressed");
+                    websocket_client.send_jsonrpc("printer.emergency_stop");
+                  })
+  , motoroff_btn(homing_cont, &motor_off_img, _("Motor off") /* "Мотор выкл" */, &HomingPanel::_handle_callback, this)
+  , back_btn(homing_cont, &back, _("Back") /* "Назад" */, &HomingPanel::_handle_callback, this)
+  , distance_selector(homing_cont, _("Travel distance (mm)") /* "Расстояние перемещения (мм)" */,
+                     {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
 {
   lv_obj_clear_flag(homing_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_height(homing_cont, lv_pct(100));
@@ -53,7 +53,7 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_grid_cell(home_all_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(y_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(home_xy_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(z_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1); 
+  lv_obj_set_grid_cell(z_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(emergency_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
   // row 2
@@ -62,10 +62,10 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_grid_cell(x_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(z_down_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(motoroff_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    
+
   lv_obj_set_grid_cell(distance_selector.get_container(), LV_GRID_ALIGN_CENTER, 0, 5, LV_GRID_ALIGN_CENTER, 2, 1);
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);  
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
   lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 10, 0);
 
   ws.register_notify_update(this);
@@ -161,14 +161,14 @@ void HomingPanel::foreground() {
 }
 
 void HomingPanel::handle_callback(lv_event_t *event) {
-  lv_obj_t *btn = lv_event_get_current_target(event);  
+  lv_obj_t *btn = lv_event_get_current_target(event);
   const char * distance = lv_btnmatrix_get_btn_text(distance_selector.get_selector(),
-						    distance_selector.get_selected_idx());
+                                                    distance_selector.get_selected_idx());
   std::string move_op;
 
   if (btn == home_all_btn.get_container()) {
     spdlog::debug("home all pressed");
-    ws.gcode_script("G28 X Y Z");
+    ws.gcode_script("G28");
 
   }
   else if (btn == home_xy_btn.get_container()) {
@@ -178,43 +178,36 @@ void HomingPanel::handle_callback(lv_event_t *event) {
   }
   else if (btn == y_up_btn.get_container()) {
     spdlog::debug("y up pressed");
-    move_op = fmt::format("G0 Y+{} F1200", distance);
+    move_op = fmt::format("_CLIENT_LINEAR_MOVE Y=+{} F=7800", distance);
 
   }
   else if (btn == y_down_btn.get_container()) {
     spdlog::debug("y down pressed");
-    move_op = fmt::format("G0 Y-{} F1200", distance);
-
+    move_op = fmt::format("_CLIENT_LINEAR_MOVE Y=-{} F=7800", distance);
   }
   else if (btn == x_up_btn.get_container()) {
     spdlog::debug("x up pressed");
-    move_op = fmt::format("G0 X+{} F1200", distance);
-
+    move_op = fmt::format("_CLIENT_LINEAR_MOVE X=+{} F=7800", distance);
   }
   else if (btn == x_down_btn.get_container()) {
     spdlog::debug("x down pressed");
-    move_op = fmt::format("G0 X-{} F1200", distance);
-
+    move_op = fmt::format("_CLIENT_LINEAR_MOVE X=-{} F=7800", distance);
   }
   else if (btn == z_up_btn.get_container()) {
     spdlog::debug("z up pressed");
-    move_op = fmt::format("G0 Z+{} F1200", distance);
-
+    move_op = fmt::format("_CLIENT_LINEAR_MOVE Z=+{} F=7800", distance);
   }
   else if (btn == z_down_btn.get_container()) {
     spdlog::debug("z down pressed");
-    move_op = fmt::format("G0 Z-{} F1200", distance);
-
+    move_op = fmt::format("_CLIENT_LINEAR_MOVE Z=-{} F=7800", distance);
   }
   else if (btn == emergency_btn.get_container()) {
     spdlog::debug("emergency stop pressed");
     ws.send_jsonrpc("printer.emergency_stop");
-
   }
   else if (btn == motoroff_btn.get_container()) {
     spdlog::debug("motor off pressed");
     ws.gcode_script("M84");
-
   } else if (btn == back_btn.get_container()) {
     lv_obj_move_background(homing_cont);
   }
