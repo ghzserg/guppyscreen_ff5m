@@ -103,13 +103,13 @@ void FineTunePanel::foreground() {
   auto v = State::get_instance()->get_data(
                 "/printer_state/gcode_move/homing_origin/2"_json_pointer);
   if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.5} "+ std::string(_("мм")) , v.template get<double>()).c_str());
+    z_offset.update_label(fmt::format("{:.5f} "+ std::string(_("мм")) , v.template get<double>()).c_str());
   }
 
   v = State::get_instance()->get_data(
                 "/printer_state/extruder/pressure_advance"_json_pointer);
   if (!v.is_null()) {
-    pa.update_label(fmt::format("{:.5} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()).c_str());
+    pa.update_label(fmt::format("{:.5f} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()).c_str());
   }
 
   v = State::get_instance()->get_data(
@@ -146,12 +146,12 @@ void FineTunePanel::consume(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
   auto v = j["/params/0/gcode_move/homing_origin/2"_json_pointer];
   if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.5} "+ std::string(_("мм")) , v.template get<double>()).c_str());
+    z_offset.update_label(fmt::format("{:.5f} "+ std::string(_("мм")) , v.template get<double>()).c_str());
   }
 
   v = j["/params/0/extruder/pressure_advance"_json_pointer];
   if (!v.is_null()) {
-    pa.update_label(fmt::format("{:.5} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()).c_str());
+    pa.update_label(fmt::format("{:.5f} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()).c_str());
   }
 
   v = j["/params/0/gcode_move/speed_factor"_json_pointer];
