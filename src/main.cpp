@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 {
     setlocale(LC_ALL, "");
     setlocale(LC_NUMERIC, "C");
-    bindtextdomain("guppyscreen", "/opt/config/mod/.shell/locale");
+    bindtextdomain("guppyscreen", "/usr/data/zmod/zmod/.shell/locale");
     textdomain("guppyscreen");
 
     // config
