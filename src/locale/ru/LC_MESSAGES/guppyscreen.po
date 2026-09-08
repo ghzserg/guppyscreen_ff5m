@@ -165,7 +165,7 @@ msgstr "Внешняя циркуляция"
 
 #: ../main_panel.cpp:57
 msgid "Extrude"
-msgstr "Экструзия"
+msgstr "Экструдер"
 
 #: ../extruder_panel.cpp:27 ../pid_panel.cpp:26
 msgid "Extruder"

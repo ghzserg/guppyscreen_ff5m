@@ -240,14 +240,12 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_grid_cell(print_btn.get_container(),     LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
     lv_obj_set_grid_cell(emergency_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
-    // Отключаем скролинг экструдеров
-    //lv_obj_clear_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
     // Разрешаем прокрутку контейнера
     lv_obj_add_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
     // Разрешаем скроллинг только по вертикали
     lv_obj_set_scroll_dir(temp_cont, LV_DIR_VER);
-    // Скрываем полосу прокрутки, чтобы она не занимала место на узком экране (по желанию)
-    lv_obj_set_scrollbar_mode(temp_cont, LV_SCROLLBAR_MODE_OFF);
+    // Отключаем передачу прокрутки наверх, чтобы скроллился именно список
+    lv_obj_clear_flag(temp_cont, LV_OBJ_FLAG_SCROLL_CHAIN);
 #ifdef GUPPY_FF5M
     lv_obj_set_size(temp_cont, LV_PCT(50), LV_PCT(62));
     lv_obj_set_style_pad_top(temp_cont, 4, 0);
@@ -258,7 +256,9 @@ void MainPanel::create_main(lv_obj_t * parent)
 
     lv_obj_set_style_pad_all(temp_cont, 0, 0);
 
-    lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_ROW_WRAP);
+    // Выстраиваем датчики строго в вертикальную колонку
+    lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_COLUMN);
+
     lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 2);
 
     lv_obj_align(temp_chart, LV_ALIGN_CENTER, 0, 0);
