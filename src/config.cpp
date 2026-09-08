@@ -47,7 +47,7 @@ void Config::init(std::string config_path, const std::string thumbdir) {
     },
     {
       {"id", "heater_bed"},
-      {"display_name", "Кровать"},
+      {"display_name", "Стол"},
       {"controllable", true},
       {"color", "purple"}
     },
@@ -59,7 +59,7 @@ void Config::init(std::string config_path, const std::string thumbdir) {
     }
   };
 
-  json cooldown_conf = {{ "cooldown", "SET_HEATER_TEMPERATURE HEATER=extruder TARGET=0\nSET_HEATER_TEMPERATURE HEATER=heater_bed TARGET=0"}};
+  json cooldown_conf = {{ "cooldown", "TURN_OFF_HEATERS"}};
   json default_macros_conf = {
     {"load_filament", "LOAD_FILAMENT"},
     {"code", "_GUPPY_MACRO"}
