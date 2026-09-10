@@ -33,6 +33,9 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
                   {"1", "2", "5", "10", "25", "35", "50", ""}, 2, &ExtruderPanel::_handle_callback, this)
   , rightside_btns_cont(lv_obj_create(panel_cont))
   , leftside_btns_cont(lv_obj_create(panel_cont))
+  , tools_btnmatrix(NULL)
+  , active_tool_id(0)
+  , total_tools(1)
   , load_btn(leftside_btns_cont, &extrude_img, _("Load") /* "Загрузить" */, &ExtruderPanel::_handle_callback, this)
   , retract_btn(leftside_btns_cont, &retract_img, _("Unload") /* "Выгрузить" */, &ExtruderPanel::_handle_callback, this)
   , code_btn(leftside_btns_cont, &code_img, _("Macro") /* "Макрос" */, &ExtruderPanel::_handle_callback, this)
@@ -42,7 +45,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , back_btn(rightside_btns_cont, &back, _("Back") /* "Назад" */, &ExtruderPanel::_handle_callback, this)
   , load_filament_macro("LOAD_FILAMENT")
   , code_macro("_GUPPY_MACRO")
-  , cooldown_macro("SET_HEATER_TEMPERATURE HEATER=extruder TARGET=0")
+  , cooldown_macro("TURN_OFF_HEATERS")
 {
   Config *conf = Config::get_instance();
   auto df = conf->get_json("/default_printer");
@@ -78,6 +81,24 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_set_flex_flow(leftside_btns_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(leftside_btns_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_clear_flag(leftside_btns_cont, LV_OBJ_FLAG_SCROLLABLE);
+
+  static const char * btnm_map[] = {"T0", "T1", "T2", "T3", ""};
+  tools_btnmatrix = lv_btnmatrix_create(panel_cont);
+  lv_btnmatrix_set_map(tools_btnmatrix, btnm_map);
+  lv_btnmatrix_set_btn_ctrl_all(tools_btnmatrix, LV_BTNMATRIX_CTRL_CHECKABLE);
+  lv_btnmatrix_set_one_checked(tools_btnmatrix, true);
+  lv_btnmatrix_set_btn_ctrl(tools_btnmatrix, active_tool_id, LV_BTNMATRIX_CTRL_CHECKED);
+  lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_event_cb(tools_btnmatrix, &ExtruderPanel::_handle_callback, LV_EVENT_VALUE_CHANGED, this);
+
+  // Переводим кнопки в плавающий режим и жестко выравниваем по правому верхнему углу
+  lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_FLOATING);
+  lv_obj_align(tools_btnmatrix, LV_ALIGN_TOP_RIGHT, -110, 10); // Сдвиг на 110px влево (безопасная зона)
+  lv_obj_set_size(tools_btnmatrix, 180, 35);                  // Компактный размер для аккуратного ряда
+
+  // Устанавливаем зазоры между кнопками матрицы, чтобы T0 T1 T2 T3 не слипались
+  lv_obj_set_style_pad_column(tools_btnmatrix, 10, 0); // Зазор 10px между кнопками
+  lv_obj_set_style_pad_all(tools_btnmatrix, 2, 0);
 
 #ifndef GUPPY_FF5M
   spoolman_btn.disable();
@@ -139,16 +160,100 @@ void ExtruderPanel::enable_spoolman() {
 
 void ExtruderPanel::consume(json& j) {
   std::lock_guard<std::mutex> lock(lv_lock);
-  auto target_value = j["/params/0/extruder/target"_json_pointer];
-  if (!target_value.is_null()) {
-    int target = target_value.template get<int>();
-    extruder_temp.update_target(target);
+
+  static int last_rendered_tool_id = -99;
+  static int last_rendered_target = -99;
+  static int last_rendered_value = -99;
+  static bool dump_done = false;
+
+  if (!dump_done) { // Init
+   dump_done = true;
+   State *state = State::get_instance();
+
+   auto v_tools = state->get_data("/printer_state/zmod_color/total_tools"_json_pointer);
+   if (!v_tools.is_null()) {
+     total_tools = v_tools.template get<int>();
+     if (total_tools > 1) {
+         lv_obj_clear_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
+     } else {
+         lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
+     }
+   }
+
+   // Синхронизируем начальный инструмент при открытии экрана
+   auto v_active = state->get_data("/printer_state/zmod_color/active_tool_id"_json_pointer);
+   if (!v_active.is_null()) {
+     int klipper_tool_id = v_active.template get<int>();
+     active_tool_id = klipper_tool_id;
+     if (active_tool_id >= 0 && active_tool_id < total_tools) {
+         last_rendered_tool_id = active_tool_id;
+         lv_btnmatrix_set_btn_ctrl(tools_btnmatrix, active_tool_id, LV_BTNMATRIX_CTRL_CHECKED);
+         load_btn.enable();
+         retract_btn.enable();
+         coldpull_btn.enable();
+     } else {
+         lv_btnmatrix_clear_btn_ctrl_all(tools_btnmatrix, LV_BTNMATRIX_CTRL_CHECKED);
+         load_btn.disable();
+         retract_btn.disable();
+         coldpull_btn.disable();
+     }
+   }
+  } // End Init
+
+  auto zmod_active = j["/params/0/zmod_color/active_tool_id"_json_pointer];
+  if (!zmod_active.is_null()) {
+    int klipper_tool_id = zmod_active.template get<int>();
+    active_tool_id = klipper_tool_id;
+
+    if (klipper_tool_id >= 0 && klipper_tool_id < total_tools) {
+        if (active_tool_id != last_rendered_tool_id) {
+            last_rendered_target = -99;
+            last_rendered_value = -99;
+            last_rendered_tool_id = active_tool_id;
+        }
+        lv_btnmatrix_set_btn_ctrl(tools_btnmatrix, active_tool_id, LV_BTNMATRIX_CTRL_CHECKED);
+        load_btn.enable();
+        retract_btn.enable();
+        coldpull_btn.enable();
+    } else {
+        last_rendered_target = -99;
+        last_rendered_value = -99;
+        last_rendered_tool_id = -99;
+
+        lv_btnmatrix_clear_btn_ctrl_all(tools_btnmatrix, LV_BTNMATRIX_CTRL_CHECKED);
+        load_btn.disable();
+        retract_btn.disable();
+        coldpull_btn.disable();
+    }
   }
 
-  auto temp_value = j["/params/0/extruder/temperature"_json_pointer];
+  int effective_id = (active_tool_id >= 0) ? active_tool_id : 0;
+  std::string ext_name = "extruder" + (effective_id > 0 ? std::to_string(effective_id) : "");
+
+  auto target_value = j[json::json_pointer("/params/0/" + ext_name + "/target")];
+  if (target_value.is_null() && last_rendered_target == -99) {
+    target_value = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/target"));
+  }
+
+  if (!target_value.is_null()) {
+    int target = target_value.template get<int>();
+    if (target != last_rendered_target) {
+        extruder_temp.update_target(target);
+        last_rendered_target = target;
+    }
+  }
+
+  auto temp_value = j[json::json_pointer("/params/0/" + ext_name + "/temperature")];
+  if (temp_value.is_null() && last_rendered_value == -99) {
+    temp_value = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/temperature"));
+  }
+
   if (!temp_value.is_null()) {
     int value = temp_value.template get<int>();
-    extruder_temp.update_value(value);
+    if (value != last_rendered_value) {
+        extruder_temp.update_value(value);
+        last_rendered_value = value;
+    }
   }
 }
 
@@ -158,6 +263,12 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     lv_obj_t *selector = lv_event_get_target(e);
     uint32_t idx = lv_btnmatrix_get_selected_btn(selector);
     const char * v = lv_btnmatrix_get_btn_text(selector, idx);
+
+    if (selector == tools_btnmatrix) {
+      active_tool_id = idx;
+      ws.gcode_script(fmt::format("_T_USE T={}", active_tool_id));
+      return;
+    }
 
     if (selector == temp_selector.get_selector()) {
       temp_selector.set_selected_idx(idx);
@@ -184,7 +295,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
 
     if (btn == coldpull_btn.get_container()) {
       coldpull_btn.disable();
-      ws.gcode_script("COLDPULL");
+      ws.gcode_script(fmt::format("COLDPULL T={}", active_tool_id));
       coldpull_btn.enable();
     }
 
@@ -196,7 +307,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                    length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("M109 S{}\nM83\nG1 E-{} F{}", temp, len, std::stoi(speed) * 60));
+      ws.gcode_script(fmt::format("M109 S{} T{}\nM83\nG1 E-{} F{}", temp, active_tool_id, len, std::stoi(speed) * 60));
       retract_btn.enable();
     }
 
@@ -208,7 +319,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                     length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("{} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", code_macro, temp, len, std::stoi(speed) * 60));
+      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", code_macro, active_tool_id, temp, len, std::stoi(speed) * 60));
       code_btn.enable();
     }
 
@@ -220,7 +331,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                   length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("{} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", load_filament_macro, temp, len, std::stoi(speed) * 60));
+      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", load_filament_macro, active_tool_id, temp, len, std::stoi(speed) * 60));
       load_btn.enable();
     }
 

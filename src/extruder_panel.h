@@ -35,6 +35,9 @@ class ExtruderPanel : public NotifyConsumer {
   Selector speed_selector;
   lv_obj_t *rightside_btns_cont;
   lv_obj_t *leftside_btns_cont;
+  lv_obj_t *tools_btnmatrix;
+  int active_tool_id;
+  int total_tools;
   ButtonContainer load_btn;
   ButtonContainer retract_btn;
   ButtonContainer code_btn;
