@@ -77,6 +77,7 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_obj_t *progress_bar;
   lv_obj_t *progress_label;
   lv_obj_t *progress_end;
+  lv_obj_t *filename_label;
   lv_obj_t *detail_cont;
 
   ImageLabel extruder_temp;

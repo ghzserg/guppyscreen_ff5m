@@ -146,18 +146,27 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_set_size(progress_bar, bar_width, 20 * hscale);
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
-  lv_obj_center(progress_bar);
 
   lv_label_set_text(progress_label, "0%");
   lv_obj_center(progress_label);
   lv_label_set_text(progress_end, "00:00");
+  lv_obj_set_align(progress_bar, LV_ALIGN_CENTER);
   lv_obj_set_align(progress_end, LV_ALIGN_RIGHT_MID);
 
   lv_obj_set_flex_flow(thumbnail_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
-  lv_obj_set_size(thumbnail_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+  lv_obj_set_size(thumbnail_cont, (double)lv_disp_get_physical_hor_res(NULL) * 0.35, LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(thumbnail_cont, 0, 0);
   lv_obj_set_style_pad_row(thumbnail_cont, 20, 0);
+
+  filename_label = lv_label_create(thumbnail_cont);
+  lv_label_set_text(filename_label, "...");
+  lv_obj_set_style_text_align(filename_label, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_set_width(filename_label, (double)lv_disp_get_physical_hor_res(NULL) * 0.35);
+  lv_label_set_long_mode(filename_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
+
+  lv_obj_move_to_index(filename_label, 0);
+  lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
 
   // row 1
   lv_obj_set_grid_cell(thumbnail_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
@@ -212,6 +221,7 @@ void PrintStatusPanel::reset() {
   filament_m = 0;
   estimated_time_s = 0;
   layers.update_label(fmt::format("{} / {}", 0, 0).c_str());
+  lv_label_set_text(filename_label, "...");
 
   auto v = State::get_instance()
     ->get_data("/printer_state/configfile/config/extruder/filament_diameter"_json_pointer);
@@ -251,7 +261,12 @@ void PrintStatusPanel::init(json &fans) {
     }
   }
 
-  fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
+  //fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
+  if (fan_speeds.count("fan_generic fanM106")) {
+    fan0.update_label(fmt::format("{}%", fan_speeds["fan_generic fanM106"]).c_str());
+  } else {
+    fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
+  }
 
   reset();
   populate();
@@ -277,6 +292,7 @@ void PrintStatusPanel::populate() {
   if (!printfile.is_null()) {
     const std::string fname = printfile.template get<std::string>();
     if (fname.length() > 0) {
+      lv_label_set_text(filename_label, fname.c_str());
       json fname_input = {{"filename", fname }};
       ws.send_jsonrpc("server.files.metadata", fname_input,
                       [fname, this](json &d) { this->handle_metadata(fname, d); });
@@ -309,7 +325,7 @@ void PrintStatusPanel::populate() {
   v = s->get_data(
       "/printer_state/gcode_move/homing_origin/2"_json_pointer);
   if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.5f} " + std::string(_("мм")), v.template get<double>()).c_str());
+    z_offset.update_label(fmt::format("{:.3f} " + std::string(_("мм")), v.template get<double>()).c_str());
   }
 }
 
@@ -346,10 +362,12 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
     std::lock_guard<std::mutex> lock(lv_lock);
     const std::string img_path = "A:" + fullpath;
 
-    auto screen_width = lv_disp_get_physical_hor_res(NULL);
-    uint32_t normalized_thumb_scale = ((0.34 * (double)screen_width) / (double)thumb_detail.second) * 256;
+    //auto screen_width = lv_disp_get_physical_hor_res(NULL);
+    //uint32_t normalized_thumb_scale = ((0.34 * (double)screen_width) / (double)thumb_detail.second) * 256;
+    //lv_img_set_zoom(thumbnail, normalized_thumb_scale);
     lv_img_set_src(thumbnail, img_path.c_str());
-    lv_img_set_zoom(thumbnail, normalized_thumb_scale);
+    uint32_t target_zoom = (192 * 256) / thumb_detail.second;
+    lv_img_set_zoom(thumbnail, target_zoom);
     mini_print_status.update_img(img_path, thumb_detail.second);
   }
 }
@@ -364,6 +382,7 @@ void PrintStatusPanel::consume(json &j) {
     reset();
     populate();
     foreground(); // auto move to front when print is detected
+    lv_label_set_text(filename_label, printfile.template get<std::string>().c_str());
   }
 
   auto& pstate = j["/params/0/print_stats/state"_json_pointer];
@@ -392,18 +411,41 @@ void PrintStatusPanel::consume(json &j) {
     extruder_target = v.template get<int>();
   }
 
+  int active_tool_id = 0;
+  auto zmod_active = j["/params/0/zmod_color/active_tool_id"_json_pointer];
+  if (!zmod_active.is_null()) {
+    active_tool_id = zmod_active.template get<int>();
+  } else {
+    auto v_active = State::get_instance()->get_data("/printer_state/zmod_color/active_tool_id"_json_pointer);
+    if (!v_active.is_null()) {
+      active_tool_id = v_active.template get<int>();
+    }
+  }
+  int effective_id = (active_tool_id >= 0) ? active_tool_id : 0;
+  std::string tool_prefix = "T" + std::to_string(effective_id);
+  std::string ext_name = "extruder" + (effective_id > 0 ? std::to_string(effective_id) : "");
+
+  auto v_target = j[json::json_pointer("/params/0/" + ext_name + "/target")];
+  if (!v_target.is_null()) {
+    extruder_target = v_target.template get<int>();
+  } else {
+    auto st_target = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/target"));
+    if (!st_target.is_null()) {
+      extruder_target = st_target.template get<int>();
+    }
+  }
+
+  v = j[json::json_pointer("/params/0/" + ext_name + "/temperature")];
+  if (v.is_null()) {
+    v = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/temperature"));
+  }
+  if (!v.is_null()) {
+    extruder_temp.update_label(extruder_target > 0 ? fmt::format("{}: {} / {}", tool_prefix, v.template get<int>(), extruder_target).c_str() : fmt::format("{}: {}", tool_prefix, v.template get<int>()).c_str());
+  }
+
   v = j["/params/0/heater_bed/target"_json_pointer];
   if (!v.is_null()) {
     heater_bed_target = v.template get<int>();
-  }
-
-  v = j["/params/0/extruder/temperature"_json_pointer];
-  if (!v.is_null()) {
-    if (extruder_target > 0) {
-      extruder_temp.update_label(fmt::format("{} / {}", v.template get<int>(), extruder_target).c_str());
-    } else {
-      extruder_temp.update_label(fmt::format("{}", v.template get<int>()).c_str());
-    }
   }
 
   v = j["/params/0/heater_bed/temperature"_json_pointer];
@@ -425,7 +467,7 @@ void PrintStatusPanel::consume(json &j) {
   // zoffset
   v = j["/params/0/gcode_move/homing_origin/2"_json_pointer];
   if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.5f} " + std::string(_("мм")), v.template get<double>()).c_str());
+    z_offset.update_label(fmt::format("{:.3f} " + std::string(_("мм")), v.template get<double>()).c_str());
   }
 
   std::vector<std::string> values;
@@ -447,7 +489,12 @@ void PrintStatusPanel::consume(json &j) {
     values.push_back(fmt::format("{}%", fv));
   }
 
-  fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
+  //fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
+  if (fan_speeds.count("fan_generic fanM106")) {
+    fan0.update_label(fmt::format("{}%", fan_speeds["fan_generic fanM106"]).c_str());
+  } else {
+    fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
+  }
 
   // progress
   v = j["/params/0/print_stats/print_duration"_json_pointer];
