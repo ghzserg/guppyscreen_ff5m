@@ -185,7 +185,12 @@ void SensorContainer::handle_edit(lv_event_t *e) {
   if (lv_event_get_code(e) == LV_EVENT_SHORT_CLICKED) {
     spdlog::trace("sensor callback this {}, {}, {}", id, fmt::ptr(this), fmt::ptr(&numpad));
     numpad.set_callback([this](double v) {
-      ws.gcode_script(fmt::format("SET_HEATER_TEMPERATURE HEATER={} TARGET={}", id, v));
+      // Если это нагреватель камеры (с префиксом из конфига или без), вызываем специальный макрос
+      if (id == "heater_generic chamber_heater" || id == "chamber_heater") {
+        ws.gcode_script(fmt::format("_T_HEATER TEMP={}", (int)v));
+      } else {
+        ws.gcode_script(fmt::format("SET_HEATER_TEMPERATURE HEATER={} TARGET={}", id, v));
+      }
     });
     numpad.foreground_reset();
   }

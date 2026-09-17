@@ -281,6 +281,7 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
       ws.gcode_script("G28");
     }
 
+    ws.gcode_script("GOTO_SHAPER");
     if (x_requested) {
       // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x FREQ_START={} FREQ_END={}\nM400", 5, 10));
       ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x\nM400"));

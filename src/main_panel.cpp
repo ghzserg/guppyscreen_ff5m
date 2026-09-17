@@ -295,6 +295,24 @@ void MainPanel::create_sensors(json &temp_sensors) {
         color_code = lv_palette_main(LV_PALETTE_PURPLE);
       } else if (color == "blue") {
         color_code = lv_palette_main(LV_PALETTE_BLUE);
+      } else if (color == "orange") {
+        color_code = lv_palette_main(LV_PALETTE_ORANGE);
+      } else if (color == "yellow") {
+        color_code = lv_palette_main(LV_PALETTE_YELLOW);
+      } else if (color == "green") {
+        color_code = lv_palette_main(LV_PALETTE_GREEN);
+      } else if (color == "cyan") {
+        color_code = lv_palette_main(LV_PALETTE_CYAN);
+      } else if (color == "teal") {
+        color_code = lv_palette_main(LV_PALETTE_TEAL);
+      } else if (color == "lime") {
+        color_code = lv_palette_main(LV_PALETTE_LIME);
+      } else if (color == "amber") {
+        color_code = lv_palette_main(LV_PALETTE_AMBER);
+      } else if (color == "pink") {
+        color_code = lv_palette_main(LV_PALETTE_PINK);
+      } else if (color == "grey" || color == "gray") {
+        color_code = lv_palette_main(LV_PALETTE_GREY);
       }
     } else {
       color_code = lv_palette_main((lv_palette_t)sensor.value()["color"].template get<int>());

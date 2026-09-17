@@ -27,9 +27,12 @@ class PidPanel : public NotifyConsumer {
   KWebSocketClient &ws;
   lv_obj_t *cont;
   Numpad numpad;
+  int active_tool_id = 0;
+  int total_tools = 1;
 
   lv_obj_t *temp_cont;
   lv_obj_t *temp_chart;
+  lv_obj_t *tools_btnmatrix;
   lv_chart_series_t *extruder_temp_series;
   lv_chart_series_t *heater_bed_temp_series;
   lv_chart_series_t *weight_temp_series;
