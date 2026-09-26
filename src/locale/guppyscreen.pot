@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-08 16:43+0500\n"
+"POT-Creation-Date: 2026-09-26 15:35+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -58,10 +58,10 @@ msgid "Attention!"
 msgstr ""
 
 #: ../bedmesh_panel.cpp:39 ../belts_calibration_panel.cpp:44
-#: ../exclude_panel.cpp:13 ../extruder_panel.cpp:42 ../fan_panel.cpp:15
+#: ../exclude_panel.cpp:13 ../extruder_panel.cpp:45 ../fan_panel.cpp:15
 #: ../finetune_panel.cpp:37 ../homing_panel.cpp:38 ../inputshaper_panel.cpp:79
 #: ../led_panel.cpp:15 ../limits_panel.cpp:17 ../pid_panel.cpp:37
-#: ../print_panel.cpp:37 ../print_status_panel.cpp:68 ../pro_panel.cpp:17
+#: ../print_panel.cpp:37 ../print_status_panel.cpp:68 ../pro_panel.cpp:20
 #: ../retract_panel.cpp:17 ../spoolman_panel.cpp:23 ../sysinfo_panel.cpp:96
 msgid "Back"
 msgstr ""
@@ -78,7 +78,7 @@ msgstr ""
 msgid "Belts/Shake"
 msgstr ""
 
-#: ../inputshaper_panel.cpp:526
+#: ../inputshaper_panel.cpp:527
 #, c++-format
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr ""
@@ -89,6 +89,14 @@ msgstr ""
 
 #: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
 msgid "Calibrate"
+msgstr ""
+
+#: ../pro_panel.cpp:19
+msgid "Calibrate VFA"
+msgstr ""
+
+#: ../pro_panel.cpp:18
+msgid "Calibrate extruders"
 msgstr ""
 
 #: ../bedmesh_panel.cpp:141 ../print_panel.cpp:135 ../print_status_panel.cpp:54
@@ -119,7 +127,7 @@ msgstr ""
 msgid "Configuration change detected"
 msgstr ""
 
-#: ../extruder_panel.cpp:40
+#: ../extruder_panel.cpp:43
 msgid "Cool down"
 msgstr ""
 
@@ -156,7 +164,7 @@ msgstr ""
 msgid "Excitate"
 msgstr ""
 
-#: ../pro_panel.cpp:15
+#: ../pro_panel.cpp:16
 msgid "External circulation"
 msgstr ""
 
@@ -224,7 +232,7 @@ msgstr ""
 msgid "Homing"
 msgstr ""
 
-#: ../pro_panel.cpp:14
+#: ../pro_panel.cpp:15
 msgid "Internal circulation"
 msgstr ""
 
@@ -236,7 +244,7 @@ msgstr ""
 msgid "Limits"
 msgstr ""
 
-#: ../extruder_panel.cpp:36
+#: ../extruder_panel.cpp:39
 msgid "Load"
 msgstr ""
 
@@ -246,10 +254,6 @@ msgstr ""
 
 #: ../sysinfo_panel.cpp:172
 msgid "Log level"
-msgstr ""
-
-#: ../extruder_panel.cpp:38
-msgid "Macro"
 msgstr ""
 
 #: ../fan_panel.cpp:76 ../led_panel.cpp:80
@@ -420,7 +424,7 @@ msgstr ""
 msgid "Stop"
 msgstr ""
 
-#: ../pro_panel.cpp:16
+#: ../pro_panel.cpp:17
 msgid "Stop circulation"
 msgstr ""
 
@@ -432,7 +436,7 @@ msgstr ""
 msgid "Travel distance (mm)"
 msgstr ""
 
-#: ../extruder_panel.cpp:37
+#: ../extruder_panel.cpp:40
 msgid "Unload"
 msgstr ""
 
@@ -480,19 +484,19 @@ msgstr ""
 #: ../finetune_panel.cpp:106 ../finetune_panel.cpp:112
 #: ../finetune_panel.cpp:149 ../finetune_panel.cpp:154
 #: ../print_status_panel.cpp:78 ../print_status_panel.cpp:79
-#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:207
-#: ../print_status_panel.cpp:208 ../print_status_panel.cpp:312
-#: ../print_status_panel.cpp:422 ../print_status_panel.cpp:428
-#: ../print_status_panel.cpp:477
+#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:216
+#: ../print_status_panel.cpp:217 ../print_status_panel.cpp:328
+#: ../print_status_panel.cpp:464 ../print_status_panel.cpp:470
+#: ../print_status_panel.cpp:524
 msgid "мм"
 msgstr ""
 
 #: ../finetune_panel.cpp:38 ../finetune_panel.cpp:43 ../finetune_panel.cpp:112
 #: ../finetune_panel.cpp:154 ../print_status_panel.cpp:78
 #: ../print_status_panel.cpp:80 ../print_status_panel.cpp:83
-#: ../print_status_panel.cpp:207 ../print_status_panel.cpp:208
-#: ../print_status_panel.cpp:209 ../print_status_panel.cpp:422
-#: ../print_status_panel.cpp:477 ../utils.cpp:259
+#: ../print_status_panel.cpp:216 ../print_status_panel.cpp:217
+#: ../print_status_panel.cpp:218 ../print_status_panel.cpp:464
+#: ../print_status_panel.cpp:524 ../utils.cpp:259
 msgid "с"
 msgstr ""
 

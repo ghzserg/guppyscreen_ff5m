@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-28 17:04+0500\n"
+"POT-Creation-Date: 2026-09-26 15:32+0500\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -58,10 +58,10 @@ msgid "Attention!"
 msgstr "注意！"
 
 #: ../bedmesh_panel.cpp:39 ../belts_calibration_panel.cpp:44
-#: ../exclude_panel.cpp:13 ../extruder_panel.cpp:42 ../fan_panel.cpp:15
+#: ../exclude_panel.cpp:13 ../extruder_panel.cpp:45 ../fan_panel.cpp:15
 #: ../finetune_panel.cpp:37 ../homing_panel.cpp:38 ../inputshaper_panel.cpp:79
 #: ../led_panel.cpp:15 ../limits_panel.cpp:17 ../pid_panel.cpp:37
-#: ../print_panel.cpp:37 ../print_status_panel.cpp:68 ../pro_panel.cpp:17
+#: ../print_panel.cpp:37 ../print_status_panel.cpp:68 ../pro_panel.cpp:20
 #: ../retract_panel.cpp:17 ../spoolman_panel.cpp:23 ../sysinfo_panel.cpp:96
 msgid "Back"
 msgstr "戻る"
@@ -78,7 +78,7 @@ msgstr "ベッドメッシュ"
 msgid "Belts/Shake"
 msgstr "ベルト/シェイク"
 
-#: ../inputshaper_panel.cpp:526
+#: ../inputshaper_panel.cpp:527
 #, c++-format
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "最適なシェイパーは {} で、周波数は {:.2f} Hz\n"
@@ -90,6 +90,16 @@ msgstr "明るさ"
 #: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
 msgid "Calibrate"
 msgstr "校正する"
+
+#: ../pro_panel.cpp:19
+#, fuzzy
+msgid "Calibrate VFA"
+msgstr "校正する VFA"
+
+#: ../pro_panel.cpp:18
+#, fuzzy
+msgid "Calibrate extruders"
+msgstr "校正する extruders"
 
 #: ../bedmesh_panel.cpp:141 ../print_panel.cpp:135 ../print_status_panel.cpp:54
 msgid "Cancel"
@@ -119,7 +129,7 @@ msgstr "冷却"
 msgid "Configuration change detected"
 msgstr "設定変更が検出されました"
 
-#: ../extruder_panel.cpp:40
+#: ../extruder_panel.cpp:43
 msgid "Cool down"
 msgstr "冷却する"
 
@@ -158,7 +168,7 @@ msgstr "緊急停止の確認"
 msgid "Excitate"
 msgstr "励起する"
 
-#: ../pro_panel.cpp:15
+#: ../pro_panel.cpp:16
 msgid "External circulation"
 msgstr "外部循環"
 
@@ -226,7 +236,7 @@ msgstr "ホーム"
 msgid "Homing"
 msgstr "ホーム移動"
 
-#: ../pro_panel.cpp:14
+#: ../pro_panel.cpp:15
 msgid "Internal circulation"
 msgstr "内部循環"
 
@@ -238,7 +248,7 @@ msgstr "Klipper再起動"
 msgid "Limits"
 msgstr "リミット"
 
-#: ../extruder_panel.cpp:36
+#: ../extruder_panel.cpp:39
 msgid "Load"
 msgstr "ロード"
 
@@ -249,10 +259,6 @@ msgstr "ロードセル"
 #: ../sysinfo_panel.cpp:172
 msgid "Log level"
 msgstr "ログレベル"
-
-#: ../extruder_panel.cpp:38
-msgid "Macro"
-msgstr "マクロ"
 
 #: ../fan_panel.cpp:76 ../led_panel.cpp:80
 msgid "Max"
@@ -426,7 +432,7 @@ msgstr "状態"
 msgid "Stop"
 msgstr "停止"
 
-#: ../pro_panel.cpp:16
+#: ../pro_panel.cpp:17
 msgid "Stop circulation"
 msgstr "循環停止"
 
@@ -438,7 +444,7 @@ msgstr "システム"
 msgid "Travel distance (mm)"
 msgstr "移動距離 (mm)"
 
-#: ../extruder_panel.cpp:37
+#: ../extruder_panel.cpp:40
 msgid "Unload"
 msgstr "アンロード"
 
@@ -489,22 +495,25 @@ msgstr "min "
 #: ../finetune_panel.cpp:106 ../finetune_panel.cpp:112
 #: ../finetune_panel.cpp:149 ../finetune_panel.cpp:154
 #: ../print_status_panel.cpp:78 ../print_status_panel.cpp:79
-#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:207
-#: ../print_status_panel.cpp:208 ../print_status_panel.cpp:312
-#: ../print_status_panel.cpp:422 ../print_status_panel.cpp:428
-#: ../print_status_panel.cpp:477
+#: ../print_status_panel.cpp:80 ../print_status_panel.cpp:216
+#: ../print_status_panel.cpp:217 ../print_status_panel.cpp:328
+#: ../print_status_panel.cpp:464 ../print_status_panel.cpp:470
+#: ../print_status_panel.cpp:524
 msgid "мм"
 msgstr "mm"
 
 #: ../finetune_panel.cpp:38 ../finetune_panel.cpp:43 ../finetune_panel.cpp:112
 #: ../finetune_panel.cpp:154 ../print_status_panel.cpp:78
 #: ../print_status_panel.cpp:80 ../print_status_panel.cpp:83
-#: ../print_status_panel.cpp:207 ../print_status_panel.cpp:208
-#: ../print_status_panel.cpp:209 ../print_status_panel.cpp:422
-#: ../print_status_panel.cpp:477 ../utils.cpp:259
+#: ../print_status_panel.cpp:216 ../print_status_panel.cpp:217
+#: ../print_status_panel.cpp:218 ../print_status_panel.cpp:464
+#: ../print_status_panel.cpp:524 ../utils.cpp:259
 msgid "с"
 msgstr "s"
 
 #: ../utils.cpp:254
 msgid "ч "
 msgstr "h "
+
+#~ msgid "Macro"
+#~ msgstr "マクロ"

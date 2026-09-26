@@ -1,4 +1,5 @@
 #!/bin/bash
+
 size="$1"
 which rsvg-convert > /dev/null 2>&1
 if [[ ! $? -eq 0 ]]; then

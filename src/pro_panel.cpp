@@ -5,6 +5,7 @@
 LV_IMG_DECLARE(air_circulation_internal_img);
 LV_IMG_DECLARE(air_circulation_external_img);
 LV_IMG_DECLARE(air_circulation_stop_img);
+LV_IMG_DECLARE(code_img);
 LV_IMG_DECLARE(back);
 
 ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
@@ -14,6 +15,8 @@ ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
   , air_circulation_internal_btn(cont, &air_circulation_internal_img, _("Internal circulation") /* "Внутренняя\nциркуляция" */, &ProPanel::_handle_callback, this)
   , air_circulation_external_btn(cont, &air_circulation_external_img, _("External circulation") /* "Внешняя\nциркуляция" */, &ProPanel::_handle_callback, this)
   , air_circulation_stop_btn(cont, &air_circulation_stop_img, _("Stop circulation") /* "Остановить\nциркуляцию" */, &ProPanel::_handle_callback, this)
+  , calibrate_extruders_btn(cont, &code_img, _("Calibrate extruders") /* "Калибровка экструдеров" */, &ProPanel::_handle_callback, this)
+  , calibrate_vfa_btn(cont, &code_img, _("Calibrate VFA") /* "Калибровка VFA" */, &ProPanel::_handle_callback, this)
   , back_btn(cont, &back, _("Back") /* "Назад" */, &ProPanel::_handle_callback, this)
 {
   lv_obj_move_background(cont);
@@ -31,6 +34,10 @@ ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_grid_cell(air_circulation_internal_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
   lv_obj_set_grid_cell(air_circulation_external_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
   lv_obj_set_grid_cell(air_circulation_stop_btn.get_container(),     LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
+
+  // row 2
+  lv_obj_set_grid_cell(calibrate_extruders_btn.get_container(),      LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(calibrate_vfa_btn.get_container(),            LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
 
   // row 3
   lv_obj_set_grid_cell(back_btn.get_container(),                     LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 3, 1);
@@ -61,5 +68,9 @@ void ProPanel::handle_callback(lv_event_t *e) {
     ws.gcode_script("AIR_CIRCULATION_EXTERNAL");
   } else if (btn == air_circulation_stop_btn.get_container()) {
     ws.gcode_script("AIR_CIRCULATION_STOP");
+  } else if (btn == calibrate_extruders_btn.get_container()) {
+    ws.gcode_script("CALIBRATE_EXTRUDERS");
+  } else if (btn == calibrate_vfa_btn.get_container()) {
+    ws.gcode_script("CALIBRATE_VFA");
   }
 }

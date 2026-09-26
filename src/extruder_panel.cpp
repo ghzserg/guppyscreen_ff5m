@@ -10,7 +10,7 @@ LV_IMG_DECLARE(spoolman_img);
 LV_IMG_DECLARE(coldpull);
 LV_IMG_DECLARE(extrude_img);
 LV_IMG_DECLARE(retract_img);
-LV_IMG_DECLARE(code_img);
+LV_IMG_DECLARE(color_img);
 LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(cooldown_img);
 
@@ -38,7 +38,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , total_tools(1)
   , load_btn(leftside_btns_cont, &extrude_img, _("Load") /* "Загрузить" */, &ExtruderPanel::_handle_callback, this)
   , retract_btn(leftside_btns_cont, &retract_img, _("Unload") /* "Выгрузить" */, &ExtruderPanel::_handle_callback, this)
-  , code_btn(leftside_btns_cont, &code_img, _("Macro") /* "Макрос" */, &ExtruderPanel::_handle_callback, this)
+  , code_btn(leftside_btns_cont, &color_img, "COLOR" /* "COLOR" */, &ExtruderPanel::_handle_callback, this)
   , spoolman_btn(rightside_btns_cont, &spoolman_img, "Spoolman", &ExtruderPanel::_handle_callback, this)
   , cooldown_btn(rightside_btns_cont, &cooldown_img, _("Cool down") /* "Остудить" */, &ExtruderPanel::_handle_callback, this)
   , coldpull_btn(rightside_btns_cont, &coldpull, "ColdPull", &ExtruderPanel::_handle_callback, this)
