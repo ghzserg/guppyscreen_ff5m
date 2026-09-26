@@ -92,12 +92,10 @@ msgid "Calibrate"
 msgstr "Kalibre Et"
 
 #: ../pro_panel.cpp:19
-#, fuzzy
 msgid "Calibrate VFA"
 msgstr "Kalibre VFA"
 
 #: ../pro_panel.cpp:18
-#, fuzzy
 msgid "Calibrate extruders"
 msgstr "Kalibre extruders"
 

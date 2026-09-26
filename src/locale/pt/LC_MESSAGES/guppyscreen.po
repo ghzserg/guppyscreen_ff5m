@@ -92,12 +92,10 @@ msgid "Calibrate"
 msgstr "Calibrar"
 
 #: ../pro_panel.cpp:19
-#, fuzzy
 msgid "Calibrate VFA"
 msgstr "Calibrar"
 
 #: ../pro_panel.cpp:18
-#, fuzzy
 msgid "Calibrate extruders"
 msgstr "Calibrar"
 
@@ -169,7 +167,6 @@ msgid "Excitate"
 msgstr "Excitar"
 
 #: ../pro_panel.cpp:16
-#, fuzzy
 msgid "External circulation"
 msgstr "Circulação externa"
 

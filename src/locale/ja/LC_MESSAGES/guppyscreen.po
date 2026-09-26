@@ -92,12 +92,10 @@ msgid "Calibrate"
 msgstr "校正する"
 
 #: ../pro_panel.cpp:19
-#, fuzzy
 msgid "Calibrate VFA"
 msgstr "校正する VFA"
 
 #: ../pro_panel.cpp:18
-#, fuzzy
 msgid "Calibrate extruders"
 msgstr "校正する extruders"
 
