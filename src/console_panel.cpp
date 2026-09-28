@@ -12,7 +12,7 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   , lv_lock(lock)
   , console_cont(lv_obj_create(parent))
   , top_cont(lv_obj_create(console_cont))
-  , output(lv_textarea_create(top_cont))
+  , output(lv_obj_create(top_cont))
   , macro_list(lv_table_create(top_cont))
   , input_cont(lv_obj_create(console_cont))
   , input(lv_textarea_create(input_cont))
@@ -23,19 +23,26 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_set_flex_flow(console_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_style_pad_all(console_cont, 0, 0);
   lv_obj_set_style_text_font(console_cont, &dejavusans_mono_14, LV_STATE_DEFAULT);
+  lv_obj_clear_flag(console_cont, LV_OBJ_FLAG_SCROLLABLE);
 
   lv_obj_set_flex_grow(top_cont, 1);
   lv_obj_set_style_pad_all(top_cont, 0, 0);
   lv_obj_set_width(top_cont, LV_PCT(100));
+  lv_obj_clear_flag(top_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_set_style_border_width(output, 0, 0);
+  // ---- output: scrollable column of labels ----
   lv_obj_set_size(output, LV_PCT(60), LV_PCT(100));
-  lv_obj_set_style_border_width(output, 0, LV_STATE_FOCUSED | LV_PART_CURSOR);
+  lv_obj_set_style_border_width(output, 0, 0);
+  lv_obj_set_style_pad_all(output, 0, 0);
+  lv_obj_set_flex_flow(output, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_scroll_dir(output, LV_DIR_VER);
+  lv_obj_set_scrollbar_mode(output, LV_SCROLLBAR_MODE_AUTO);
+  lv_obj_clear_flag(output, LV_OBJ_FLAG_SCROLL_ELASTIC);
+  lv_obj_set_style_text_font(output, &dejavusans_mono_14, LV_STATE_DEFAULT);
 
   lv_obj_set_flex_grow(input, 1);
   lv_obj_set_width(input, LV_PCT(100));
   lv_textarea_set_one_line(input, true);
-  lv_textarea_set_cursor_click_pos(output, false);
 
   lv_obj_set_flex_flow(input_cont, LV_FLEX_FLOW_ROW);
   lv_obj_set_style_pad_all(input_cont, 0, 0);
@@ -47,7 +54,7 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_t *send_btn_label = lv_label_create(send_btn);
   lv_label_set_text(send_btn_label, LV_SYMBOL_NEW_LINE);
   lv_obj_center(send_btn_label);
-  lv_obj_add_event_cb(send_btn , &ConsolePanel::_handle_send_macro, LV_EVENT_SHORT_CLICKED, this);
+  lv_obj_add_event_cb(send_btn, &ConsolePanel::_handle_send_macro, LV_EVENT_SHORT_CLICKED, this);
 
   lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
   lv_obj_set_style_text_font(kb, &notosemi_16, LV_STATE_DEFAULT);
@@ -67,13 +74,20 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_add_flag(label, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(label, &ConsolePanel::_handle_clear_input, LV_EVENT_SHORT_CLICKED, this);
 
-  // ws.register_gcode_resp([this](json& d) { this->handle_macro_response(d); });
+  // ---- throttled output flush timer ----
+  // Runs in the LVGL thread (inside lv_timer_handler), lv_lock is already held there.
+  output_flush_timer = lv_timer_create(&ConsolePanel::_output_flush_timer_cb, 250, this);
+
   ws.register_method_callback("notify_gcode_response",
                               "ConsolePanel",
                               [this](json& d) { this->handle_macro_response(d); });
 }
 
 ConsolePanel::~ConsolePanel() {
+  if (output_flush_timer) {
+    lv_timer_del(output_flush_timer);
+    output_flush_timer = nullptr;
+  }
   if (console_cont != NULL) {
     lv_obj_del(console_cont);
     console_cont = NULL;
@@ -88,12 +102,12 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
 {
   const lv_event_code_t code = lv_event_get_code(e);
 
-  if(code == LV_EVENT_FOCUSED) {
+  if (code == LV_EVENT_FOCUSED) {
     lv_keyboard_set_textarea(kb, input);
     lv_obj_clear_flag(kb, LV_OBJ_FLAG_HIDDEN);
   }
 
-  if(code == LV_EVENT_DEFOCUSED) {
+  if (code == LV_EVENT_DEFOCUSED) {
     lv_keyboard_set_textarea(kb, NULL);
     lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
   }
@@ -111,13 +125,13 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
         uint16_t index = 0;
         for (const auto &m : history) {
           if (m.rfind(upper_cmd, 0) == 0 || m.rfind(cmd, 0) == 0) {
-            lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+            lv_table_set_cell_value(macro_list, index++, 0, m.c_str());
           }
         }
 
         for (const auto &m : all_macros) {
           if (m.rfind(upper_cmd, 0) == 0 || m.rfind(cmd, 0) == 0) {
-            lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+            lv_table_set_cell_value(macro_list, index++, 0, m.c_str());
           }
         }
 
@@ -133,9 +147,12 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
       return;
     }
 
-    lv_textarea_add_text(output,"> ");
-    lv_textarea_add_text(output, cmd);
-    lv_textarea_add_text(output,"\n");
+    append_line(std::string("> ") + cmd);
+
+    if (!output_lines.empty()) {
+      lv_obj_scroll_to_view(output_lines.back(), LV_ANIM_OFF);
+    }
+
     ws.gcode_script(cmd);
 
     if (!history.empty()) {
@@ -161,13 +178,12 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
 
     uint32_t index = 0;
     for (const auto &m : history) {
-      lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+      lv_table_set_cell_value(macro_list, index++, 0, m.c_str());
     }
 
     for (const auto &m : all_macros) {
-      lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+      lv_table_set_cell_value(macro_list, index++, 0, m.c_str());
     }
-
   }
 }
 
@@ -178,10 +194,9 @@ void ConsolePanel::handle_select_macro(lv_event_t *e) {
     uint16_t col;
 
     lv_table_get_selected_cell(macro_list, &row, &col);
-    const char * macro = lv_table_get_cell_value(macro_list, row, col);
+    const char *macro = lv_table_get_cell_value(macro_list, row, col);
     lv_textarea_set_text(input, macro);
   }
-
 }
 
 void ConsolePanel::handle_macros(json &j) {
@@ -203,21 +218,63 @@ void ConsolePanel::handle_macros(json &j) {
 
   std::lock_guard<std::mutex> lock(lv_lock);
   for (const auto &m : history) {
-    lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+    lv_table_set_cell_value(macro_list, index++, 0, m.c_str());
   }
 
   for (const auto &m : all_macros) {
-    lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+    lv_table_set_cell_value(macro_list, index++, 0, m.c_str());
   }
 }
 
 void ConsolePanel::handle_macro_response(json &j) {
-  if (j.contains("params")) {
-    std::lock_guard<std::mutex> lock(lv_lock);
-    for (auto &l : j["params"]) {
-      lv_textarea_add_text(output, l.template get<std::string>().c_str());
-      lv_textarea_add_text(output, "\n");
-    }
+  // Runs in the websocket thread.  Do NOT touch LVGL here and do NOT take lv_lock.
+  if (!j.contains("params")) return;
+
+  std::string local;
+  for (auto &l : j["params"]) {
+    local += l.template get<std::string>();
+    local += "\n";
+  }
+  if (local.empty()) return;
+
+  std::lock_guard<std::mutex> lock(pending_mutex);
+  pending_buffer += local;
+}
+
+void ConsolePanel::append_line(const std::string &line) {
+  lv_obj_t *lbl = lv_label_create(output);
+  lv_obj_set_width(lbl, LV_PCT(100));
+  lv_label_set_long_mode(lbl, LV_LABEL_LONG_WRAP);
+  lv_obj_set_style_text_font(lbl, &dejavusans_mono_14, LV_STATE_DEFAULT);
+  lv_label_set_text(lbl, line.c_str());
+  output_lines.push_back(lbl);
+
+  while (output_lines.size() > MAX_LINES) {
+    lv_obj_del(output_lines.front());
+    output_lines.pop_front();
+  }
+}
+
+void ConsolePanel::flush_output() {
+  // Runs in the LVGL thread via lv_timer_handler(); lv_lock is already held there.
+  std::string to_append;
+  {
+    std::lock_guard<std::mutex> lock(pending_mutex);
+    if (pending_buffer.empty()) return;
+    to_append.swap(pending_buffer);
+  }
+
+  size_t start = 0;
+  while (start < to_append.size()) {
+    size_t end = to_append.find('\n', start);
+    if (end == std::string::npos) end = to_append.size();
+    append_line(to_append.substr(start, end - start));
+    if (end == to_append.size()) break;
+    start = end + 1;
+  }
+
+  if (!output_lines.empty()) {
+    lv_obj_scroll_to_view(output_lines.back(), LV_ANIM_OFF);
   }
 }
 
