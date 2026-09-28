@@ -203,7 +203,6 @@ void PromptPanel::consume(json &j) {
         lv_obj_center(label_save);
         lv_obj_add_event_cb(btn_save, _handle_callback_save, LV_EVENT_SHORT_CLICKED, this);
 
-        check_height();
         foreground();
     }
     if (i && kamp && !v.is_null() && v.template get<bool>()) {
@@ -312,31 +311,6 @@ void PromptPanel::handle_callback_g28(lv_event_t *event) {
     ws.gcode_script("G28");
 }
 
-void PromptPanel::check_height() {
-    // check if we need to increase size of the parent container
-    lv_obj_t *last_child = lv_obj_get_child(flex, -1);
-    // iterate max 5 times to enlarge, could probably be done nicer but since it's
-    // based on css auto sizing is terrible.
-    if (NULL != last_child) {
-        int count = 0;
-        int y = lv_obj_get_y(last_child);
-        int height = lv_obj_get_height(last_child);
-        while(((y + height > lv_obj_get_height(flex)) || height == 0) && count < 5) {
-            spdlog::debug("y: {}, h: {}", y, height);
-            if ((y + height > lv_obj_get_height(flex)) || height == 0) {
-                int newheight = (int) (((double)lv_obj_get_height(prompt_cont)) * 1.1);
-                int newwidth = (int) (((double)lv_obj_get_width(prompt_cont)) * 1.1);
-                spdlog::debug("Increase size of panel: {}, {}", newheight, newwidth);
-                lv_obj_set_size(prompt_cont, newheight, newwidth);
-            }
-            lv_obj_update_layout(prompt_cont);
-            count++;
-            y = lv_obj_get_y(last_child);
-            height = lv_obj_get_height(last_child);
-        }
-    }
-}
-
 void PromptPanel::handle_macro_response(json &j) {
     spdlog::trace("macro response: {}", j.dump());
     auto &v = j["/params/0"_json_pointer];
@@ -438,7 +412,6 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_add_event_cb(btn, _handle_callback_close, LV_EVENT_SHORT_CLICKED, this);
             }
 
-            check_height();
             foreground();
         }
 
@@ -615,7 +588,6 @@ void PromptPanel::handle_macro_response(json &j) {
                 }
             } else if (command.find("prompt_show") == 0) {
                 spdlog::debug("PROMPT_SHOW");
-                check_height();
                 foreground();
             } else if (command.find("prompt_end") == 0) {
                 spdlog::debug("PROMPT_END");

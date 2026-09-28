@@ -66,8 +66,6 @@ class PromptPanel : public NotifyConsumer {
         void background();
         void ignore_save_config(bool ignore);
     private:
-        void check_height();
-
         KWebSocketClient &ws;
         lv_obj_t *promptpanel_cont;
         lv_obj_t *prompt_cont;
