@@ -94,7 +94,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   // Переводим кнопки в плавающий режим и жестко выравниваем по правому верхнему углу
   lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_FLOATING);
   lv_obj_align(tools_btnmatrix, LV_ALIGN_TOP_RIGHT, -110, 10); // Сдвиг на 110px влево (безопасная зона)
-  lv_obj_set_size(tools_btnmatrix, 180, 35);                  // Компактный размер для аккуратного ряда
+  lv_obj_set_size(tools_btnmatrix, 260, 50);                  // Компактный размер для аккуратного ряда
 
   // Устанавливаем зазоры между кнопками матрицы, чтобы T0 T1 T2 T3 не слипались
   lv_obj_set_style_pad_column(tools_btnmatrix, 10, 0); // Зазор 10px между кнопками
