@@ -24,7 +24,7 @@ class SwitchContainer {
   void enable();
   void hide();
   void on();
-  void on_exlude();
+  void on_exclude();
   void off();
 
   std::string get_name() {

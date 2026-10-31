@@ -75,7 +75,7 @@ void SwitchContainer::on() {
     lv_obj_clear_state(swt,      LV_STATE_DISABLED);
 }
 
-void SwitchContainer::on_exlude() {
+void SwitchContainer::on_exclude() {
     lv_obj_add_state(swt,        LV_STATE_CHECKED);
 
     lv_obj_clear_state(swt_cont, LV_STATE_DISABLED);
@@ -123,5 +123,5 @@ void SwitchContainer::handle_prompt() {
 }
 
 void SwitchContainer::run_callback() {
-    on_exlude();
+    on_exclude();
 }
