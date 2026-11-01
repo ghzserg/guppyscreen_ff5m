@@ -83,7 +83,10 @@ void Numpad::handle_input(lv_event_t *e) {
     // input validation, e.g. range
     std::string value = std::string(lv_textarea_get_text(input));
     if (value.length() > 0) {
-      ready_cb(std::stod(value));
+      try {
+        ready_cb(std::stod(value));
+      } catch (const std::exception &) {
+      }
     }
 
     lv_obj_add_flag(edit_cont, LV_OBJ_FLAG_HIDDEN);
