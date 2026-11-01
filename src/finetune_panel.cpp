@@ -227,7 +227,7 @@ void FineTunePanel::handle_pa(lv_event_t *e) {
         const char * step = lv_btnmatrix_get_btn_text(zoffset_selector.get_selector(),
                                                       zoffset_selector.get_selected_idx());
 
-        double direction = btn == paup_btn.get_container() ? std::stod(step) : -std::stod(step);
+        double direction = btn == paup_btn.get_container() ? std::atof(step) : -std::atof(step);
         double new_pa = cur_pa.template get<double>() + direction;
         new_pa = new_pa < 0 ? 0 : new_pa;
         ws.gcode_script(fmt::format("SET_PRESSURE_ADVANCE ADVANCE={}", new_pa));
@@ -249,7 +249,7 @@ void FineTunePanel::handle_speed(lv_event_t *e) {
         const char * step = lv_btnmatrix_get_btn_text(multipler_selector.get_selector(),
                                                       multipler_selector.get_selected_idx());
 
-        int32_t direction = btn == speed_up_btn.get_container() ? std::stoi(step) : -std::stoi(step);
+        int32_t direction = btn == speed_up_btn.get_container() ? std::atoi(step) : -std::atoi(step);
         int32_t new_speed = static_cast<int32_t>(spd_factor.template get<double>() * 100 + direction);
         new_speed = std::max(new_speed, 1);
         spdlog::trace("speed step {}, {}", direction, new_speed);
@@ -272,7 +272,7 @@ void FineTunePanel::handle_flow(lv_event_t *e) {
         const char * step = lv_btnmatrix_get_btn_text(multipler_selector.get_selector(),
                                                       multipler_selector.get_selected_idx());
 
-        int32_t direction = btn == flow_up_btn.get_container() ? std::stoi(step) : -std::stoi(step);
+        int32_t direction = btn == flow_up_btn.get_container() ? std::atoi(step) : -std::atoi(step);
 
         int32_t new_flow = static_cast<int32_t>(extrude_factor.template get<double>() * 100 + direction);
         new_flow = std::max(new_flow, 1);

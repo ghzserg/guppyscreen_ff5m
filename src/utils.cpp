@@ -69,12 +69,12 @@ namespace KUtils {
       size_t thumb_width = 0;
       auto width = thumbs.at(0)["width"].is_number()
         ? thumbs.at(0)["width"].template get<int>()
-        : std::stoi(thumbs.at(0)["width"].template get<std::string>());
+        : std::atoi(thumbs.at(0)["width"].template get<std::string>().c_str());
       int closest = std::abs(scaled_width - width);
       for (int i = 0; i < thumbs.size(); i++) {
         width = thumbs.at(i)["width"].is_number()
           ? thumbs.at(i)["width"].template get<int>()
-          : std::stoi(thumbs.at(i)["width"].template get<std::string>());
+          : std::atoi(thumbs.at(i)["width"].template get<std::string>().c_str());
         int cur_diff = std::abs(scaled_width - width);
         if (cur_diff < closest) {
           closest = cur_diff;
@@ -165,14 +165,21 @@ namespace KUtils {
 
   std::string interface_ip(const std::string &interface) {
     int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (fd < 0) {
+      return "";
+    }
 
     struct ifreq ifr{};
-    strcpy(ifr.ifr_name, interface.c_str());
-    ioctl(fd, SIOCGIFADDR, &ifr);
+    strncpy(ifr.ifr_name, interface.c_str(), IFNAMSIZ - 1);
+    int rc = ioctl(fd, SIOCGIFADDR, &ifr);
     close(fd);
+    if (rc < 0) {
+      return "";
+    }
 
     char ip[INET_ADDRSTRLEN];
-    strcpy(ip, inet_ntoa(((sockaddr_in *) &ifr.ifr_addr)->sin_addr));
+    strncpy(ip, inet_ntoa(((sockaddr_in *) &ifr.ifr_addr)->sin_addr), sizeof(ip) - 1);
+    ip[sizeof(ip) - 1] = 0;
     return ip;
   }
 

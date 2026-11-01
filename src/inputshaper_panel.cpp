@@ -242,7 +242,7 @@ void InputShaperPanel::foreground() {
   if (!inputshaper.is_null()) {
     auto v = inputshaper["/shaper_freq_x"_json_pointer];
     if (!v.is_null()) {
-      double hz = std::stod(v.template get<std::string>());
+      double hz = std::atof(v.template get<std::string>().c_str());
       xspinbox.update_value(hz * 10);
     }
 
@@ -255,7 +255,7 @@ void InputShaperPanel::foreground() {
 
     v = inputshaper["/shaper_freq_y"_json_pointer];
     if (!v.is_null()) {
-      double hz = std::stod(v.template get<std::string>());
+      double hz = std::atof(v.template get<std::string>().c_str());
       yspinbox.update_value(hz * 10);
     }
 
