@@ -353,7 +353,7 @@ void SpoolmanPanel::handle_spoolman_action(lv_event_t *e) {
       if (col == 6 && selected != NULL && strlen(selected) != 0
           && std::memcmp(LV_SYMBOL_PLAY, selected, 3) == 0) {
         // set active spool
-        int id = std::stoi(spool_id);
+        int id = std::atoi(spool_id);
         spdlog::trace("set active spool id {}", id);
         json param = {
           {"spool_id", id}
@@ -411,7 +411,7 @@ void SpoolmanPanel::handle_spoolman_action(lv_event_t *e) {
 
       if (row != 0 && col == 3) {
         const char *spool_id = lv_table_get_cell_value(spool_table, row, 0);
-        uint32_t id = std::stoi(spool_id);
+        uint32_t id = std::atoi(spool_id);
         const auto &spool = spools.find(id);
         if (spool != spools.end()) {
           auto &c = spool->second["/filament/color_hex"_json_pointer];

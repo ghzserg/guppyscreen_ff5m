@@ -225,7 +225,7 @@ void PrintStatusPanel::reset() {
 
   auto v = State::get_instance()
     ->get_data("/printer_state/configfile/config/extruder/filament_diameter"_json_pointer);
-  filament_diameter = v.is_null() ? 1.750 : std::stod(v.template get<std::string>());
+  filament_diameter = v.is_null() ? 1.750 : std::atof(v.template get<std::string>().c_str());
   extruder_target = -1;
   heater_bed_target = -1;
 
