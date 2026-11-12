@@ -62,6 +62,24 @@ FakeMoonraker::~FakeMoonraker() {
   server_.stop();
 }
 
+void FakeMoonraker::forget_requests() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  decltype(requests_)().swap(requests_);
+  decltype(gcodes_)().swap(gcodes_);
+  decltype(unhandled_)().swap(unhandled_);
+}
+
+void FakeMoonraker::drop_client() {
+  WebSocketChannelPtr c;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    c = client_;
+  }
+  if (c) {
+    c->close();
+  }
+}
+
 void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::string &msg) {
   json req = json::parse(msg);
   std::string method = req.value("method", "");

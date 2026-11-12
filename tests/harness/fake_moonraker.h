@@ -38,6 +38,14 @@ class FakeMoonraker {
   // Send any notification, e.g. push_notification("notify_klippy_ready", json::array()).
   void push_notification(const std::string &method, const json &params);
 
+  // Close the client's connection, like a Moonraker restart. guppyscreen
+  // reconnects on its own (libhv reconnect, 200 ms minimum delay).
+  void drop_client();
+
+  // Drop the recorded requests, G-codes and unhandled methods and free
+  // their memory, e.g. before measuring the app's heap.
+  void forget_requests();
+
   bool client_connected() const;
   int request_count(const std::string &method) const;
   std::vector<json> requests(const std::string &method) const;  // their params
