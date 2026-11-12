@@ -5,6 +5,7 @@
 #include "lv_tc_screen.h"
 
 #include <unistd.h>
+#include <malloc.h>
 #include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
@@ -37,10 +38,25 @@ static void hal_init(lv_color_t p, lv_color_t s);
 
 using namespace hv;
 
+#ifdef GUPPY_FF5M
+// One draw buffer of 80 lines of the 800 px wide screen (250 KB at 32 bpp).
+// fbdev_flush copies synchronously, so a second buffer would not let drawing
+// and flushing overlap; it only cost RAM. Measured on the AD5M: a full-screen
+// redraw takes 13.2 ms with this buffer vs 12.3 ms with two 128K-pixel ones.
+#define DISP_BUF_SIZE (800 * 80)
+#else
 #define DISP_BUF_SIZE (128 * 1024)
+#endif
 
 int main(int argc, char* argv[])
 {
+    // Pin glibc's mmap threshold at its default (128 KB). Freeing a big
+    // mmap'd block (libhv's ~500 KB receive buffer after the subscribe reply)
+    // would raise it, and the trim threshold, to that size. Later big
+    // temporaries (e.g. the PNG quantizer's ~390 KB histogram) would then
+    // come from the heap and stay there after being freed.
+    mallopt(M_MMAP_THRESHOLD, 128 * 1024);
+
     setlocale(LC_ALL, "");
     setlocale(LC_NUMERIC, "C");
     bindtextdomain("guppyscreen", "/usr/data/zmod/zmod/.shell/locale");
@@ -112,11 +128,15 @@ void init_touch() {
 static void hal_init(lv_color_t primary, lv_color_t secondary) {
     /*A small buffer for LittlevGL to draw the screen's content*/
     static lv_color_t buf[DISP_BUF_SIZE];
-    static lv_color_t buf2[DISP_BUF_SIZE];
 
     /*Initialize a descriptor for the buffer*/
     static lv_disp_draw_buf_t disp_buf;
+#ifdef GUPPY_FF5M
+    lv_disp_draw_buf_init(&disp_buf, buf, NULL, DISP_BUF_SIZE);
+#else
+    static lv_color_t buf2[DISP_BUF_SIZE];
     lv_disp_draw_buf_init(&disp_buf, buf, buf2, DISP_BUF_SIZE);
+#endif
 
     /*Initialize and register a display driver*/
     static lv_disp_drv_t disp_drv;

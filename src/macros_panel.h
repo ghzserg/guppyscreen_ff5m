@@ -5,6 +5,8 @@
 #include "macro_item.h"
 #include "lvgl/lvgl.h"
 
+#include <map>
+#include <string>
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -14,7 +16,14 @@ class MacrosPanel {
   MacrosPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent);
   ~MacrosPanel();
 
-  void populate();
+  // The macro list (~12 LVGL objects per macro, ~330 kB for zMod's macros)
+  // is built when the tab is first shown, and kept: freeing it on leaving
+  // the tab gives little back (heap fragmentation) and building takes
+  // ~0.4 s on the printer. The macro text is fetched from Moonraker just
+  // before (fetch()). Call with lv_lock held.
+  void foreground();   // the tab is shown: build the list if needed
+  void background();   // the tab is left
+  void refresh();      // the macros changed (reconnect): rebuild if shown, else free
   void handle_hide_show(lv_event_t *e);
 
   static void _handle_hide_show(lv_event_t *e) {
@@ -31,6 +40,17 @@ class MacrosPanel {
   lv_obj_t *top_cont;
   lv_obj_t *kb;
   std::vector<std::shared_ptr<MacroItem>> macro_items;
+  bool shown = false;  // the tab is showing
+  bool built = false;  // macro_items holds the list
+  bool fetching = false;  // the printer.objects.query for the macros is on its way
+  bool fetched = false;   // macros holds its reply, not built yet
+  uint32_t generation = 0;  // bumped by refresh(), to drop a stale reply
+  // Macro name -> {parameter -> default value}, macros starting with "_" excluded.
+  std::map<std::string, std::map<std::string, std::string>> macros;
+
+  void fetch();     // ask Moonraker for the macros, build when the reply comes
+  void populate();
+  static void _rebuild(void *panel);  // lv_async_call callback
 
 };
 

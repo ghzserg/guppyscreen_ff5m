@@ -1,7 +1,9 @@
 /*.log
 build/
+build-test/
 *.d
 *.o
 *.a
 /.idea
 *.po~
+__pycache__/

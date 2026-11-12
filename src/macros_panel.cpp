@@ -3,6 +3,8 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
+#include <chrono>
+
 MacrosPanel::MacrosPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent)
   : ws(c)
   , lv_lock(l)
@@ -38,42 +40,140 @@ MacrosPanel::MacrosPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent)
 
 MacrosPanel::~MacrosPanel()
 {
+  lv_async_call_cancel(&MacrosPanel::_rebuild, this);
+  // The items delete their own containers, which are inside cont.
+  std::vector<std::shared_ptr<MacroItem>>().swap(macro_items);
   if (cont != NULL) {
     lv_obj_del(cont);
     cont = NULL;
   }
 }
 
+void MacrosPanel::foreground() {
+  shown = true;
+  if (built) {
+    return;
+  }
+  if (fetched) {
+    populate();
+  } else {
+    fetch();
+  }
+}
+
+void MacrosPanel::background() {
+  shown = false;
+}
+
+void MacrosPanel::refresh() {
+  generation++;  // a reply still on its way is for the old connection
+  fetching = false;
+  fetched = false;
+  std::map<std::string, std::map<std::string, std::string>>().swap(macros);
+  if (!built && !shown) {
+    return;
+  }
+  lv_keyboard_set_textarea(kb, NULL);  // may point into a macro item
+  lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
+  std::vector<std::shared_ptr<MacroItem>>().swap(macro_items);
+  built = false;
+  if (shown) {
+    fetch();
+  }
+}
+
+// The macros are the gcode_macro sections of configfile's `config`, ~200 kB
+// of G-code text on zMod. They are left out of every other message (see
+// KWebSocketClient::parse_message) and asked for here, only when the list
+// is built.
+void MacrosPanel::fetch() {
+  if (fetching) {
+    return;
+  }
+  fetching = true;
+  uint32_t gen = generation;
+  auto t0 = std::chrono::steady_clock::now();
+  json params = {{"objects", {{"configfile", {"config"}}}}};
+  ws.send_jsonrpc("printer.objects.query", params, [this, gen, t0](json &j) {
+    // On the websocket thread.
+    std::map<std::string, std::map<std::string, std::string>> parsed;
+    const json &config = j["/result/status/configfile/config"_json_pointer];
+    if (config.is_object()) {
+      parsed = KUtils::parse_macros(config);
+    } else {
+      spdlog::warn("macros: no configfile in the reply");
+    }
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+    spdlog::info("macros: fetched {} macros in {} ms", parsed.size(), ms);
+
+    std::lock_guard<std::mutex> lock(lv_lock);
+    if (gen != generation) {
+      return;
+    }
+    fetching = false;
+    fetched = true;
+    macros = std::move(parsed);
+    // Build on the LVGL thread, so the list comes from the main heap, not
+    // libhv's arena.
+    lv_async_call_cancel(&MacrosPanel::_rebuild, this);
+    lv_async_call(&MacrosPanel::_rebuild, this);
+  }, true);
+}
+
+void MacrosPanel::_rebuild(void *panel) {
+  MacrosPanel *p = (MacrosPanel *)panel;
+  if (p->shown && !p->built && p->fetched) {
+    p->populate();
+  }
+}
+
 void MacrosPanel::populate() {
+  auto t0 = std::chrono::steady_clock::now();
+  built = true;
   macro_items.clear();
 
-  auto &config_json = State::get_instance()
-    ->get_data("/printer_state/configfile/config"_json_pointer);
+  // Runs on the LVGL thread: copy under State's lock, the websocket thread
+  // may reset or update guppysettings meanwhile.
+  json macro_settings = State::get_instance()->get_data_copy("/guppysettings/macros/settings"_json_pointer);
 
-  // TODO: this is a race condition
-  auto &macro_settings = State::get_instance()->get_data("/guppysettings/macros/settings"_json_pointer);
+  // Each item is built on a detached screen and then moved into the list.
+  // Creating a textarea runs a layout pass over its whole screen; on the
+  // list's screen that pass covers every item built so far (~0.9 s on the
+  // printer for zMod's ~110 visible macros).
+  lv_obj_t *staging = lv_obj_create(NULL);
 
-  if (!config_json.is_null()) {
-    auto macros = KUtils::parse_macros(config_json);
+  // uint32_t i = 0;
+  // lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
+  // lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
+  //                                     cur_bg, LV_OPA_10);
 
-    // uint32_t i = 0;
-    // lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
-    // lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
-    //                                     cur_bg, LV_OPA_10);
+  for (auto const & [k, v] : macros) {
+    auto hidden_json = macro_settings[json::json_pointer(fmt::format("/{}/hidden", k))];
+    bool hidden = !hidden_json.is_null() ? hidden_json.template get<bool>() : false;
+    macro_items.push_back(std::make_shared<MacroItem>(ws, staging, k, v, kb, hidden));
+    lv_obj_set_parent(macro_items.back()->get_container(), top_cont);
 
-    for (auto const & [k, v] : macros) {
-      auto hidden_json = macro_settings[json::json_pointer(fmt::format("/{}/hidden", k))];
-      bool hidden = !hidden_json.is_null() ? hidden_json.template get<bool>() : false;
-      macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, hidden));
+    // if (i % 2 == 0) {
+    //         macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, mixed, hidden));
+    // } else {
+    //         macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, cur_bg, hidden));
+    // }
+    // i++;
+  }
 
-      // if (i % 2 == 0) {
-      //         macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, mixed, hidden));
-      // } else {
-      //         macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, cur_bg, hidden));
-      // }
-      // i++;
+  lv_obj_del(staging);
+  // The items hold what they need; fetch again for the next build.
+  fetched = false;
+  std::map<std::string, std::map<std::string, std::string>>().swap(macros);
+
+  if (lv_obj_has_state(show_hide_switch, LV_STATE_CHECKED)) {
+    for (const auto &m : macro_items) {
+      m->show();
     }
   }
+
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+  spdlog::info("macros: built {} items in {} ms", macro_items.size(), ms);
 }
 
 void MacrosPanel::handle_hide_show(lv_event_t *e) {

@@ -110,13 +110,13 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   lv_img_set_zoom(xgraph, 95);
   lv_obj_center(xgraph);
   if (fs::exists("/opt/config/mod_data/resonances_x.png")) {
-    lv_img_set_src(xgraph, "A:/opt/config/mod_data/resonances_x.png");
+    KUtils::set_img_src(xgraph, "A:/opt/config/mod_data/resonances_x.png");
   }
 
   lv_img_set_zoom(ygraph, 95);
   lv_obj_center(ygraph);
   if (fs::exists("/opt/config/mod_data/resonances_y.png")) {
-    lv_img_set_src(ygraph, "A:/opt/config/mod_data/resonances_y.png");
+    KUtils::set_img_src(ygraph, "A:/opt/config/mod_data/resonances_y.png");
   }
 
   lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
@@ -134,10 +134,10 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   lv_obj_set_style_text_font(youtput, &dejavusans_mono_14, LV_STATE_DEFAULT);
 
   // spinners
-  lv_obj_add_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
+  KUtils::spinner_hide(xspinner);  // their animations run only while shown
   lv_obj_set_size(xspinner, 100, 100);
 
-  lv_obj_add_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
+  KUtils::spinner_hide(yspinner);
   lv_obj_set_size(yspinner, 100, 100);
 
   // buttons
@@ -287,13 +287,13 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
       ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x\nM400"));
 
       // free src
-      lv_img_set_src(xgraph, NULL);
+      KUtils::set_img_src(xgraph, NULL);
       // hack to color in empty space.
       ((lv_img_t*)xgraph)->src_type = LV_IMG_SRC_SYMBOL;
 
       lv_label_set_text(xoutput, "");
       lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
-      lv_obj_clear_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
+      KUtils::spinner_show(xspinner);
       lv_obj_move_foreground(xspinner);
     }
 
@@ -302,13 +302,13 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
       ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=Y NAME=y\nM400"));
 
       // free src
-      lv_img_set_src(ygraph, NULL);
+      KUtils::set_img_src(ygraph, NULL);
       // hack to color in empty space.
       ((lv_img_t*)ygraph)->src_type = LV_IMG_SRC_SYMBOL;
 
       lv_label_set_text(youtput, "");
       lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
-      lv_obj_clear_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
+      KUtils::spinner_show(yspinner);
       lv_obj_move_foreground(yspinner);
     }
     // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x FREQ_START={} FREQ_END={}\nM400\nTEST_RESONANCES AXIS=Y NAME=y FREQ_START={} FREQ_END={}\nM400", 5, 10, 5, 10));
@@ -330,6 +330,9 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
     ws.gcode_script(fmt::format("SAVE_SHAPER AXIS=X NAME={} FREQUENCY={}\nSAVE_SHAPER AXIS=Y NAME={} FREQUENCY={}\nSAVE_CONFIG",
                                 xbuf, xhz, ybuf, yhz));
   } else if (btn == back_btn.get_container()) {
+    // The two graphs are 800x480: 1.5 MB each once decoded.
+    KUtils::uncache_img(xgraph);
+    KUtils::uncache_img(ygraph);
     lv_obj_move_background(cont);
   } else if (btn == emergency_btn.get_container()) {
     ws.send_jsonrpc("printer.emergency_stop");
@@ -365,7 +368,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
             spdlog::trace("x freq png path {}", png_path);
 
             lv_label_set_text(xoutput, "");
-            lv_img_set_src(xgraph, png_path.c_str());
+            KUtils::set_img_src(xgraph, png_path.c_str());
             lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
             set_shaper_detail(res, NULL, &xspinbox, xshaper_dd);
             lv_obj_move_foreground(xgraph_cont);
@@ -374,7 +377,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
             lv_obj_move_foreground(xoutput);
           }
 
-          lv_obj_add_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
+          KUtils::spinner_hide(xspinner);
           lv_obj_move_background(xspinner);
 
         } else if (Y_DATA == fn) {
@@ -391,7 +394,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
             spdlog::trace("y freq png path {}", png_path);
 
             lv_label_set_text(youtput, "");
-            lv_img_set_src(ygraph, png_path.c_str());
+            KUtils::set_img_src(ygraph, png_path.c_str());
             lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
             set_shaper_detail(res, NULL, &yspinbox, yshaper_dd);
             lv_obj_move_foreground(ygraph_cont);
@@ -400,7 +403,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
             lv_obj_move_foreground(youtput);
           }
 
-          lv_obj_add_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
+          KUtils::spinner_hide(yspinner);
           lv_obj_move_background(yspinner);
         }
       }

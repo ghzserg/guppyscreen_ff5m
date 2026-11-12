@@ -4,6 +4,8 @@
 #include "state.h"
 #include "spdlog/spdlog.h"
 #include "platform.h"
+#include "utils.h"
+#include "lvgl/lvgl.h"
 
 #include <cmath>
 #include <time.h>
@@ -265,7 +267,7 @@ std::string end_time(int64_t seconds_to_add) {
     return s / 1024 / 1024;
   }
 
-  std::map<std::string, std::map<std::string, std::string>> parse_macros(json &m) {
+  std::map<std::string, std::map<std::string, std::string>> parse_macros(const json &m) {
     std::map<std::string, std::map<std::string, std::string>> macros;
 
     std::regex param_regex(R"(params\.(\w+)(.*))", std::regex_constants::icase);
@@ -274,8 +276,9 @@ std::string end_time(int64_t seconds_to_add) {
     for (auto &el : m.items()) {
       std::string key = el.key();
       if (key.rfind("gcode_macro ", 0) == 0) {
-        auto &gcode = el.value()["/gcode"_json_pointer];
-        if (!gcode.is_null()) {
+        if (el.value().is_object() && el.value().contains("gcode")
+            && el.value().at("gcode").is_string()) {
+          const auto &gcode = el.value().at("gcode");
           auto macro_split = split(el.key(), ' ');
           if (macro_split.size() > 1 && macro_split[1].rfind("_", 0) != 0) {
             std::string macro_name = macro_split[1];
@@ -309,4 +312,57 @@ std::string end_time(int64_t seconds_to_add) {
 
     return macros;
   }
+
+  static std::string file_src(lv_obj_t *img) {
+    const void *src = lv_img_get_src(img);
+    if (src != NULL && lv_img_src_get_type(src) == LV_IMG_SRC_FILE) {
+      return (const char *)src;
+    }
+    return "";
+  }
+
+  void set_img_src(lv_obj_t *img, const void *src) {
+    std::string old = file_src(img);
+    lv_img_set_src(img, src);
+    if (!old.empty()) {
+      lv_img_cache_invalidate_src(old.c_str());
+    }
+  }
+
+  void uncache_img(lv_obj_t *img) {
+    std::string src = file_src(img);
+    if (!src.empty()) {
+      lv_img_cache_invalidate_src(src.c_str());
+    }
+  }
   }  // namespace KUtils
+
+namespace {
+void spinner_start_angle(void *obj, int32_t v) { lv_arc_set_start_angle((lv_obj_t *)obj, (uint16_t)v); }
+void spinner_end_angle(void *obj, int32_t v) { lv_arc_set_end_angle((lv_obj_t *)obj, (uint16_t)v); }
+}  // namespace
+
+// The same two animations as lv_spinner's constructor (lv_spinner.c).
+void KUtils::spinner_show(lv_obj_t *spinner, uint32_t time_ms, uint16_t arc_len) {
+  lv_anim_del(spinner, NULL);
+  lv_anim_t a;
+  lv_anim_init(&a);
+  lv_anim_set_var(&a, spinner);
+  lv_anim_set_exec_cb(&a, spinner_end_angle);
+  lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+  lv_anim_set_time(&a, time_ms);
+  lv_anim_set_values(&a, arc_len, 360 + arc_len);
+  lv_anim_start(&a);
+
+  lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
+  lv_anim_set_values(&a, 0, 360);
+  lv_anim_set_exec_cb(&a, spinner_start_angle);
+  lv_anim_start(&a);
+
+  lv_obj_clear_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+}
+
+void KUtils::spinner_hide(lv_obj_t *spinner) {
+  lv_anim_del(spinner, NULL);
+  lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+}

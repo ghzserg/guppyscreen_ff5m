@@ -49,13 +49,15 @@ void State::reset() {
 
 void State::set_data(const std::string &key, json &j, const std::string &json_path) {
   std::lock_guard<std::mutex> guard(lock);
-  auto patch = j[json::json_pointer(json_path)];
-  if (!patch.is_null()) {
-    // spdlog::debug("setting data key {}\nbefore: {}\npatch: {}", key, data.contains(key) ? data[key].dump() : "nil"
-    //                   ,patch.dump());
-    data[key].merge_patch(patch);
-    // spdlog::debug("after: {}", data.contains(key) ? data[key].dump() : "nil");
+  // A reference: merge_patch copies what it keeps, so a deep copy of the
+  // incoming message (the whole printer state at subscribe) is not needed.
+  const json &patch = j[json::json_pointer(json_path)];
+  if (patch.is_null()) {
+    return;
   }
+
+  // configfile arrives already slimmed: see KWebSocketClient::parse_message.
+  data[key].merge_patch(patch);
 }
 
 json &State::get_data() {
@@ -66,6 +68,11 @@ json &State::get_data() {
 json &State::get_data(const json::json_pointer& ptr) {
   std::lock_guard<std::mutex> guard(lock);
   return data[ptr];
+}
+
+json State::get_data_copy(const json::json_pointer &ptr) {
+  std::lock_guard<std::mutex> guard(lock);
+  return data.contains(ptr) ? data.at(ptr) : json();
 }
 
 void State::consume(json &j) {

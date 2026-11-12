@@ -1,7 +1,9 @@
 #ifndef __STATE_H__
 #define __STATE_H__
 
+#include <map>
 #include <mutex>
+#include <string>
 #include <vector>
 #include "notify_consumer.h"
 
@@ -22,6 +24,9 @@ class State : public NotifyConsumer {
   void set_data(const std::string &key, json &j, const std::string &json_path);
   json &get_data();
   json &get_data(const json::json_pointer &ptr);
+  // A copy made under the lock, for readers on another thread than the
+  // websocket one (get_data's reference outlives the lock).
+  json get_data_copy(const json::json_pointer &ptr);
 
   void consume(json &j);
 

@@ -14,6 +14,7 @@
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
+#include <malloc.h>
 
 using namespace hv;
 using json = nlohmann::json;
@@ -25,6 +26,70 @@ KWebSocketClient::KWebSocketClient(EventLoopPtr loop)
 }
 
 KWebSocketClient::~KWebSocketClient() {
+}
+
+// The configfile sections the app reads; everything else in configfile's
+// `config` and `settings` is skipped while parsing. Readers:
+// print_status_panel (config/extruder), inputshaper_panel
+// (config/input_shaper), finetune_panel (settings/extruder), retract_panel
+// (settings/firmware_retraction), limits_panel (settings/printer). Other
+// configfile fields (save_config_pending, warnings, ...) are kept. The macro
+// list (config/gcode_macro *) is fetched by MacrosPanel with keep_macros.
+static bool keep_configfile_section(const std::string &part, const std::string &section,
+                                    bool keep_macros) {
+  static const char *const config_keep[] = {"extruder", "input_shaper"};
+  static const char *const settings_keep[] = {"extruder", "firmware_retraction", "printer"};
+  if (part == "config") {
+    for (const char *k : config_keep) {
+      if (section == k) return true;
+    }
+    return keep_macros && section.rfind("gcode_macro ", 0) == 0;
+  }
+  for (const char *k : settings_keep) {
+    if (section == k) return true;
+  }
+  return false;
+}
+
+json KWebSocketClient::parse_message(const std::string &msg, bool keep_macros) {
+  if (msg.find("\"configfile\"") == std::string::npos) {
+    return json::parse(msg);  // the usual case: status updates several times a second
+  }
+
+  // A section is a key at depth 5: result/status/configfile/<part>/<section>
+  // or params/[0]/configfile/<part>/<section> (an array level has no key).
+  // The callback sees every event, also inside skipped values, with
+  // consistent depths.
+  constexpr int SECTION = 5;
+  std::string path[SECTION - 1];
+  bool skipping = false;  // inside a section that is dropped
+  auto filter = [&](int depth, json::parse_event_t event, json &parsed) -> bool {
+    if (event == json::parse_event_t::key && depth <= SECTION) {
+      skipping = false;
+      if (depth < SECTION) {
+        path[depth - 1] = parsed.template get_ref<const std::string &>();
+        for (int d = depth; d < SECTION - 1; d++) path[d].clear();
+        return true;
+      }
+      bool in_configfile = path[2] == "configfile"
+        && (path[3] == "config" || path[3] == "settings")
+        && ((path[0] == "result" && path[1] == "status") || (path[0] == "params" && path[1].empty()));
+      if (in_configfile
+          && !keep_configfile_section(path[3], parsed.template get_ref<const std::string &>(), keep_macros)) {
+        skipping = true;
+        return false;
+      }
+      return true;
+    }
+    // Inside a dropped section: don't even build its nodes as temporaries.
+    // Never return false for an end event of a shallower container: that
+    // would drop the container itself.
+    if (skipping && depth >= SECTION) {
+      return false;
+    }
+    return true;
+  };
+  return json::parse(msg, filter);
 }
 
 int KWebSocketClient::connect(const char* url,
@@ -42,7 +107,23 @@ int KWebSocketClient::connect(const char* url,
     //   spdlog::trace("onmessage(type={} len={}): {}", opcode() == WS_OPCODE_TEXT ? "text" : "binary",
     //              (int)msg.size(), msg);
     // }
-    auto j = json::parse(msg);
+    {
+    json j = parse_message(msg);
+
+    if (j.contains("id") && j["id"].is_number_unsigned()) {
+      // A reply that should keep the macros: parse it again with them. The
+      // id can come after the result in the text, so the first pass can't
+      // know. Only the Macros tab's query does this, when the list is built.
+      bool again;
+      {
+        std::lock_guard<std::mutex> lock(keep_macros_lock);
+        again = keep_macros_ids.erase(j["id"].template get<uint32_t>()) > 0;
+      }
+      if (again) {
+        j = json();
+        j = parse_message(msg, true);
+      }
+    }
 
     if (j.contains("id")) {
       // XXX: get rid of consumers and use function ptrs for callback
@@ -84,6 +165,16 @@ int KWebSocketClient::connect(const char* url,
         }
       }
     }
+    }  // j is freed here, before the trim below
+
+    // A big message (in practice the printer.objects.subscribe reply with
+    // the whole printer config, ~500 KB on zMod) leaves its parsed copies
+    // as free memory in this thread's malloc arena, which glibc keeps.
+    // Give the free pages back. Measured on the AD5M: -520 kB at idle,
+    // the call takes ~3 ms.
+    if (msg.size() > 64 * 1024) {
+      malloc_trim(0);
+    }
   };
 
   onclose = [disconnected]() {
@@ -107,11 +198,16 @@ int KWebSocketClient::connect(const char* url,
 
 int KWebSocketClient::send_jsonrpc(const std::string &method,
                                    const json &params,
-                                   std::function<void(json&)> cb) {
+                                   std::function<void(json&)> cb,
+                                   bool keep_macros) {
   const auto &entry = callbacks.find(id);
   if (entry == callbacks.end()) {
     // spdlog::debug("registering consume %d, %x\n", id, consumer);
     callbacks.insert({id, cb});
+    if (keep_macros) {
+      std::lock_guard<std::mutex> lock(keep_macros_lock);
+      keep_macros_ids.insert(id);
+    }
     // XXX: check success, remove consumer if send is unsuccessfull
     return send_jsonrpc(method, params);
   } else {

@@ -1,0 +1,198 @@
+diff --git a/src/draw/lv_draw_img.c b/src/draw/lv_draw_img.c
+index 5e67f88..33b8746 100644
+--- a/src/draw/lv_draw_img.c
++++ b/src/draw/lv_draw_img.c
+@@ -251,6 +251,8 @@ static lv_res_t LV_ATTRIBUTE_FAST_MEM decode_and_draw(lv_draw_ctx_t * draw_ctx,
+     if(lv_img_cf_is_chroma_keyed(cdsc->dec_dsc.header.cf)) cf = LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED;
+     else if(LV_IMG_CF_ALPHA_8BIT == cdsc->dec_dsc.header.cf) cf = LV_IMG_CF_ALPHA_8BIT;
+     else if(LV_IMG_CF_RGB565A8 == cdsc->dec_dsc.header.cf) cf = LV_IMG_CF_RGB565A8;
++    /*A decoder that returns the whole image as 8-bit indexed (palette + indices)*/
++    else if(LV_IMG_CF_INDEXED_8BIT == cdsc->dec_dsc.header.cf && cdsc->dec_dsc.img_data) cf = LV_IMG_CF_INDEXED_8BIT;
+     else if(lv_img_cf_has_alpha(cdsc->dec_dsc.header.cf)) cf = LV_IMG_CF_TRUE_COLOR_ALPHA;
+     else cf = LV_IMG_CF_TRUE_COLOR;
+ 
+diff --git a/src/draw/lv_draw_img.h b/src/draw/lv_draw_img.h
+index a88a33c..d4258be 100644
+--- a/src/draw/lv_draw_img.h
++++ b/src/draw/lv_draw_img.h
+@@ -21,6 +21,10 @@ extern "C" {
+  *      DEFINES
+  *********************/
+ 
++/*Decoders may return a whole LV_IMG_CF_INDEXED_8BIT image (palette + indices) as img_data;
++ *the software renderer draws it, also zoomed. Added by guppyscreen's patches/0006.*/
++#define LV_DRAW_IMG_INDEXED_8BIT_DECODED 1
++
+ /**********************
+  *      MACROS
+  **********************/
+diff --git a/src/draw/sw/lv_draw_sw_img.c b/src/draw/sw/lv_draw_sw_img.c
+index 7181c15..3f7b8d0 100644
+--- a/src/draw/sw/lv_draw_sw_img.c
++++ b/src/draw/sw/lv_draw_sw_img.c
+@@ -274,6 +274,25 @@ static void convert_cb(const lv_area_t * dest_area, const void * src_buf, lv_coo
+             src_tmp8 += src_new_line_step_byte;
+         }
+     }
++    else if(cf == LV_IMG_CF_INDEXED_8BIT) {
++        /*256 lv_color32_t palette entries, then one index byte per pixel*/
++        const lv_color32_t * palette = (const lv_color32_t *)src_buf;
++        const uint8_t * idx = (const uint8_t *)src_buf + 256 * sizeof(lv_color32_t);
++        idx += src_stride * dest_area->y1 + dest_area->x1;
++
++        lv_coord_t dest_h = lv_area_get_height(dest_area);
++        lv_coord_t dest_w = lv_area_get_width(dest_area);
++        for(y = 0; y < dest_h; y++) {
++            for(x = 0; x < dest_w; x++) {
++                lv_color32_t c = palette[idx[x]];
++                cbuf[x] = lv_color_make(c.ch.red, c.ch.green, c.ch.blue);
++                abuf[x] = c.ch.alpha;
++            }
++            idx += src_stride;
++            cbuf += dest_w;
++            abuf += dest_w;
++        }
++    }
+     else if(cf == LV_IMG_CF_RGB565A8) {
+         src_tmp8 += (src_stride * dest_area->y1 * sizeof(lv_color_t)) + dest_area->x1 * sizeof(lv_color_t);
+ 
+diff --git a/src/draw/sw/lv_draw_sw_transform.c b/src/draw/sw/lv_draw_sw_transform.c
+index 9ead7b9..210d9ad 100644
+--- a/src/draw/sw/lv_draw_sw_transform.c
++++ b/src/draw/sw/lv_draw_sw_transform.c
+@@ -61,6 +61,14 @@ static void rgb565a8_no_aa(const uint8_t * src, lv_coord_t src_w, lv_coord_t src
+                            int32_t x_end, lv_color_t * cbuf, uint8_t * abuf);
+ #endif
+ 
++static void indexed8_no_aa(const uint8_t * src, lv_coord_t src_w, lv_coord_t src_h, lv_coord_t src_stride,
++                           int32_t xs_ups, int32_t ys_ups, int32_t xs_step, int32_t ys_step,
++                           int32_t x_end, lv_color_t * cbuf, uint8_t * abuf);
++
++static void indexed8_aa(const uint8_t * src, lv_coord_t src_w, lv_coord_t src_h, lv_coord_t src_stride,
++                        int32_t xs_ups, int32_t ys_ups, int32_t xs_step, int32_t ys_step,
++                        int32_t x_end, lv_color_t * cbuf, uint8_t * abuf);
++
+ static void argb_and_rgb_aa(const uint8_t * src, lv_coord_t src_w, lv_coord_t src_h, lv_coord_t src_stride,
+                             int32_t xs_ups, int32_t ys_ups, int32_t xs_step, int32_t ys_step,
+                             int32_t x_end, lv_color_t * cbuf, uint8_t * abuf, lv_img_cf_t cf);
+@@ -134,6 +142,9 @@ void lv_draw_sw_transform(lv_draw_ctx_t * draw_ctx, const lv_area_t * dest_area,
+                 case LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED:
+                     rgb_no_aa(src_buf, src_w, src_h, src_stride, xs_ups, ys_ups, xs_step_256, ys_step_256, dest_w, cbuf, abuf, cf);
+                     break;
++                case LV_IMG_CF_INDEXED_8BIT:
++                    indexed8_no_aa(src_buf, src_w, src_h, src_stride, xs_ups, ys_ups, xs_step_256, ys_step_256, dest_w, cbuf, abuf);
++                    break;
+ 
+ #if LV_COLOR_DEPTH == 16
+                 case LV_IMG_CF_RGB565A8:
+@@ -144,6 +155,9 @@ void lv_draw_sw_transform(lv_draw_ctx_t * draw_ctx, const lv_area_t * dest_area,
+                     break;
+             }
+         }
++        else if(cf == LV_IMG_CF_INDEXED_8BIT) {
++            indexed8_aa(src_buf, src_w, src_h, src_stride, xs_ups, ys_ups, xs_step_256, ys_step_256, dest_w, cbuf, abuf);
++        }
+         else {
+             argb_and_rgb_aa(src_buf, src_w, src_h, src_stride, xs_ups, ys_ups, xs_step_256, ys_step_256, dest_w, cbuf, abuf, cf);
+         }
+@@ -265,6 +279,100 @@ static void rgb565a8_no_aa(const uint8_t * src, lv_coord_t src_w, lv_coord_t src
+ #endif
+ 
+ 
++/*8-bit indexed source: 256 lv_color32_t palette entries, then one index byte per pixel*/
++static void indexed8_no_aa(const uint8_t * src, lv_coord_t src_w, lv_coord_t src_h, lv_coord_t src_stride,
++                           int32_t xs_ups, int32_t ys_ups, int32_t xs_step, int32_t ys_step,
++                           int32_t x_end, lv_color_t * cbuf, uint8_t * abuf)
++{
++    const lv_color32_t * palette = (const lv_color32_t *)src;
++    const uint8_t * idx = src + 256 * sizeof(lv_color32_t);
++    int32_t xs_ups_start = xs_ups;
++    int32_t ys_ups_start = ys_ups;
++
++    lv_coord_t x;
++    for(x = 0; x < x_end; x++) {
++        xs_ups = xs_ups_start + ((xs_step * x) >> 8);
++        ys_ups = ys_ups_start + ((ys_step * x) >> 8);
++
++        int32_t xs_int = xs_ups >> 8;
++        int32_t ys_int = ys_ups >> 8;
++        if(xs_int < 0 || xs_int >= src_w || ys_int < 0 || ys_int >= src_h) {
++            abuf[x] = 0;
++        }
++        else {
++            lv_color32_t c = palette[idx[ys_int * src_stride + xs_int]];
++            cbuf[x] = lv_color_make(c.ch.red, c.ch.green, c.ch.blue);
++            abuf[x] = c.ch.alpha;
++        }
++    }
++}
++
++/*Bilinear interpolation of the 4 nearest pixels, colors weighted by alpha*/
++static void indexed8_aa(const uint8_t * src, lv_coord_t src_w, lv_coord_t src_h, lv_coord_t src_stride,
++                        int32_t xs_ups, int32_t ys_ups, int32_t xs_step, int32_t ys_step,
++                        int32_t x_end, lv_color_t * cbuf, uint8_t * abuf)
++{
++    const lv_color32_t * palette = (const lv_color32_t *)src;
++    const uint8_t * idx = src + 256 * sizeof(lv_color32_t);
++    int32_t xs_ups_start = xs_ups;
++    int32_t ys_ups_start = ys_ups;
++
++    lv_coord_t x;
++    for(x = 0; x < x_end; x++) {
++        xs_ups = xs_ups_start + ((xs_step * x) >> 8);
++        ys_ups = ys_ups_start + ((ys_step * x) >> 8);
++
++        int32_t xs_int = xs_ups >> 8;
++        int32_t ys_int = ys_ups >> 8;
++        if(xs_int < 0 || xs_int >= src_w || ys_int < 0 || ys_int >= src_h) {
++            abuf[x] = 0;
++            continue;
++        }
++
++        /*Sample position relative to the pixel centers (xs_ups includes +0x80)*/
++        int32_t px = xs_ups - 0x80;
++        int32_t py = ys_ups - 0x80;
++        int32_t x0 = px >> 8;
++        int32_t y0 = py >> 8;
++        int32_t fx = px & 0xFF;
++        int32_t fy = py & 0xFF;
++        int32_t x1 = x0 + 1;
++        int32_t y1 = y0 + 1;
++        if(x0 < 0) x0 = 0;
++        if(y0 < 0) y0 = 0;
++        if(x1 >= src_w) x1 = src_w - 1;
++        if(y1 >= src_h) y1 = src_h - 1;
++
++        lv_color32_t c[4];
++        c[0] = palette[idx[y0 * src_stride + x0]];
++        c[1] = palette[idx[y0 * src_stride + x1]];
++        c[2] = palette[idx[y1 * src_stride + x0]];
++        c[3] = palette[idx[y1 * src_stride + x1]];
++        uint32_t w[4];
++        w[0] = (256 - fx) * (256 - fy);
++        w[1] = fx * (256 - fy);
++        w[2] = (256 - fx) * fy;
++        w[3] = fx * fy;
++
++        /*Alpha from the full weights (they sum to exactly 65536), so an opaque
++         *image stays opaque. Colors from the weights / 256 to stay in 32 bits.*/
++        uint32_t a_sum = 0, wa_sum = 0, r = 0, g = 0, b = 0;
++        int i;
++        for(i = 0; i < 4; i++) {
++            a_sum += w[i] * c[i].ch.alpha;                /*<= 65536 * 255*/
++            uint32_t wa = (w[i] >> 8) * c[i].ch.alpha;   /*<= 256 * 255*/
++            wa_sum += wa;
++            r += wa * c[i].ch.red;
++            g += wa * c[i].ch.green;
++            b += wa * c[i].ch.blue;
++        }
++        abuf[x] = (uint8_t)(a_sum >> 16);
++        if(wa_sum) {
++            cbuf[x] = lv_color_make(r / wa_sum, g / wa_sum, b / wa_sum);
++        }
++    }
++}
++
+ static void argb_and_rgb_aa(const uint8_t * src, lv_coord_t src_w, lv_coord_t src_h, lv_coord_t src_stride,
+                             int32_t xs_ups, int32_t ys_ups, int32_t xs_step, int32_t ys_step,
+                             int32_t x_end, lv_color_t * cbuf, uint8_t * abuf, lv_img_cf_t cf)

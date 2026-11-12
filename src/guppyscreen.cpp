@@ -1,3 +1,4 @@
+#include "png_decoder.h"
 #include "guppyscreen.h"
 
 #include "config.h"
@@ -116,6 +117,7 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
 
   hal_init(primary_color, secondary_color);
   lv_png_init();
+  PngDecoder::init();  // tried first: keeps PNGs as 8-bit indexed
 
   lv_style_init(&style_container);
   lv_style_set_border_width(&style_container, 0);
@@ -234,7 +236,7 @@ void GuppyScreen::loop() {
 
   while (1) {
     lv_lock.lock();
-    lv_timer_handler();
+    uint32_t idle_ms = lv_timer_handler();  // until the next LVGL timer is due
     lv_lock.unlock();
 
     lv_lock_update.lock();
@@ -262,7 +264,13 @@ void GuppyScreen::loop() {
     }
 #endif  // SIMULATOR/OS_ANDROID
 
-    usleep(5000);
+    // Sleep until the next LVGL timer is due instead of a fixed 5 ms: the
+    // display refresh and the touch read run every LV_DISP_DEF_REFR_PERIOD /
+    // LV_INDEV_DEF_READ_PERIOD (30 ms), so this wakes ~33 times a second
+    // instead of 200, with the same redraw and touch latency. Timers that
+    // other threads add (lv_async_call) wait at most that long.
+    if (idle_ms > LV_DISP_DEF_REFR_PERIOD) idle_ms = LV_DISP_DEF_REFR_PERIOD;  // also LV_NO_TIMER_READY
+    usleep(idle_ms * 1000);
   }
 }
 

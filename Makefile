@@ -30,6 +30,12 @@ CFLAGS 			?= -O3 -g0 -MD -MP -I$(LVGL_DIR)/ $(WARNINGS) --sysroot=$(SYSROOT)
 FF5M_CMAKE_FLAGS ?= -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX)
 LDFLAGS 		?= --sysroot=$(SYSROOT) -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread  -lstdc++fs -l:libspdlog.a -lts
 endif
+# Let the linker drop functions and data nothing references (unused icons,
+# LVGL parts, inline code). Nearly the whole binary stays resident on the
+# printer, so this is RAM, too.
+CFLAGS 			+= -ffunction-sections -fdata-sections
+LDFLAGS 		+= -Wl,--gc-sections
+
 BIN 			= guppyscreen
 BUILD_DIR 		= ./build
 BUILD_OBJ_DIR 	= $(BUILD_DIR)/obj
@@ -44,6 +50,10 @@ MAINSRC = 		$(filter-out $(LVGL_DIR)/src/kd_graphic_mode.cpp, $(wildcard $(LVGL_
 
 include $(LVGL_DIR)/lvgl/lvgl.mk
 include $(LVGL_DIR)/lv_drivers/lv_drivers.mk
+
+# lvgl.mk also lists LVGL's demos and examples (their image data alone is
+# ~70 kB); the app uses none of them.
+CSRCS 			:= $(filter-out $(LVGL_DIR)/$(LVGL_DIR_NAME)/demos/% $(LVGL_DIR)/$(LVGL_DIR_NAME)/examples/%, $(CSRCS))
 
 CSRCS 			+= $(wildcard $(LVGL_DIR)/assets/*.c)
 CSRCS			+= $(wildcard $(LVGL_DIR)/lv_touch_calibration/*.c)
@@ -153,6 +163,11 @@ clean:
 	rm -rf releases/
 
 cleanall: clean libhvclean spdlogclean
+
+# Integration tests on the host (PC); see tests/Makefile and docs/testing.md.
+.PHONY: test
+test:
+	@$(MAKE) --no-print-directory -j$$(nproc) -f tests/Makefile run
 
 install:
 	install -d $(DESTDIR)$(bindir)

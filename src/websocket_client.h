@@ -11,6 +11,8 @@
 #define _(String) gettext(String)
 
 #include <map>
+#include <mutex>
+#include <set>
 #include <vector>
 #include <atomic>
 #include <functional>
@@ -32,7 +34,9 @@ class KWebSocketClient : public hv::WebSocketClient {
   // void register_gcode_resp(std::function<void(json&)> cb);
 
   int send_jsonrpc(const std::string &method, std::function<void(json&)> cb);
-  int send_jsonrpc(const std::string &method, const json &params, std::function<void(json&)> cb);
+  // keep_macros: the reply keeps configfile's gcode_macro sections (see parse_message).
+  int send_jsonrpc(const std::string &method, const json &params, std::function<void(json&)> cb,
+                   bool keep_macros = false);
   int send_jsonrpc(const std::string &method, const json &params, NotifyConsumer *consumer);
   int send_jsonrpc(const std::string &method, const json &params);
   int send_jsonrpc(const std::string &method);
@@ -42,9 +46,19 @@ class KWebSocketClient : public hv::WebSocketClient {
                                 std::string handler_name,
                                 std::function<void(json&)> cb);
 
+  // Parses a Moonraker message. Klipper's configfile (in query/subscribe
+  // results at /result/status/configfile and in notify_status_update at
+  // /params/0/configfile) holds the whole printer config twice, ~460 kB of
+  // text on zMod, mostly gcode_macro sections. Only the config/settings
+  // sections the panels read become JSON nodes; the rest is skipped while
+  // parsing. With keep_macros, config's gcode_macro sections are kept too.
+  static json parse_message(const std::string &msg, bool keep_macros = false);
+
  private:
   std::map<uint32_t, std::function<void(json&)>> callbacks;
   std::map<uint32_t, NotifyConsumer*> consumers;
+  std::set<uint32_t> keep_macros_ids;  // requests whose reply keeps the macros
+  std::mutex keep_macros_lock;
   std::vector<NotifyConsumer*> notify_consumers;
   // std::vector<std::function<void(json&)>> gcode_resp_cbs;
 
