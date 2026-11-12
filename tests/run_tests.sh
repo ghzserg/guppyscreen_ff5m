@@ -24,13 +24,16 @@ while IFS= read -r name; do
   total=$((total + 1))
   log="$LOGS/$(echo "$name" | tr -c 'A-Za-z0-9_-' '_').log"
   start=$(date +%s)
-  if timeout "$TIMEOUT" "$BIN" --test-case="$name" --no-version > "$log" 2>&1; then
+  # doctest splits --test-case at commas: a name with a comma runs nothing.
+  if timeout "$TIMEOUT" "$BIN" --test-case="$name" --no-version > "$log" 2>&1 &&
+     ! grep -q 'test cases: *0 |' "$log"; then
     echo "PASS  $name ($(( $(date +%s) - start ))s)"
   else
     rc=$?
+    grep -q 'test cases: *0 |' "$log" && rc=0 && echo "ran no test case (a comma in the name?)" >> "$log"
     failed=$((failed + 1))
     failed_names="$failed_names\n  $name"
-    [ $rc -eq 124 ] && why="timeout after ${TIMEOUT}s" || why="exit $rc"
+    if [ $rc -eq 124 ]; then why="timeout after ${TIMEOUT}s"; elif [ $rc -eq 0 ]; then why="ran no test case"; else why="exit $rc"; fi
     echo "FAIL  $name ($why)"
     echo "----- $log (last 60 lines) -----"
     tail -n 60 "$log"
