@@ -28,7 +28,7 @@ Everything in `src/` is real: `GuppyScreen`, all panels and widgets, `State`, `C
 
 ## How a test runs
 
-guppyscreen is built from process-wide singletons (`GuppyScreen`, `State`, `Config`, the static `ws`), so **each test case runs in its own process**. `tests/run_tests.sh` lists the test cases and runs them one by one, prints the output of failing ones and keeps every log in `build-test/<default|asan>/logs/`.
+guppyscreen is built from process-wide singletons (`GuppyScreen`, `State`, `Config`, the static `ws`), so **each test case runs in its own process**. `tests/run_tests.sh` lists the test cases and runs them in parallel (`TEST_JOBS`, default: the number of CPUs; `TEST_TIMEOUT` per test, default 60 s), then prints the results in order with the output of failing ones, and keeps every log in `build-test/<default|asan>/logs/`. The processes are independent: each gets its own temp dir and a free port for the fake Moonraker. Don't make a test depend on wall-clock speed: several run at once, so prefer `app::wait_until(condition)` over a fixed `app::pump(ms)`.
 
 Inside a test, the test thread is the LVGL thread: nothing on screen changes unless the test calls `app::pump()` or `app::wait_until()`. The WebSocket client and the fake server run on their own libhv threads, as on the printer.
 

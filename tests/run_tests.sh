@@ -1,15 +1,41 @@
 #!/bin/sh
-# Run every test case of a doctest binary in its own process.
-# guppyscreen is built from process-wide singletons, so each test needs a
-# fresh app. Output of failing tests is printed; all output is kept in
-# <bin dir>/logs/.
+# Run every test case of a doctest binary in its own process, several at a
+# time. guppyscreen is built from process-wide singletons, so each test needs
+# a fresh app; the processes are independent (each gets its own temp dir and
+# a free port for the fake Moonraker), so they can run in parallel.
+# Results are printed in the binary's order once all are done; output of
+# failing tests is printed; all output is kept in <bin dir>/logs/.
 #
 # usage: run_tests.sh <test binary> [doctest name filter, e.g. '*homing*']
+# env:   TEST_JOBS (default: number of CPUs), TEST_TIMEOUT (s, default 60)
+
+# One test (run by xargs below): its log, and its result line in <log>.result.
+if [ "$1" = "--one" ]; then
+  BIN=$2; LOGS=$3; TIMEOUT=$4; name=$5
+  log="$LOGS/$(echo "$name" | tr -c 'A-Za-z0-9_-' '_').log"
+  start=$(date +%s%N)
+  timeout "$TIMEOUT" "$BIN" --test-case="$name" --no-version > "$log" 2>&1
+  rc=$?
+  ms=$(( ($(date +%s%N) - start) / 1000000 ))
+  # doctest splits --test-case at commas: a name with a comma runs nothing.
+  if grep -q 'test cases: *0 |' "$log"; then
+    echo "ran no test case (a comma in the name?)" >> "$log"
+    echo "FAIL ran no test case" > "$log.result"
+  elif [ $rc -eq 0 ]; then
+    echo "PASS $ms" > "$log.result"
+  elif [ $rc -eq 124 ]; then
+    echo "FAIL timeout after ${TIMEOUT}s" > "$log.result"
+  else
+    echo "FAIL exit $rc" > "$log.result"
+  fi
+  exit 0
+fi
 
 BIN=$1
 FILTER=${2:-*}
 [ -n "$FILTER" ] || FILTER='*'
 TIMEOUT=${TEST_TIMEOUT:-60}
+JOBS=${TEST_JOBS:-$(nproc)}
 LOGS=$(dirname "$BIN")/logs
 
 rm -rf "$LOGS" && mkdir -p "$LOGS"
@@ -19,34 +45,34 @@ rm -rf "$LOGS" && mkdir -p "$LOGS"
 }
 grep -v -e '^\[doctest\]' -e '^=====' "$LOGS/list.txt" | grep -v '^$' > "$LOGS/names.txt"
 
-total=0; failed=0; failed_names=""
+total=$(wc -l < "$LOGS/names.txt")
+if [ "$total" -eq 0 ]; then
+  echo "no test cases match '$FILTER'"
+  exit 1
+fi
+
+start=$(date +%s%N)
+tr '\n' '\0' < "$LOGS/names.txt" | xargs -0 -n 1 -P "$JOBS" sh "$0" --one "$BIN" "$LOGS" "$TIMEOUT"
+wall_ms=$(( ($(date +%s%N) - start) / 1000000 ))
+
+failed=0; failed_names=""
 while IFS= read -r name; do
-  total=$((total + 1))
   log="$LOGS/$(echo "$name" | tr -c 'A-Za-z0-9_-' '_').log"
-  start=$(date +%s)
-  # doctest splits --test-case at commas: a name with a comma runs nothing.
-  if timeout "$TIMEOUT" "$BIN" --test-case="$name" --no-version > "$log" 2>&1 &&
-     ! grep -q 'test cases: *0 |' "$log"; then
-    echo "PASS  $name ($(( $(date +%s) - start ))s)"
+  read -r status detail < "$log.result" 2>/dev/null || { status=FAIL; detail="no result"; }
+  if [ "$status" = PASS ]; then
+    printf 'PASS  %s (%d.%01ds)\n' "$name" $((detail / 1000)) $((detail % 1000 / 100))
   else
-    rc=$?
-    grep -q 'test cases: *0 |' "$log" && rc=0 && echo "ran no test case (a comma in the name?)" >> "$log"
     failed=$((failed + 1))
     failed_names="$failed_names\n  $name"
-    if [ $rc -eq 124 ]; then why="timeout after ${TIMEOUT}s"; elif [ $rc -eq 0 ]; then why="ran no test case"; else why="exit $rc"; fi
-    echo "FAIL  $name ($why)"
+    echo "FAIL  $name ($detail)"
     echo "----- $log (last 60 lines) -----"
     tail -n 60 "$log"
     echo "-----"
   fi
 done < "$LOGS/names.txt"
 
-if [ "$total" -eq 0 ]; then
-  echo "no test cases match '$FILTER'"
-  exit 1
-fi
 if [ "$failed" -gt 0 ]; then
   printf "\n%d of %d tests failed:%b\n" "$failed" "$total" "$failed_names"
   exit 1
 fi
-echo "\nall $total tests passed"
+printf "\nall %d tests passed in %d.%01ds (%d at a time)\n" "$total" $((wall_ms / 1000)) $((wall_ms % 1000 / 100)) "$JOBS"
