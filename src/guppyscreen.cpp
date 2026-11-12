@@ -1,3 +1,4 @@
+#include "png_decoder.h"
 #include "guppyscreen.h"
 
 #include "config.h"
@@ -116,6 +117,7 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
 
   hal_init(primary_color, secondary_color);
   lv_png_init();
+  PngDecoder::init();  // tried first: keeps PNGs as 8-bit indexed
 
   lv_style_init(&style_container);
   lv_style_set_border_width(&style_container, 0);

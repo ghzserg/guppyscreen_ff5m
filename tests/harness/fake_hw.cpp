@@ -23,7 +23,18 @@ static void touch_read(lv_indev_drv_t *, lv_indev_data_t *data) {
   data->state = touch_pressed ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
 }
 
-static void flush(lv_disp_drv_t *drv, const lv_area_t *, lv_color_t *) {
+static lv_color_t framebuffer[WIDTH * HEIGHT];
+
+lv_color_t pixel(int x, int y) {
+  return framebuffer[y * WIDTH + x];
+}
+
+static void flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *colors) {
+  for (int y = area->y1; y <= area->y2; y++) {
+    for (int x = area->x1; x <= area->x2; x++) {
+      framebuffer[y * WIDTH + x] = *colors++;
+    }
+  }
   lv_disp_flush_ready(drv);
 }
 

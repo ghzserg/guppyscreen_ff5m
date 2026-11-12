@@ -27,6 +27,9 @@ void hal_init(lv_color_t primary, lv_color_t secondary);
 // Fake touch panel state, read by LVGL's input device.
 void touch_set(int x, int y, bool pressed);
 
+// A pixel of the fake display, as last flushed by LVGL.
+lv_color_t pixel(int x, int y);
+
 }  // namespace fake_hw
 
 #endif  // GUPPY_TEST_FAKE_HW_H
