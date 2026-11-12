@@ -30,8 +30,14 @@ std::vector<std::string> texts_in(lv_obj_t *root);
 // value and target next to a sensor's name. Empty if the label is not shown.
 std::vector<std::string> row_texts(const std::string &text);
 
+// First shown widget of class `cls` (e.g. &lv_canvas_class), or nullptr.
+lv_obj_t *find_shown(const lv_obj_class_t *cls);
+
 // Tap the centre of `obj` with the fake touch panel (press, then release).
 void tap(lv_obj_t *obj);
+
+// Tap the screen point (x, y).
+void tap_at(lv_coord_t x, lv_coord_t y);
 
 // Tap the shown label `text`. Fails the test if there is none.
 void tap_label(const std::string &text, Match match = Match::Exact);

@@ -105,6 +105,23 @@ std::vector<std::string> row_texts(const std::string &text) {
   return texts_in_locked(lv_obj_get_parent(label));
 }
 
+lv_obj_t *find_shown(const lv_obj_class_t *cls) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_t *found = NULL;
+  walk_all([&](lv_obj_t *obj) {
+    if (found == NULL && lv_obj_check_type(obj, cls) && shown(obj)) found = obj;
+  });
+  return found;
+}
+
+void tap_at(lv_coord_t x, lv_coord_t y) {
+  // LVGL polls the input device every LV_INDEV_DEF_READ_PERIOD (30 ms).
+  fake_hw::touch_set(x, y, true);
+  app::pump(100);
+  fake_hw::touch_set(x, y, false);
+  app::pump(100);
+}
+
 void tap(lv_obj_t *obj) {
   lv_point_t p;
   {
@@ -112,11 +129,7 @@ void tap(lv_obj_t *obj) {
     lv_obj_update_layout(lv_scr_act());
     p = centre(obj);
   }
-  // LVGL polls the input device every LV_INDEV_DEF_READ_PERIOD (30 ms).
-  fake_hw::touch_set(p.x, p.y, true);
-  app::pump(100);
-  fake_hw::touch_set(p.x, p.y, false);
-  app::pump(100);
+  tap_at(p.x, p.y);
 }
 
 void tap_label(const std::string &text, Match match) {
