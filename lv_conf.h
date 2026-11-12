@@ -447,7 +447,7 @@ extern uint32_t custom_tick_get(void);
 
 #define LV_USE_ARC        1
 
-#define LV_USE_ANIMIMG    1
+#define LV_USE_ANIMIMG    0
 
 #define LV_USE_BAR        1
 
@@ -457,7 +457,7 @@ extern uint32_t custom_tick_get(void);
 
 #define LV_USE_CANVAS     1
 
-#define LV_USE_CHECKBOX   1
+#define LV_USE_CHECKBOX   0
 
 #define LV_USE_DROPDOWN   1   /*Requires: lv_label*/
 
@@ -469,9 +469,9 @@ extern uint32_t custom_tick_get(void);
     #define LV_LABEL_LONG_TXT_HINT 1  /*Store some extra info in labels to speed up drawing of very long texts*/
 #endif
 
-#define LV_USE_LINE       1
+#define LV_USE_LINE       0
 
-#define LV_USE_ROLLER     1   /*Requires: lv_label*/
+#define LV_USE_ROLLER     0   /*Requires: lv_label*/
 #if LV_USE_ROLLER
     #define LV_ROLLER_INF_PAGES 7 /*Number of extra "pages" when the roller is infinite*/
 #endif
@@ -560,10 +560,10 @@ extern uint32_t custom_tick_get(void);
 #endif /*LV_USE_THEME_DEFAULT*/
 
 /*A very simple theme that is a good starting point for a custom theme*/
-#define LV_USE_THEME_BASIC 1
+#define LV_USE_THEME_BASIC 0
 
 /*A theme designed for monochrome displays*/
-#define LV_USE_THEME_MONO 1
+#define LV_USE_THEME_MONO 0
 
 /*-----------
  * Layouts
@@ -748,16 +748,16 @@ extern uint32_t custom_tick_get(void);
 #define LV_USE_DEMO_PRINTER     0
 
 /*Demonstrate the usage of encoder and keyboard*/
-#define LV_USE_DEMO_KEYPAD_AND_ENCODER     1
+#define LV_USE_DEMO_KEYPAD_AND_ENCODER     0
 
 /*Benchmark your system*/
-#define LV_USE_DEMO_BENCHMARK   1
+#define LV_USE_DEMO_BENCHMARK   0
 
 /*Stress test for LVGL*/
-#define LV_USE_DEMO_STRESS      1
+#define LV_USE_DEMO_STRESS      0
 
 /*Music player demo*/
-#define LV_USE_DEMO_MUSIC      1
+#define LV_USE_DEMO_MUSIC      0
 #if LV_USE_DEMO_MUSIC
 # define LV_DEMO_MUSIC_LANDSCAPE 0
 # define LV_DEMO_MUSIC_LARGE     0
@@ -1127,7 +1127,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 
 #define LV_USE_ARC          1
 
-#define LV_USE_ANIMIMG      1
+#define LV_USE_ANIMIMG      0
 
 #define LV_USE_BAR          1
 
@@ -1137,7 +1137,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 
 #define LV_USE_CANVAS       1
 
-#define LV_USE_CHECKBOX     1
+#define LV_USE_CHECKBOX     0
 
 
 #define LV_USE_DROPDOWN     1   /*Requires: lv_label*/
@@ -1150,9 +1150,9 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #  define LV_LABEL_LONG_TXT_HINT    1   /*Store some extra info in labels to speed up drawing of very long texts*/
 #endif
 
-#define LV_USE_LINE         1
+#define LV_USE_LINE         0
 
-#define LV_USE_ROLLER       1   /*Requires: lv_label*/
+#define LV_USE_ROLLER       0   /*Requires: lv_label*/
 #if LV_USE_ROLLER
 #  define LV_ROLLER_INF_PAGES       7   /*Number of extra "pages" when the roller is infinite*/
 #endif
@@ -1239,10 +1239,10 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #endif /*LV_USE_THEME_DEFAULT*/
 
 /*An very simple them that is a good starting point for a custom theme*/
- #define LV_USE_THEME_BASIC    1
+ #define LV_USE_THEME_BASIC    0
 
 /*A theme designed for monochrome displays*/
-#define LV_USE_THEME_MONO       1
+#define LV_USE_THEME_MONO       0
 
 /*-----------
  * Layouts
