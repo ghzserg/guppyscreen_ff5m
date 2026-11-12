@@ -1,5 +1,5 @@
 // Print panel file list: selecting a file shows its PNG thumbnail. LVGL
-// decodes each PNG (8-bit indexed: 300x300 -> 91 KB) and caches it; browsing
+// decodes each PNG (ARGB8888: 300x300 -> 360 KB) and caches it; browsing
 // must not keep the decoded thumbnails of files no longer shown.
 
 #include "doctest/doctest.h"
@@ -28,8 +28,8 @@ namespace {
 
 constexpr int THUMB = 300;
 constexpr int N_FILES = 4;
-// A decoded thumbnail: 8-bit indexed (src/png_decoder.cpp), 1 KB palette.
-constexpr size_t DECODED = 1024 + THUMB * THUMB;
+// A decoded thumbnail: ARGB8888 (smaller than PngDecoder::MIN_PIXELS).
+constexpr size_t DECODED = THUMB * THUMB * 4;
 
 std::string make_gcodes_dir() {
   const char *tmp = getenv("TMPDIR");

@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-// PNG decoder that keeps images as 8-bit indexed (at most 256 colours):
+// PNG decoder that keeps big images as 8-bit indexed (at most 256 colours):
 // LV_IMG_CF_INDEXED_8BIT, a 256-entry lv_color32_t palette followed by one
 // index byte per pixel. LVGL's own PNG decoder keeps 4 bytes per pixel
 // (an 800x480 input-shaper graph: 1.5 MB instead of 385 KB).
@@ -14,6 +14,9 @@
 // reduced with a median cut. Drawing needs patches/0006 (LVGL's software
 // renderer draws decoded indexed images, also zoomed).
 namespace PngDecoder {
+
+// Images with fewer pixels are left to LVGL's own (true-colour) decoder.
+extern const uint32_t MIN_PIXELS;
 
 // Register the decoder. LVGL tries the most recently registered decoder
 // first, so call this after lv_png_init(); LVGL's decoder remains the

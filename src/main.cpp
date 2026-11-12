@@ -5,6 +5,7 @@
 #include "lv_tc_screen.h"
 
 #include <unistd.h>
+#include <malloc.h>
 #include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
@@ -49,6 +50,13 @@ using namespace hv;
 
 int main(int argc, char* argv[])
 {
+    // Pin glibc's mmap threshold at its default (128 KB). Freeing a big
+    // mmap'd block (libhv's ~500 KB receive buffer after the subscribe reply)
+    // would raise it, and the trim threshold, to that size. Later big
+    // temporaries (e.g. the PNG quantizer's ~390 KB histogram) would then
+    // come from the heap and stay there after being freed.
+    mallopt(M_MMAP_THRESHOLD, 128 * 1024);
+
     setlocale(LC_ALL, "");
     setlocale(LC_NUMERIC, "C");
     bindtextdomain("guppyscreen", "/usr/data/zmod/zmod/.shell/locale");

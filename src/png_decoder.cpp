@@ -23,6 +23,14 @@ const char *lodepng_error_text(unsigned code);
 
 namespace PngDecoder {
 
+// Below this size LVGL's own decoder keeps the image (ARGB8888). Indexed
+// saves 3 bytes per pixel but quantizing can need a ~390 KB temporary
+// histogram, so it only pays off for big images (measured on the AD5M), and
+// thumbnails must keep their colours. 256k pixels: the 800x480 input-shaper
+// graphs (384k) are indexed; slicer thumbnails (140x110 on zMod, up to
+// ~400x400 or 480x320 elsewhere) stay true colour.
+const uint32_t MIN_PIXELS = 256 * 1024;
+
 namespace {
 
 constexpr uint32_t PALETTE_BYTES = 256 * sizeof(lv_color32_t);
@@ -220,6 +228,7 @@ lv_res_t decoder_info(lv_img_decoder_t *, const void *src, lv_img_header_t *head
   uint32_t w = (buf[16] << 24) | (buf[17] << 16) | (buf[18] << 8) | buf[19];
   uint32_t h = (buf[20] << 24) | (buf[21] << 16) | (buf[22] << 8) | buf[23];
   if (w == 0 || h == 0 || w > 2047 || h > 2047) return LV_RES_INV;  // lv_img_header_t limits
+  if (w * h < MIN_PIXELS) return LV_RES_INV;  // LVGL's decoder: true colour
 
   header->always_zero = 0;
   header->cf = LV_IMG_CF_INDEXED_8BIT;
