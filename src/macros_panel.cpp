@@ -41,6 +41,8 @@ MacrosPanel::MacrosPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent)
 MacrosPanel::~MacrosPanel()
 {
   lv_async_call_cancel(&MacrosPanel::_rebuild, this);
+  // The items delete their own containers, which are inside cont.
+  std::vector<std::shared_ptr<MacroItem>>().swap(macro_items);
   if (cont != NULL) {
     lv_obj_del(cont);
     cont = NULL;
