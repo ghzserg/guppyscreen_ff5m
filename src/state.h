@@ -15,11 +15,6 @@ class State : public NotifyConsumer {
  protected:
   json data;
 
-  // Parsed from configfile/config gcode_macro sections; see slim_configfile().
-  std::map<std::string, std::map<std::string, std::string>> macros;
-
-  json slim_configfile(const json &configfile);
-
  public:
   State(std::mutex &lv_lock);
   State(State &o) = delete;
@@ -32,9 +27,6 @@ class State : public NotifyConsumer {
   // A copy made under the lock, for readers on another thread than the
   // websocket one (get_data's reference outlives the lock).
   json get_data_copy(const json::json_pointer &ptr);
-
-  // Macro name -> {parameter -> default value}, macros starting with "_" excluded.
-  std::map<std::string, std::map<std::string, std::string>> get_macros();
 
   void consume(json &j);
 

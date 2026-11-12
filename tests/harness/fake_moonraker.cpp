@@ -80,6 +80,28 @@ void FakeMoonraker::drop_client() {
   }
 }
 
+// Like Klipper: the requested objects of the subscribed status, all fields
+// for null, else only the listed ones.
+static json query(const json &subscribed, const json &params) {
+  json status = json::object();
+  const json &all = subscribed.contains("status") ? subscribed["status"] : json::object();
+  if (params.contains("objects") && params["objects"].is_object()) {
+    for (auto &[name, fields] : params["objects"].items()) {
+      if (!all.contains(name)) continue;
+      if (!fields.is_array()) {
+        status[name] = all[name];
+        continue;
+      }
+      status[name] = json::object();
+      for (const auto &f : fields) {
+        std::string field = f.get<std::string>();
+        if (all[name].contains(field)) status[name][field] = all[name][field];
+      }
+    }
+  }
+  return {{"eventtime", subscribed.value("eventtime", 0.0)}, {"status", status}};
+}
+
 void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::string &msg) {
   json req = json::parse(msg);
   std::string method = req.value("method", "");
@@ -96,6 +118,8 @@ void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::st
       result = handlers_[method](params);
     } else if (results_.contains(method)) {
       result = results_[method];
+    } else if (method == "printer.objects.query" && results_.contains("printer.objects.subscribe")) {
+      result = query(results_["printer.objects.subscribe"], params);
     } else {
       unhandled_.push_back(method);
       result = json::object();

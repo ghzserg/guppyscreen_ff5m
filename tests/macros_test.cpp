@@ -182,3 +182,44 @@ TEST_CASE("configfile values used by panels are kept in State") {
   CHECK(app::wait_until([&] { return get("/save_config_pending") == true; }));
   check_all("after a configfile notification");
 }
+
+// The macro text is not kept from the subscribe reply (it is dropped while
+// parsing, see configfile_filter_test.cpp). The Macros tab asks for it with
+// printer.objects.query when it builds the list, so it gets the current
+// macros after a config change and a reconnect.
+TEST_CASE("macros tab fetches the macro text when it builds the list") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  std::ifstream f(app::fixture("ad5m_basic.json"));
+  json sub = json::parse(f)["printer.objects.subscribe"];
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  app::pump(200);
+  CHECK(moonraker.request_count("printer.objects.query") == 0);
+  CHECK_FALSE(State::get_instance()->get_data_copy("/printer_state/configfile/config"_json_pointer)
+                .contains("gcode_macro START_PRINT"));
+
+  // The config changes before the tab is first opened.
+  sub["status"]["configfile"]["config"]["gcode_macro NEW_ONE"] = {{"gcode", "\nM400"}};
+  moonraker.set_result("printer.objects.subscribe", sub);
+
+  open_macros_tab();
+  REQUIRE_MESSAGE(app::wait_until([] { return ui::find_label("NEW_ONE") != nullptr; }),
+                  "screen: " << ui::dump_screen());
+  CHECK(ui::find_label("START_PRINT") != nullptr);
+  auto queries = moonraker.requests("printer.objects.query");
+  REQUIRE(queries.size() == 1);
+  CHECK(queries[0] == json({{"objects", {{"configfile", {"config"}}}}}));
+
+  open_home_tab();
+  open_macros_tab();
+  CHECK(moonraker.request_count("printer.objects.query") == 1);  // kept, not fetched again
+
+  // Klipper restarts with another macro set while the tab is open.
+  sub["status"]["configfile"]["config"].erase("gcode_macro NEW_ONE");
+  sub["status"]["configfile"]["config"]["gcode_macro NEWER_ONE"] = {{"gcode", "\nM400"}};
+  moonraker.set_result("printer.objects.subscribe", sub);
+  reconnect(moonraker);
+  CHECK(app::wait_until([] { return ui::find_label("NEWER_ONE") != nullptr; }));
+  CHECK(count_labels("NEW_ONE") == 0);
+  CHECK(count_labels("START_PRINT") == 1);
+}

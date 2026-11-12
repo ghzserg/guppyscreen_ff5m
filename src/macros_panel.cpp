@@ -51,8 +51,13 @@ MacrosPanel::~MacrosPanel()
 
 void MacrosPanel::foreground() {
   shown = true;
-  if (!built) {
+  if (built) {
+    return;
+  }
+  if (fetched) {
     populate();
+  } else {
+    fetch();
   }
 }
 
@@ -61,7 +66,11 @@ void MacrosPanel::background() {
 }
 
 void MacrosPanel::refresh() {
-  if (!built) {
+  generation++;  // a reply still on its way is for the old connection
+  fetching = false;
+  fetched = false;
+  std::map<std::string, std::map<std::string, std::string>>().swap(macros);
+  if (!built && !shown) {
     return;
   }
   lv_keyboard_set_textarea(kb, NULL);  // may point into a macro item
@@ -69,16 +78,51 @@ void MacrosPanel::refresh() {
   std::vector<std::shared_ptr<MacroItem>>().swap(macro_items);
   built = false;
   if (shown) {
-    // refresh() runs on the websocket thread (MainPanel::init). Build on the
-    // LVGL thread, so the list comes from the main heap, not libhv's arena.
+    fetch();
+  }
+}
+
+// The macros are the gcode_macro sections of configfile's `config`, ~200 kB
+// of G-code text on zMod. They are left out of every other message (see
+// KWebSocketClient::parse_message) and asked for here, only when the list
+// is built.
+void MacrosPanel::fetch() {
+  if (fetching) {
+    return;
+  }
+  fetching = true;
+  uint32_t gen = generation;
+  auto t0 = std::chrono::steady_clock::now();
+  json params = {{"objects", {{"configfile", {"config"}}}}};
+  ws.send_jsonrpc("printer.objects.query", params, [this, gen, t0](json &j) {
+    // On the websocket thread.
+    std::map<std::string, std::map<std::string, std::string>> parsed;
+    const json &config = j["/result/status/configfile/config"_json_pointer];
+    if (config.is_object()) {
+      parsed = KUtils::parse_macros(config);
+    } else {
+      spdlog::warn("macros: no configfile in the reply");
+    }
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+    spdlog::info("macros: fetched {} macros in {} ms", parsed.size(), ms);
+
+    std::lock_guard<std::mutex> lock(lv_lock);
+    if (gen != generation) {
+      return;
+    }
+    fetching = false;
+    fetched = true;
+    macros = std::move(parsed);
+    // Build on the LVGL thread, so the list comes from the main heap, not
+    // libhv's arena.
     lv_async_call_cancel(&MacrosPanel::_rebuild, this);
     lv_async_call(&MacrosPanel::_rebuild, this);
-  }
+  }, true);
 }
 
 void MacrosPanel::_rebuild(void *panel) {
   MacrosPanel *p = (MacrosPanel *)panel;
-  if (p->shown && !p->built) {
+  if (p->shown && !p->built && p->fetched) {
     p->populate();
   }
 }
@@ -91,8 +135,6 @@ void MacrosPanel::populate() {
   // Runs on the LVGL thread: copy under State's lock, the websocket thread
   // may reset or update guppysettings meanwhile.
   json macro_settings = State::get_instance()->get_data_copy("/guppysettings/macros/settings"_json_pointer);
-
-  auto macros = State::get_instance()->get_macros();
 
   // Each item is built on a detached screen and then moved into the list.
   // Creating a textarea runs a layout pass over its whole screen; on the
@@ -120,6 +162,9 @@ void MacrosPanel::populate() {
   }
 
   lv_obj_del(staging);
+  // The items hold what they need; fetch again for the next build.
+  fetched = false;
+  std::map<std::string, std::map<std::string, std::string>>().swap(macros);
 
   if (lv_obj_has_state(show_hide_switch, LV_STATE_CHECKED)) {
     for (const auto &m : macro_items) {

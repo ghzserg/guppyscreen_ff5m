@@ -6,7 +6,9 @@
 //
 // Requests are answered from a fixture file, a JSON object mapping
 // method name -> result. Methods missing from the fixture get an empty
-// object as result and are listed by unhandled(). Every request is
+// object as result and are listed by unhandled(). printer.objects.query,
+// if not in the fixture, is answered from the printer.objects.subscribe
+// result. Every request is
 // recorded, and printer.gcode.script calls are also collected in gcodes().
 //
 // All methods are thread-safe: the server runs on its own libhv thread.
