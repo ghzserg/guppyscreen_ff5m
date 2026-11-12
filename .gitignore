@@ -1,5 +1,6 @@
 /*.log
 build/
+build-test/
 *.d
 *.o
 *.a
