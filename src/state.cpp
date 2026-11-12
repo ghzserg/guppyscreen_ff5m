@@ -45,6 +45,42 @@ State *State::get_instance() {
 void State::reset() {
   std::lock_guard<std::mutex> guard(lock);
   data.clear();
+  macros.clear();
+}
+
+// configfile holds the whole printer config twice, as `config` and as parsed
+// `settings`: ~480 KB of JSON on zMod, mostly gcode_macro sections. Keep only
+// the sections the panels read, and the macro list parsed once.
+// Readers: print_status_panel (config/extruder), inputshaper_panel
+// (config/input_shaper), finetune_panel (settings/extruder), retract_panel
+// (settings/firmware_retraction), limits_panel (settings/printer),
+// macros_panel (get_macros()). Top-level keys such as save_config_pending
+// are kept as they are.
+json State::slim_configfile(const json &configfile) {
+  static const char *const config_keep[] = {"extruder", "input_shaper"};
+  static const char *const settings_keep[] = {"extruder", "firmware_retraction", "printer"};
+
+  auto pick = [](const json &from, const auto &keys) {
+    json out = json::object();
+    if (!from.is_object()) return out;
+    for (const char *k : keys) {
+      if (from.contains(k)) out[k] = from.at(k);
+    }
+    return out;
+  };
+
+  json out = json::object();
+  for (auto it = configfile.begin(); it != configfile.end(); ++it) {
+    if (it.key() == "config") {
+      macros = KUtils::parse_macros(it.value());
+      out["config"] = pick(it.value(), config_keep);
+    } else if (it.key() == "settings") {
+      out["settings"] = pick(it.value(), settings_keep);
+    } else {
+      out[it.key()] = it.value();
+    }
+  }
+  return out;
 }
 
 void State::set_data(const std::string &key, json &j, const std::string &json_path) {
@@ -52,12 +88,29 @@ void State::set_data(const std::string &key, json &j, const std::string &json_pa
   // A reference: merge_patch copies what it keeps, so a deep copy of the
   // incoming message (the whole printer state at subscribe) is not needed.
   const json &patch = j[json::json_pointer(json_path)];
-  if (!patch.is_null()) {
-    // spdlog::debug("setting data key {}\nbefore: {}\npatch: {}", key, data.contains(key) ? data[key].dump() : "nil"
-    //                   ,patch.dump());
-    data[key].merge_patch(patch);
-    // spdlog::debug("after: {}", data.contains(key) ? data[key].dump() : "nil");
+  if (patch.is_null()) {
+    return;
   }
+
+  if (key == "printer_state" && patch.is_object() && patch.contains("configfile")) {
+    // Same as data[key].merge_patch(patch), with configfile slimmed first.
+    json &target = data[key];
+    if (!target.is_object()) {
+      target = json::object();
+    }
+    for (auto it = patch.begin(); it != patch.end(); ++it) {
+      if (it.value().is_null()) {
+        target.erase(it.key());
+      } else if (it.key() == "configfile" && it.value().is_object()) {
+        target["configfile"].merge_patch(slim_configfile(it.value()));
+      } else {
+        target[it.key()].merge_patch(it.value());
+      }
+    }
+    return;
+  }
+
+  data[key].merge_patch(patch);
 }
 
 json &State::get_data() {
@@ -68,6 +121,11 @@ json &State::get_data() {
 json &State::get_data(const json::json_pointer& ptr) {
   std::lock_guard<std::mutex> guard(lock);
   return data[ptr];
+}
+
+std::map<std::string, std::map<std::string, std::string>> State::get_macros() {
+  std::lock_guard<std::mutex> guard(lock);
+  return macros;
 }
 
 void State::consume(json &j) {

@@ -265,7 +265,7 @@ std::string end_time(int64_t seconds_to_add) {
     return s / 1024 / 1024;
   }
 
-  std::map<std::string, std::map<std::string, std::string>> parse_macros(json &m) {
+  std::map<std::string, std::map<std::string, std::string>> parse_macros(const json &m) {
     std::map<std::string, std::map<std::string, std::string>> macros;
 
     std::regex param_regex(R"(params\.(\w+)(.*))", std::regex_constants::icase);
@@ -274,8 +274,9 @@ std::string end_time(int64_t seconds_to_add) {
     for (auto &el : m.items()) {
       std::string key = el.key();
       if (key.rfind("gcode_macro ", 0) == 0) {
-        auto &gcode = el.value()["/gcode"_json_pointer];
-        if (!gcode.is_null()) {
+        if (el.value().is_object() && el.value().contains("gcode")
+            && el.value().at("gcode").is_string()) {
+          const auto &gcode = el.value().at("gcode");
           auto macro_split = split(el.key(), ' ');
           if (macro_split.size() > 1 && macro_split[1].rfind("_", 0) != 0) {
             std::string macro_name = macro_split[1];

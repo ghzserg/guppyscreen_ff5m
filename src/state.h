@@ -1,7 +1,9 @@
 #ifndef __STATE_H__
 #define __STATE_H__
 
+#include <map>
 #include <mutex>
+#include <string>
 #include <vector>
 #include "notify_consumer.h"
 
@@ -13,6 +15,11 @@ class State : public NotifyConsumer {
  protected:
   json data;
 
+  // Parsed from configfile/config gcode_macro sections; see slim_configfile().
+  std::map<std::string, std::map<std::string, std::string>> macros;
+
+  json slim_configfile(const json &configfile);
+
  public:
   State(std::mutex &lv_lock);
   State(State &o) = delete;
@@ -22,6 +29,9 @@ class State : public NotifyConsumer {
   void set_data(const std::string &key, json &j, const std::string &json_path);
   json &get_data();
   json &get_data(const json::json_pointer &ptr);
+
+  // Macro name -> {parameter -> default value}, macros starting with "_" excluded.
+  std::map<std::string, std::map<std::string, std::string>> get_macros();
 
   void consume(json &j);
 

@@ -47,32 +47,27 @@ MacrosPanel::~MacrosPanel()
 void MacrosPanel::populate() {
   macro_items.clear();
 
-  auto &config_json = State::get_instance()
-    ->get_data("/printer_state/configfile/config"_json_pointer);
-
   // TODO: this is a race condition
   auto &macro_settings = State::get_instance()->get_data("/guppysettings/macros/settings"_json_pointer);
 
-  if (!config_json.is_null()) {
-    auto macros = KUtils::parse_macros(config_json);
+  auto macros = State::get_instance()->get_macros();
 
-    // uint32_t i = 0;
-    // lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
-    // lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
-    //                                     cur_bg, LV_OPA_10);
+  // uint32_t i = 0;
+  // lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
+  // lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
+  //                                     cur_bg, LV_OPA_10);
 
-    for (auto const & [k, v] : macros) {
-      auto hidden_json = macro_settings[json::json_pointer(fmt::format("/{}/hidden", k))];
-      bool hidden = !hidden_json.is_null() ? hidden_json.template get<bool>() : false;
-      macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, hidden));
+  for (auto const & [k, v] : macros) {
+    auto hidden_json = macro_settings[json::json_pointer(fmt::format("/{}/hidden", k))];
+    bool hidden = !hidden_json.is_null() ? hidden_json.template get<bool>() : false;
+    macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, hidden));
 
-      // if (i % 2 == 0) {
-      //         macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, mixed, hidden));
-      // } else {
-      //         macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, cur_bg, hidden));
-      // }
-      // i++;
-    }
+    // if (i % 2 == 0) {
+    //         macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, mixed, hidden));
+    // } else {
+    //         macro_items.push_back(std::make_shared<MacroItem>(ws, top_cont, k, v, kb, cur_bg, hidden));
+    // }
+    // i++;
   }
 }
 
