@@ -67,7 +67,7 @@ BeltsCalibrationPanel::BeltsCalibrationPanel(KWebSocketClient &c, std::mutex &l)
   }
   lv_obj_center(graph);
 
-  lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+  KUtils::spinner_hide(spinner);  // its animation runs only while shown
   lv_obj_set_size(spinner, 100, 100);
 
   auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
@@ -147,7 +147,7 @@ void BeltsCalibrationPanel::handle_callback(lv_event_t *event) {
     lv_obj_add_flag(graph, LV_OBJ_FLAG_HIDDEN);
     KUtils::set_img_src(graph, NULL);
     lv_obj_invalidate(graph);
-    lv_obj_clear_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+    KUtils::spinner_show(spinner);
     lv_obj_move_foreground(spinner);
 
   } else if (btn == excite_btn.get_container()) {
@@ -208,7 +208,7 @@ void BeltsCalibrationPanel::handle_macro_response(json &j) {
 
       KUtils::set_img_src(graph, png_path.c_str());
       lv_obj_clear_flag(graph, LV_OBJ_FLAG_HIDDEN);
-      lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+      KUtils::spinner_hide(spinner);
       lv_obj_move_background(spinner);
     }
   }

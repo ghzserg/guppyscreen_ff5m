@@ -336,3 +336,33 @@ std::string end_time(int64_t seconds_to_add) {
     }
   }
   }  // namespace KUtils
+
+namespace {
+void spinner_start_angle(void *obj, int32_t v) { lv_arc_set_start_angle((lv_obj_t *)obj, (uint16_t)v); }
+void spinner_end_angle(void *obj, int32_t v) { lv_arc_set_end_angle((lv_obj_t *)obj, (uint16_t)v); }
+}  // namespace
+
+// The same two animations as lv_spinner's constructor (lv_spinner.c).
+void KUtils::spinner_show(lv_obj_t *spinner, uint32_t time_ms, uint16_t arc_len) {
+  lv_anim_del(spinner, NULL);
+  lv_anim_t a;
+  lv_anim_init(&a);
+  lv_anim_set_var(&a, spinner);
+  lv_anim_set_exec_cb(&a, spinner_end_angle);
+  lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+  lv_anim_set_time(&a, time_ms);
+  lv_anim_set_values(&a, arc_len, 360 + arc_len);
+  lv_anim_start(&a);
+
+  lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
+  lv_anim_set_values(&a, 0, 360);
+  lv_anim_set_exec_cb(&a, spinner_start_angle);
+  lv_anim_start(&a);
+
+  lv_obj_clear_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+}
+
+void KUtils::spinner_hide(lv_obj_t *spinner) {
+  lv_anim_del(spinner, NULL);
+  lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+}

@@ -61,6 +61,13 @@ namespace KUtils {
   // when its panel is closed. It is decoded again when next drawn.
   void uncache_img(lv_obj_t *img);
 
+  // LVGL's spinners animate forever from creation, hidden or not. Show a
+  // spinner with spinner_show() (starts its two arc animations, like
+  // lv_spinner_create(parent, time_ms, arc_len)) and hide it with
+  // spinner_hide() (stops them). Call spinner_hide() right after creating one.
+  void spinner_show(lv_obj_t *spinner, uint32_t time_ms = 1000, uint16_t arc_len = 60);
+  void spinner_hide(lv_obj_t *spinner);
+
 };
 
 #endif // __K_UTILS_H__
