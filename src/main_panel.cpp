@@ -88,6 +88,16 @@ void MainPanel::foreground() {
   lv_tabview_set_act(tabview, 0, LV_ANIM_OFF);
 }
 
+// The tabview sends LV_EVENT_VALUE_CHANGED for taps on the tab bar and for
+// lv_tabview_set_act() (through its scroll-end handler).
+void MainPanel::handle_tab_change(lv_event_t *e) {
+  if (lv_tabview_get_tab_act(tabview) == lv_obj_get_index(macros_tab)) {
+    macros_panel.foreground();
+  } else {
+    macros_panel.background();
+  }
+}
+
 void MainPanel::subscribe() {
   spdlog::trace("main panel subscribing");
   ws.send_jsonrpc("printer.gcode.help", [this](json &d) { console_panel.handle_macros(d); });
@@ -115,7 +125,7 @@ void MainPanel::init(json &j) {
     }
   }
 
-  macros_panel.populate();
+  macros_panel.refresh();
 
   auto fans = State::get_instance()->get_display_fans();
   print_status_panel.init(fans);
@@ -154,6 +164,7 @@ static void scroll_begin_event(lv_event_t * e)
 void MainPanel::create_panel() {
   lv_obj_clear_flag(lv_tabview_get_content(tabview), LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_add_event_cb(lv_tabview_get_content(tabview), scroll_begin_event, LV_EVENT_SCROLL_BEGIN, NULL);
+  lv_obj_add_event_cb(tabview, &MainPanel::_handle_tab_change, LV_EVENT_VALUE_CHANGED, this);
 
   lv_obj_t * tab_btns = lv_tabview_get_tab_btns(tabview);
   lv_obj_set_style_bg_color(tab_btns, lv_palette_main(LV_PALETTE_GREY), LV_STATE_CHECKED | LV_PART_ITEMS);

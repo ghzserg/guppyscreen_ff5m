@@ -123,6 +123,11 @@ json &State::get_data(const json::json_pointer& ptr) {
   return data[ptr];
 }
 
+json State::get_data_copy(const json::json_pointer &ptr) {
+  std::lock_guard<std::mutex> guard(lock);
+  return data.contains(ptr) ? data.at(ptr) : json();
+}
+
 std::map<std::string, std::map<std::string, std::string>> State::get_macros() {
   std::lock_guard<std::mutex> guard(lock);
   return macros;

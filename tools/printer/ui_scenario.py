@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Scripted UI scenario on the printer, sampling guppyscreen's memory.
 
-    tools/printer/ui_scenario.py LABEL OUT_DIR
+    tools/printer/ui_scenario.py LABEL OUT_DIR [SCENARIO]
 
-Restarts guppyscreen, waits 90 s, then taps through: Print (file list),
-5 file rows, Back, Tune, Input Shaper, Back, Home. After every tap it waits,
+Restarts guppyscreen, waits 90 s, then taps through SCENARIO:
+- files (default): Print (file list), 5 file rows, Back, Tune,
+  Input Shaper, Back, Home;
+- macros: Macros tab, Home tab, twice.
+After every tap it waits,
 takes a framebuffer screenshot (OUT_DIR/NN-step.png) and samples Anonymous
 and VmHWM. At the end it prints a table and the PNG decoder's log lines.
 
@@ -12,7 +15,8 @@ Safety:
 - Only the named taps in SAFE_TAPS exist. They open panels, select file
   rows and go back; nothing moves, heats, prints, saves or sends G-code.
   Never add the Print button of the file list (starts a print), Stop,
-  Calibrate, Save, temperature fields, or anything on the console tab.
+  Calibrate, Save, temperature fields, anything on the console tab, or
+  anything inside the macro list (run and hide buttons): only the tab bar.
 - Before every tap: the printer must be idle and the expected screen
   must be showing (pixel checks from verified screenshots). After every
   tap the resulting screen is checked. Any mismatch aborts the run.
@@ -40,6 +44,15 @@ SAFE_TAPS = {
     'input_shaper': (160, 330, 'tune',   'shaper'),
     'shaper_back':  (740, 425, 'shaper', 'tune'),    # Back; Calibrate/Save/Stop are at x<100
     'home_tab':     (30, 48,   'tune',   'main'),
+    # Tab bar: 5 tabs of 96 px; Macros is the 4th (y 288-384), Console the 5th.
+    'macros_tab':   (30, 336,  'main',   'macros'),
+    'macros_home':  (30, 48,   'macros', 'main'),
+}
+
+SCENARIOS = {
+    'files':  ['print', 'file_row_1', 'file_row_2', 'file_row_3', 'file_row_4', 'file_row_5',
+               'files_back', 'tune_tab', 'input_shaper', 'shaper_back', 'home_tab'],
+    'macros': ['macros_tab', 'macros_home', 'macros_tab', 'macros_home'],
 }
 
 TAB_ON, BG = (63, 66, 70), (40, 43, 48)
@@ -48,6 +61,7 @@ SCREENS = {
     'files':  {(40, 20): (33, 150, 243), (5, 430): BG},
     'tune':   {(5, 140): TAB_ON, (5, 430): BG, (65, 150): BG},
     'shaper': {(65, 150): (255, 255, 255), (5, 430): BG},
+    'macros': {(5, 336): TAB_ON, (5, 48): BG, (5, 430): BG},
 }
 
 
@@ -90,6 +104,7 @@ def sample():
 
 def main():
     label, out_dir = sys.argv[1], sys.argv[2]
+    steps = SCENARIOS[sys.argv[3] if len(sys.argv) > 3 else 'files']
     os.makedirs(out_dir, exist_ok=True)
     if b'guppy-tap' not in ssh('ls /tmp/guppy-tap 2>/dev/null; true'):
         sys.exit('no /tmp/guppy-tap on the printer')
@@ -109,8 +124,6 @@ def main():
     if not matches(raw, screen):
         sys.exit('ABORT: main screen not showing after restart (see 00-idle.png)')
 
-    steps = ['print', 'file_row_1', 'file_row_2', 'file_row_3', 'file_row_4', 'file_row_5',
-             'files_back', 'tune_tab', 'input_shaper', 'shaper_back', 'home_tab']
     for n, name in enumerate(steps, 1):
         x, y, on, after = SAFE_TAPS[name]
         if not printer_idle():
@@ -138,8 +151,8 @@ def main():
     print(f'{label}: step, Anonymous kB, VmHWM kB')
     for r in rows:
         print(f'{label}  {r[0]:<14} {r[1]:>6} {r[2]:>6}')
-    log = ssh('grep "png:" /opt/config/mod_data/log/guppyscreen.log; true').decode().strip()
-    print(log if log else '(no png decoder log lines)')
+    log = ssh('grep -E "png:|macros:" /opt/config/mod_data/log/guppyscreen.log; true').decode().strip()
+    print(log if log else '(no png decoder or macro list log lines)')
 
 
 if __name__ == '__main__':

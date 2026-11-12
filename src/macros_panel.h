@@ -14,7 +14,13 @@ class MacrosPanel {
   MacrosPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent);
   ~MacrosPanel();
 
-  void populate();
+  // The macro list (~12 LVGL objects per macro, ~330 kB for zMod's macros)
+  // is built when the tab is first shown, and kept: freeing it on leaving
+  // the tab gives little back (heap fragmentation) and building takes
+  // ~0.4 s on the printer. Call with lv_lock held.
+  void foreground();   // the tab is shown: build the list if needed
+  void background();   // the tab is left
+  void refresh();      // the macros changed (reconnect): rebuild if shown, else free
   void handle_hide_show(lv_event_t *e);
 
   static void _handle_hide_show(lv_event_t *e) {
@@ -31,6 +37,11 @@ class MacrosPanel {
   lv_obj_t *top_cont;
   lv_obj_t *kb;
   std::vector<std::shared_ptr<MacroItem>> macro_items;
+  bool shown = false;  // the tab is showing
+  bool built = false;  // macro_items holds the list
+
+  void populate();
+  static void _rebuild(void *panel);  // lv_async_call callback
 
 };
 
