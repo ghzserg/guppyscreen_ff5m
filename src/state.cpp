@@ -49,7 +49,9 @@ void State::reset() {
 
 void State::set_data(const std::string &key, json &j, const std::string &json_path) {
   std::lock_guard<std::mutex> guard(lock);
-  auto patch = j[json::json_pointer(json_path)];
+  // A reference: merge_patch copies what it keeps, so a deep copy of the
+  // incoming message (the whole printer state at subscribe) is not needed.
+  const json &patch = j[json::json_pointer(json_path)];
   if (!patch.is_null()) {
     // spdlog::debug("setting data key {}\nbefore: {}\npatch: {}", key, data.contains(key) ? data[key].dump() : "nil"
     //                   ,patch.dump());
