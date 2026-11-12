@@ -132,7 +132,7 @@ TEST_CASE("browsing files shows thumbnails without keeping old ones decoded") {
     std::string want = "A:" + gcodes + "/.thumbs/" + name + ".png";
     bool shown = app::wait_until([&] { return shown_thumbnail() == want; });
     CHECK_MESSAGE(shown, "want " << want << ", shown: " << shown_thumbnail());
-    app::pump(200);  // draw it, which decodes the PNG
+    app::redraw();  // draw it, which decodes the PNG
   }
 
 #ifdef __SANITIZE_ADDRESS__

@@ -54,13 +54,15 @@ TEST_CASE("homing panel sends G28") {
 - `wait_ready(moonraker)`: fails the test if startup doesn't finish in 10 s. Logs the requests the fixture didn't cover.
 - `pump(ms)`: run the LVGL loop for `ms`.
 - `wait_until(pred, timeout_ms = 5000)`: run the LVGL loop until `pred()` is true; returns `false` on timeout.
+- `redraw()`: run due LVGL timers once and draw everything invalid now, with no waiting. Use it before reading pixels.
+- `settle(moonraker, quiet_ms = 100)`: run the LVGL loop until the app has sent Moonraker no new request for `quiet_ms`. Use it after a reconnect, or a reply that makes the app do more work, instead of a fixed `pump`.
 - `dir()`: the temp dir with `guppyconfig.json` and `guppyscreen.log`.
 
 **`ui::`** (`tests/harness/ui.h`)
 - `find_label(text, Match::Exact | Match::Contains)`: the first label that is **shown** (see below), or `nullptr`.
 - `row_texts(text)`: texts of the labels next to label `text`, i.e. in its parent container. For example, a sensor row: name, value, "/", target.
 - `texts_in(obj)`: shown label texts under `obj`.
-- `tap(obj)`, `tap_label(text)`: press and release at the widget's centre through the fake touch panel.
+- `tap(obj)`, `tap_label(text)`: press and release at the widget's centre through the fake touch panel. The touch is read at once (not after LVGL's 30 ms poll), so the click handlers have run when it returns; what they queue runs within the following 20 ms pump.
 - `dump_screen()`: all shown label texts. Use it in failure messages.
 - `join(vector)`: format a list for failure messages.
 

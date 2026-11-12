@@ -109,7 +109,7 @@ void reconnect(FakeMoonraker &moonraker) {
   size_t before = moonraker.request_count("printer.objects.subscribe");
   moonraker.drop_client();
   REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.objects.subscribe") > before; }, 10000));
-  app::pump(500);
+  app::settle(moonraker);  // e.g. an open Macros tab fetches and rebuilds its list
 }
 
 // docs/ram-optimization.md item 6: ~12 LVGL objects per macro (zMod: ~1,300

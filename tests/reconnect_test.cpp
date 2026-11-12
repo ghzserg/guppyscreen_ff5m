@@ -61,7 +61,7 @@ void reconnect(FakeMoonraker &moonraker) {
   moonraker.drop_client();
   REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.objects.subscribe") > 0; }, 10000));
   app::wait_until([] { return ui::find_label("Waiting for the Klipper launch", ui::Match::Contains) == nullptr; });
-  app::pump(300);  // let callbacks and redraws settle
+  app::settle(moonraker);  // let the app finish what the reconnect started
 }
 
 }  // namespace

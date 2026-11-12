@@ -62,6 +62,11 @@ FakeMoonraker::~FakeMoonraker() {
   server_.stop();
 }
 
+size_t FakeMoonraker::requests_total() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return requests_total_;
+}
+
 void FakeMoonraker::forget_requests() {
   std::lock_guard<std::mutex> lock(mutex_);
   decltype(requests_)().swap(requests_);
@@ -111,6 +116,7 @@ void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::st
   {
     std::lock_guard<std::mutex> lock(mutex_);
     requests_.emplace_back(method, params);
+    requests_total_++;
     if (method == "printer.gcode.script") {
       gcodes_.push_back(params.value("script", ""));
       result = "ok";

@@ -122,7 +122,8 @@ TEST_CASE("exclude object map excludes the tapped object") {
       bool sent = app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"); });
       CHECK_MESSAGE(sent, "G-codes sent: " << ui::join(moonraker.gcodes()));
 
-      app::pump(100);
+      // The outline turns red when Klipper's exclude_object update arrives.
+      app::wait_until([&] { return count_outline_pixels(canvas).red > 100; });
       px = count_outline_pixels(canvas);
       CHECK_MESSAGE(px.red > 100, "red outline pixels after exclude: " << px.red);
     }

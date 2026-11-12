@@ -63,7 +63,7 @@ TEST_CASE("indexed icons draw like true colour when zoomed and recoloured") {
       lv_obj_center(img);
       lv_obj_invalidate(lv_layer_top());
     }
-    app::pump(100);
+    app::redraw();
     std::vector<lv_color_t> screen;
     for (int y = 240 - 80; y < 240 + 80; y++)
       for (int x = 400 - 80; x < 400 + 80; x++) screen.push_back(fake_hw::pixel(x, y));

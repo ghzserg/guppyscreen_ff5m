@@ -95,6 +95,12 @@ void pump(int ms) {
   } while (std::chrono::steady_clock::now() < end);
 }
 
+void redraw() {
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_timer_handler();
+  lv_refr_now(NULL);
+}
+
 bool wait_until(const std::function<bool()> &pred, int timeout_ms) {
   auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
   while (std::chrono::steady_clock::now() < end) {
@@ -104,6 +110,21 @@ bool wait_until(const std::function<bool()> &pred, int timeout_ms) {
     }
   }
   return false;
+}
+
+void settle(FakeMoonraker &moonraker, int quiet_ms, int timeout_ms) {
+  auto now = [] { return std::chrono::steady_clock::now(); };
+  auto end = now() + std::chrono::milliseconds(timeout_ms);
+  size_t seen = moonraker.requests_total();
+  auto quiet_since = now();
+  while (now() < end && now() - quiet_since < std::chrono::milliseconds(quiet_ms)) {
+    pump(5);
+    size_t n = moonraker.requests_total();
+    if (n != seen) {
+      seen = n;
+      quiet_since = now();
+    }
+  }
 }
 
 void wait_ready(FakeMoonraker &moonraker) {

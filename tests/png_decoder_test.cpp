@@ -203,7 +203,7 @@ TEST_CASE("big PNG is decoded to 8-bit indexed and drawn like the true-colour im
       lv_obj_center(img);
       lv_obj_invalidate(lv_layer_top());
     }
-    app::pump(100);
+    app::redraw();
     std::vector<lv_color_t> screen(800 * 480);
     for (int y = 0; y < 480; y++)
       for (int x = 0; x < 800; x++) screen[y * 800 + x] = fake_hw::pixel(x, y);
@@ -274,7 +274,7 @@ TEST_CASE("opaque indexed PNG stays opaque when drawn zoomed with antialiasing")
     lv_img_set_antialias(img, true);
     lv_obj_center(img);
   }
-  app::pump(100);
+  app::redraw();
 
   // Inside the zoomed image (190x190 around the centre), away from its edges.
   int wrong = 0;

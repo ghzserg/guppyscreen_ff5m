@@ -56,6 +56,7 @@ class FakeMoonraker {
 
   bool client_connected() const;
   int request_count(const std::string &method) const;
+  size_t requests_total() const;  // every request so far; not reset by forget_requests()
   std::vector<json> requests(const std::string &method) const;  // their params
   std::vector<std::string> gcodes() const;                       // scripts, in order
   std::vector<std::string> unhandled() const;                    // methods not in the fixture
@@ -73,6 +74,7 @@ class FakeMoonraker {
   mutable std::mutex mutex_;
   WebSocketChannelPtr client_;
   std::vector<std::pair<std::string, json>> requests_;
+  size_t requests_total_ = 0;
   std::vector<std::string> gcodes_;
   std::vector<std::string> unhandled_;
 };

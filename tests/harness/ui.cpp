@@ -114,12 +114,22 @@ lv_obj_t *find_shown(const lv_obj_class_t *cls) {
   return found;
 }
 
+// LVGL polls the input device every LV_INDEV_DEF_READ_PERIOD (30 ms): make
+// that read happen now instead of waiting for it.
+static void read_input_now() {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  for (lv_indev_t *i = lv_indev_get_next(NULL); i != NULL; i = lv_indev_get_next(i)) {
+    lv_timer_ready(i->driver->read_timer);
+  }
+  lv_timer_handler();
+}
+
 void tap_at(lv_coord_t x, lv_coord_t y) {
-  // LVGL polls the input device every LV_INDEV_DEF_READ_PERIOD (30 ms).
   fake_hw::touch_set(x, y, true);
-  app::pump(100);
+  read_input_now();  // pressed
   fake_hw::touch_set(x, y, false);
-  app::pump(100);
+  read_input_now();  // released: the click handlers run here
+  app::pump(20);     // what they queued (lv_async_call), and a redraw
 }
 
 void tap(lv_obj_t *obj) {
