@@ -15,6 +15,8 @@
 #include "hv/hlog.h"
 #include "hv/json.hpp"
 
+#include <functional>
+#include <map>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -30,6 +32,10 @@ class FakeMoonraker {
 
   // Replace the result returned for `method`.
   void set_result(const std::string &method, const json &result);
+
+  // Answer `method` with handler(params) instead, e.g. per-file metadata.
+  // The handler runs on the server thread.
+  void set_handler(const std::string &method, std::function<json(const json &params)> handler);
 
   // Send notify_status_update to the connected client, e.g.
   // push_status({{"extruder", {{"temperature", 215.0}}}}).
@@ -58,6 +64,7 @@ class FakeMoonraker {
 
   int port_;
   json results_;
+  std::map<std::string, std::function<json(const json &)>> handlers_;
   hv::WebSocketService service_;
   hv::WebSocketServer server_;
 

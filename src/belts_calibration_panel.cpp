@@ -60,7 +60,7 @@ BeltsCalibrationPanel::BeltsCalibrationPanel(KWebSocketClient &c, std::mutex &l)
   lv_img_set_zoom(graph, 100);
   std::string path = "/opt/config/mod_data/belts_calibration.png";
   if (fs::exists(path)) {
-      lv_img_set_src(graph, "A:/opt/config/mod_data/belts_calibration.png");
+      KUtils::set_img_src(graph, "A:/opt/config/mod_data/belts_calibration.png");
   }
   lv_obj_center(graph);
 
@@ -142,7 +142,7 @@ void BeltsCalibrationPanel::handle_callback(lv_event_t *event) {
 
 
     lv_obj_add_flag(graph, LV_OBJ_FLAG_HIDDEN);
-    lv_img_set_src(graph, NULL);
+    KUtils::set_img_src(graph, NULL);
     lv_obj_invalidate(graph);
     lv_obj_clear_flag(spinner, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(spinner);
@@ -158,6 +158,7 @@ void BeltsCalibrationPanel::handle_callback(lv_event_t *event) {
     ws.gcode_script(fmt::format("_GUPPY_EXCITATE_AXIS_AT_FREQ FREQUENCY={} AXIS={}", excite_hz, excite_buf));
 
   } else if (btn == back_btn.get_container()) {
+    KUtils::uncache_img(graph);
     lv_obj_move_background(cont);
   } else if (btn == emergency_btn.get_container()) {
     ws.send_jsonrpc("printer.emergency_stop");
@@ -202,7 +203,7 @@ void BeltsCalibrationPanel::handle_macro_response(json &j) {
                     ? png_path
                     : KUtils::download_file("config", BELTS_PNG, Config::get_instance()->get_thumbnail_path()));
 
-      lv_img_set_src(graph, "/opt/config/mod_data/belts_calibration.png");
+      KUtils::set_img_src(graph, "A:/opt/config/mod_data/belts_calibration.png");
       lv_obj_clear_flag(graph, LV_OBJ_FLAG_HIDDEN);
       lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
       lv_obj_move_background(spinner);

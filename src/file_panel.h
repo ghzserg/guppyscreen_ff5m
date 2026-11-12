@@ -19,6 +19,7 @@ class FilePanel {
   void refresh_view(json &j, const std::string &gcode_path);
   lv_obj_t *get_container();
   const char* get_thumbnail_path();
+  void uncache_thumbnail();
 
  private:
   lv_obj_t *file_cont;

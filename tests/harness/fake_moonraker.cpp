@@ -92,6 +92,8 @@ void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::st
     if (method == "printer.gcode.script") {
       gcodes_.push_back(params.value("script", ""));
       result = "ok";
+    } else if (handlers_.count(method)) {
+      result = handlers_[method](params);
     } else if (results_.contains(method)) {
       result = results_[method];
     } else {
@@ -121,6 +123,11 @@ void FakeMoonraker::send(const json &j) {
 void FakeMoonraker::set_result(const std::string &method, const json &result) {
   std::lock_guard<std::mutex> lock(mutex_);
   results_[method] = result;
+}
+
+void FakeMoonraker::set_handler(const std::string &method, std::function<json(const json &)> handler) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  handlers_[method] = std::move(handler);
 }
 
 void FakeMoonraker::push_status(const json &status) {

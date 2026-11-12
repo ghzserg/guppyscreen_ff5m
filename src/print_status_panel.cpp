@@ -230,7 +230,7 @@ void PrintStatusPanel::reset() {
   heater_bed_target = -1;
 
   // free src
-  lv_img_set_src(thumbnail, NULL);
+  KUtils::set_img_src(thumbnail, NULL);
   // hack to color in empty space.
   ((lv_img_t*)thumbnail)->src_type = LV_IMG_SRC_SYMBOL;
 
@@ -365,7 +365,7 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
     //auto screen_width = lv_disp_get_physical_hor_res(NULL);
     //uint32_t normalized_thumb_scale = ((0.34 * (double)screen_width) / (double)thumb_detail.second) * 256;
     //lv_img_set_zoom(thumbnail, normalized_thumb_scale);
-    lv_img_set_src(thumbnail, img_path.c_str());
+    KUtils::set_img_src(thumbnail, img_path.c_str());
     uint32_t target_zoom = (192 * 256) / thumb_detail.second;
     lv_img_set_zoom(thumbnail, target_zoom);
     mini_print_status.update_img(img_path, thumb_detail.second);
