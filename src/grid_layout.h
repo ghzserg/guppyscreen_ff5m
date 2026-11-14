@@ -26,6 +26,7 @@ using json = nlohmann::json;
 
 class GridLayout {
  public:
+#ifdef GUPPY_LAYOUT_REGISTRY
   // An item placed by some panel, for listing and tests.
   struct Item {
     std::string panel;
@@ -36,6 +37,7 @@ class GridLayout {
     int grid_cols, grid_rows;          // the panel's grid size
     lv_grid_align_t x_align, y_align;
   };
+#endif
 
   // `layout`: the panel's object under "/layout", or null. `def_cols` and
   // `def_rows`: the panel's own tracks (without LV_GRID_TEMPLATE_LAST).
@@ -46,12 +48,16 @@ class GridLayout {
   static GridLayout from_config(const std::string &panel,
                                 std::vector<lv_coord_t> def_cols, std::vector<lv_coord_t> def_rows);
 
+#ifdef GUPPY_LAYOUT_REGISTRY
+  // Tests and the preview only (built with GUPPY_LAYOUT_REGISTRY): nothing
+  // of this is kept on the printer.
   // Every item placed so far, in order.
   static const std::vector<Item> &placed();
 
   // The "layout" config that reproduces every panel as it is now: tracks
   // and the cell of each item, in the order the panels place them.
   static nlohmann::ordered_json current_layout();
+#endif
 
   // Sets the grid tracks on `cont`, and the configured padding and gap.
   // Call it after the panel's own padding styles, so the config wins.

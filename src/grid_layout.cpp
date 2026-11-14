@@ -66,6 +66,8 @@ static std::vector<lv_coord_t> read_tracks(const std::string &panel, const json 
   return tracks;
 }
 
+#ifdef GUPPY_LAYOUT_REGISTRY
+// What the panels placed, for tests and the preview (not on the printer).
 static std::vector<GridLayout::Item> placed_items;
 // Each panel's tracks as they would be written in the config.
 static nlohmann::ordered_json panel_tracks = nlohmann::ordered_json::object();
@@ -95,6 +97,8 @@ static const char *align_name(lv_grid_align_t a) {
   }
 }
 
+#endif  // GUPPY_LAYOUT_REGISTRY
+
 GridLayout::GridLayout(const std::string &panel_name, const json &layout,
                        std::vector<lv_coord_t> def_cols, std::vector<lv_coord_t> def_rows)
   : panel(panel_name) {
@@ -107,9 +111,11 @@ GridLayout::GridLayout(const std::string &panel_name, const json &layout,
   cols = read_tracks(panel, l.contains("columns") ? l["columns"] : none, "columns", std::move(def_cols), cols_set);
   rows = read_tracks(panel, l.contains("rows") ? l["rows"] : none, "rows", std::move(def_rows), rows_set);
   tracks_configured = cols_set || rows_set;
+#ifdef GUPPY_LAYOUT_REGISTRY
   if (!panel_tracks.contains(panel)) {
     panel_tracks[panel] = {{"columns", tracks_json(cols)}, {"rows", tracks_json(rows)}};
   }
+#endif
   if (l.contains("padding")) padding = l["padding"];
   if (l.contains("gap")) gap = l["gap"];
   if (l.contains("items")) {
@@ -137,6 +143,7 @@ GridLayout GridLayout::from_config(const std::string &panel,
   return GridLayout(panel, layout ? *layout : json(), std::move(def_cols), std::move(def_rows));
 }
 
+#ifdef GUPPY_LAYOUT_REGISTRY
 const std::vector<GridLayout::Item> &GridLayout::placed() {
   return placed_items;
 }
@@ -188,6 +195,7 @@ nlohmann::ordered_json GridLayout::current_layout() {
   }
   return out;
 }
+#endif  // GUPPY_LAYOUT_REGISTRY
 
 // A padding or gap value: an integer 0..400.
 static bool spacing_value(const json &v, lv_coord_t &out) {
@@ -222,7 +230,9 @@ static void apply_spacing(const std::string &where, const json &spec,
 
 void GridLayout::apply_tracks(lv_obj_t *cont) {
   lv_obj_set_grid_dsc_array(cont, cols.data(), rows.data());
+#ifdef GUPPY_LAYOUT_REGISTRY
   panel_conts.emplace(panel, cont);
+#endif
   if (!padding.is_null()) {
     apply_spacing(panel + ".padding", padding, {"top", "right", "bottom", "left"},
                   [cont](const std::string &k, lv_coord_t v) {
@@ -328,6 +338,8 @@ void GridLayout::place(lv_obj_t *obj, const std::string &id,
   if (hide) {
     lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
   }
+#ifdef GUPPY_LAYOUT_REGISTRY
   placed_items.push_back({panel, id, obj, col, col_span, row, row_span, hide,
                           (int)cols.size() - 1, (int)rows.size() - 1, x_align, y_align});
+#endif
 }
