@@ -1,0 +1,22 @@
+diff --git a/src/draw/lv_img_decoder.c b/src/draw/lv_img_decoder.c
+index 76aff5e..53b6bc7 100644
+--- a/src/draw/lv_img_decoder.c
++++ b/src/draw/lv_img_decoder.c
+@@ -400,6 +400,17 @@ lv_res_t lv_img_decoder_built_in_open(lv_img_decoder_t * decoder, lv_img_decoder
+             return LV_RES_OK;
+         }
+     }
++#if LV_DRAW_IMG_INDEXED_8BIT_DECODED
++    /*An 8-bit indexed variable is already laid out as the whole-image format
++     *the software renderer draws (palette + indices), so give its pointer:
++     *no per-line decoding, and zoom works. Added by guppyscreen's patches/0007.*/
++    else if(cf == LV_IMG_CF_INDEXED_8BIT && dsc->src_type == LV_IMG_SRC_VARIABLE &&
++            ((lv_img_dsc_t *)dsc->src)->data_size >= 256 * sizeof(lv_color32_t) +
++            (uint32_t)dsc->header.w * dsc->header.h) {
++        dsc->img_data = ((lv_img_dsc_t *)dsc->src)->data;
++        return LV_RES_OK;
++    }
++#endif
+     /*Process indexed images. Build a palette*/
+     else if(cf == LV_IMG_CF_INDEXED_1BIT || cf == LV_IMG_CF_INDEXED_2BIT || cf == LV_IMG_CF_INDEXED_4BIT ||
+             cf == LV_IMG_CF_INDEXED_8BIT) {
