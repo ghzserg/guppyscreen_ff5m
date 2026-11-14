@@ -134,10 +134,10 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   lv_obj_set_style_text_font(youtput, &dejavusans_mono_14, LV_STATE_DEFAULT);
 
   // spinners
-  lv_obj_add_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
+  KUtils::spinner_hide(xspinner);  // their animations run only while shown
   lv_obj_set_size(xspinner, 100, 100);
 
-  lv_obj_add_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
+  KUtils::spinner_hide(yspinner);
   lv_obj_set_size(yspinner, 100, 100);
 
   // buttons
@@ -293,7 +293,7 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
       lv_label_set_text(xoutput, "");
       lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
-      lv_obj_clear_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
+      KUtils::spinner_show(xspinner);
       lv_obj_move_foreground(xspinner);
     }
 
@@ -308,7 +308,7 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
       lv_label_set_text(youtput, "");
       lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
-      lv_obj_clear_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
+      KUtils::spinner_show(yspinner);
       lv_obj_move_foreground(yspinner);
     }
     // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x FREQ_START={} FREQ_END={}\nM400\nTEST_RESONANCES AXIS=Y NAME=y FREQ_START={} FREQ_END={}\nM400", 5, 10, 5, 10));
@@ -377,7 +377,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
             lv_obj_move_foreground(xoutput);
           }
 
-          lv_obj_add_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
+          KUtils::spinner_hide(xspinner);
           lv_obj_move_background(xspinner);
 
         } else if (Y_DATA == fn) {
@@ -403,7 +403,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
             lv_obj_move_foreground(youtput);
           }
 
-          lv_obj_add_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
+          KUtils::spinner_hide(yspinner);
           lv_obj_move_background(yspinner);
         }
       }
