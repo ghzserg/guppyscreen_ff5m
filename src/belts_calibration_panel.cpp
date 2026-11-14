@@ -12,7 +12,7 @@ LV_IMG_DECLARE(inputshaper_img);
 LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(back);
 
-#define BELTS_PNG "belts_calibration.png"
+#define BELTS_PNG "mod_data/belts_calibration.png"
 
 std::vector<std::string> BeltsCalibrationPanel::axes = {
   "x",
@@ -202,7 +202,7 @@ void BeltsCalibrationPanel::handle_macro_response(json &j) {
                     ? png_path
                     : KUtils::download_file("config", BELTS_PNG, Config::get_instance()->get_thumbnail_path()));
 
-      lv_img_set_src(graph, "/opt/config/mod_data/belts_calibration.png");
+      lv_img_set_src(graph, png_path.c_str());
       lv_obj_clear_flag(graph, LV_OBJ_FLAG_HIDDEN);
       lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
       lv_obj_move_background(spinner);
