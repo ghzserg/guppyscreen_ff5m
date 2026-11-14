@@ -45,77 +45,19 @@ State *State::get_instance() {
 void State::reset() {
   std::lock_guard<std::mutex> guard(lock);
   data.clear();
-  macros.clear();
-}
-
-// Keep every configfile section and macro attribute except macro and delayed_gcode bodies.
-// Called after the ordinary merge_patch, with State's lock held.
-void State::compact_macro_bodies(json &configfile, const json &update) {
-  if (!configfile.is_object()) {
-    macros.clear();
-    return;
-  }
-
-  auto config = configfile.find("config");
-  if (config != configfile.end() && config->is_object()) {
-    // The merged config contains bodies only for new/updated macros; summaries
-    // of unchanged macros survive partial notifications.
-    auto parsed = KUtils::parse_macros(*config);
-    for (auto &entry : parsed) macros[entry.first] = std::move(entry.second);
-
-    // A null body explicitly removes its old summary. An absent body can be
-    // a metadata-only update and must not discard the existing parameters.
-    if (update.is_object() && update.contains("config") && update.at("config").is_object()) {
-      for (const auto &section : update.at("config").items()) {
-        if (section.key().rfind("gcode_macro ", 0) == 0 && section.value().is_object()
-            && section.value().contains("gcode") && section.value().at("gcode").is_null()) {
-          const auto parts = KUtils::split(section.key(), ' ');
-          if (parts.size() > 1) macros.erase(parts[1]);
-        }
-      }
-    }
-
-    for (auto it = macros.begin(); it != macros.end();) {
-      auto section = config->find("gcode_macro " + it->first);
-      if (section == config->end() || !section->is_object()
-          || (section->contains("gcode") && !section->at("gcode").is_string())) {
-        it = macros.erase(it);
-      } else {
-        ++it;
-      }
-    }
-  } else {
-    macros.clear();
-  }
-
-  for (const char *part : {"config", "settings"}) {
-    auto sections = configfile.find(part);
-    if (sections == configfile.end() || !sections->is_object()) continue;
-    for (auto &section : sections->items()) {
-      if ((section.key().rfind("gcode_macro ", 0) == 0
-           || section.key().rfind("delayed_gcode ", 0) == 0) && section.value().is_object()) {
-        section.value().erase("gcode");
-      }
-    }
-  }
 }
 
 void State::set_data(const std::string &key, json &j, const std::string &json_path) {
   std::lock_guard<std::mutex> guard(lock);
+  // A reference: merge_patch copies what it keeps, so a deep copy of the
+  // incoming message (the whole printer state at subscribe) is not needed.
   const json &patch = j[json::json_pointer(json_path)];
-  if (patch.is_null()) return;
-
-  // Preserve the original merge semantics for every field, including unknown
-  // printer objects, config sections, null deletions and partial updates.
-  data[key].merge_patch(patch);
-  if (key == "printer_state" && patch.is_object() && patch.contains("configfile")) {
-    auto configfile = data[key].find("configfile");
-    if (configfile == data[key].end()) {
-      macros.clear();
-    } else {
-      compact_macro_bodies(*configfile, patch.at("configfile"));
-    }
+  if (patch.is_null()) {
+    return;
   }
+
+  // configfile arrives already slimmed: see KWebSocketClient::parse_message.
+  data[key].merge_patch(patch);
 }
 
 json &State::get_data() {
@@ -131,11 +73,6 @@ json &State::get_data(const json::json_pointer& ptr) {
 json State::get_data_copy(const json::json_pointer &ptr) {
   std::lock_guard<std::mutex> guard(lock);
   return data.contains(ptr) ? data.at(ptr) : json();
-}
-
-std::map<std::string, std::map<std::string, std::string>> State::get_macros() {
-  std::lock_guard<std::mutex> guard(lock);
-  return macros;
 }
 
 void State::consume(json &j) {
