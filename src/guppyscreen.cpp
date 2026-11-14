@@ -18,6 +18,7 @@
 #include "spdlog/spdlog.h"
 #include "state.h"
 #include "theme.h"
+#include <time.h>
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
@@ -327,18 +328,12 @@ void GuppyScreen::refresh_theme() {
 
 /*Set in lv_conf.h as `LV_TICK_CUSTOM_SYS_TIME_EXPR`*/
 uint32_t custom_tick_get(void) {
-  static uint64_t start_ms = 0;
-  if (start_ms == 0) {
-    struct timeval tv_start;
-    gettimeofday(&tv_start, NULL);
-    start_ms = (tv_start.tv_sec * 1000000 + tv_start.tv_usec) / 1000;
-  }
-
-  struct timeval tv_now;
-  gettimeofday(&tv_now, NULL);
-  uint64_t now_ms;
-  now_ms = (tv_now.tv_sec * 1000000 + tv_now.tv_usec) / 1000;
-
-  uint32_t time_ms = now_ms - start_ms;
-  return time_ms;
+  // LVGL needs elapsed time, unaffected by wall-clock corrections. Cast
+  // before multiplication: time_t can be 32-bit on the MIPS target.
+  struct timespec ts{};
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  const uint64_t ms = static_cast<uint64_t>(ts.tv_sec) * 1000
+                    + static_cast<uint64_t>(ts.tv_nsec) / 1000000;
+  // LVGL handles the normal uint32_t millisecond wrap-around.
+  return static_cast<uint32_t>(ms);
 }
