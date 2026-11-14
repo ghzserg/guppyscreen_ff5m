@@ -14,6 +14,7 @@
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
+#include <malloc.h>
 
 using namespace hv;
 using json = nlohmann::json;
@@ -42,6 +43,7 @@ int KWebSocketClient::connect(const char* url,
     //   spdlog::trace("onmessage(type={} len={}): {}", opcode() == WS_OPCODE_TEXT ? "text" : "binary",
     //              (int)msg.size(), msg);
     // }
+    {
     auto j = json::parse(msg);
 
     if (j.contains("id")) {
@@ -83,6 +85,16 @@ int KWebSocketClient::connect(const char* url,
           }
         }
       }
+    }
+    }  // j is freed here, before the trim below
+
+    // A big message (in practice the printer.objects.subscribe reply with
+    // the whole printer config, ~500 KB on zMod) leaves its parsed copies
+    // as free memory in this thread's malloc arena, which glibc keeps.
+    // Give the free pages back. Measured on the AD5M: -520 kB at idle,
+    // the call takes ~3 ms.
+    if (msg.size() > 64 * 1024) {
+      malloc_trim(0);
     }
   };
 
