@@ -17,10 +17,10 @@ LV_IMG_DECLARE(back);
 
 LV_FONT_DECLARE(dejavusans_mono_14);
 
-#define X_DATA "/tmp/resonances_x_x.csv"
-#define X_PNG "mod_data/resonances_x.png"
-#define Y_DATA "/tmp/resonances_y_y.csv"
-#define Y_PNG "mod_data/resonances_y.png"
+#define X_DATA "/tmp/resonances_x_X.csv"
+#define X_PNG "mod_data/resonances_X.png"
+#define Y_DATA "/tmp/resonances_y_Y.csv"
+#define Y_PNG "mod_data/resonances_Y.png"
 
 std::vector<std::string> InputShaperPanel::shapers = {
   "zv",
@@ -109,14 +109,14 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   // graphs
   lv_img_set_zoom(xgraph, 95);
   lv_obj_center(xgraph);
-  if (fs::exists("/opt/config/mod_data/resonances_x.png")) {
-    lv_img_set_src(xgraph, "A:/opt/config/mod_data/resonances_x.png");
+  if (fs::exists("/opt/config/mod_data/resonances_X.png")) {
+    lv_img_set_src(xgraph, "A:/opt/config/mod_data/resonances_X.png");
   }
 
   lv_img_set_zoom(ygraph, 95);
   lv_obj_center(ygraph);
-  if (fs::exists("/opt/config/mod_data/resonances_y.png")) {
-    lv_img_set_src(ygraph, "A:/opt/config/mod_data/resonances_y.png");
+  if (fs::exists("/opt/config/mod_data/resonances_Y.png")) {
+    lv_img_set_src(ygraph, "A:/opt/config/mod_data/resonances_Y.png");
   }
 
   lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
@@ -281,10 +281,10 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
       ws.gcode_script("G28");
     }
 
-    ws.gcode_script("GOTO_SHAPER");
+    ws.gcode_script("_GOTO_SHAPER");
     if (x_requested) {
       // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x FREQ_START={} FREQ_END={}\nM400", 5, 10));
-      ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x\nM400"));
+      ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=X\nM400"));
 
       // free src
       lv_img_set_src(xgraph, NULL);
@@ -299,7 +299,7 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
     if (y_requested) {
       // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=Y NAME=y FREQ_START={} FREQ_END={}\nM400", 5, 10));
-      ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=Y NAME=y\nM400"));
+      ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=Y NAME=Y\nM400"));
 
       // free src
       lv_img_set_src(ygraph, NULL);
