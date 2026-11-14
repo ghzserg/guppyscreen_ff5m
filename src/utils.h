@@ -48,7 +48,7 @@ namespace KUtils {
     std::sort(out_vect.begin(), out_vect.end(), sorter);
   };
 
-  std::map<std::string, std::map<std::string, std::string>> parse_macros(json &m);
+  std::map<std::string, std::map<std::string, std::string>> parse_macros(const json &m);
 
   // LVGL decodes a PNG to 4 bytes per pixel and keeps it in its image cache
   // until the entry is evicted, even when no image shows it any more.

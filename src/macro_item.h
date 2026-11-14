@@ -21,6 +21,8 @@ class MacroItem {
 
   ~MacroItem();
 
+  lv_obj_t *get_container() { return cont; }
+
   void handle_kb_input(lv_event_t *e);
   void handle_send_macro(lv_event_t *e);
   void handle_hide_show(lv_event_t *e);

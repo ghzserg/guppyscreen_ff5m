@@ -53,6 +53,10 @@ class MainPanel : public NotifyConsumer {
   PrinterTunePanel& get_tune_panel();
   void enable_spoolman();
   void foreground();
+  void handle_tab_change(lv_event_t *e);
+  static void _handle_tab_change(lv_event_t *e) {
+    ((MainPanel *)e->user_data)->handle_tab_change(e);
+  }
 
   void create_panel();
   void create_sensors(json &temp_sensors);

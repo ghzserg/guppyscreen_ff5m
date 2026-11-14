@@ -516,3 +516,7 @@ msgstr "ч "
 
 #~ msgid "Macro"
 #~ msgstr "Макрос"
+
+#: ../limits_panel.cpp
+msgid "Minimum Cruise Ratio"
+msgstr "Минимальная доля равномерного движения"

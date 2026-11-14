@@ -47,6 +47,7 @@ class SliderContainer {
   lv_obj_t *get_max();
 
   void set_range(int min_range, int max_range);
+  void set_label(const char *text);
 
   void set_range_float(int min_range, int max_range);
 

@@ -136,7 +136,12 @@ lv_obj_t *SliderContainer::get_max() {
 }
 
 void SliderContainer::set_range(int min_range, int max_range) {
+  delim = 1;
   lv_slider_set_range(slider, min_range, max_range);
+}
+
+void SliderContainer::set_label(const char *text) {
+  lv_label_set_text(label, text);
 }
 
 void SliderContainer::set_range_float(int min_range, int max_range) {

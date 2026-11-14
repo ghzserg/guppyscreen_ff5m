@@ -36,8 +36,15 @@ class LimitsPanel : public NotifyConsumer {
   ButtonContainer back_btn;
   int max_velocity_default;
   int max_accel_default;
-  int max_accel_to_decel_default;
+  double max_accel_to_decel_default;
   int square_corner_default;
+
+  enum class MotionLimit { None, AccelToDecel, MinimumCruiseRatio };
+  MotionLimit motion_limit = MotionLimit::None;
+  double minimum_cruise_ratio_default = 0.5;
+  void configure_motion_limit(const json &settings, const json &toolhead);
+  void update_motion_limit(const json &toolhead);
+  void send_motion_limit(double value);
 
 };
 
