@@ -307,7 +307,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                    length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("M109 S{} T{}\nM83\nG1 E-{} F{}", temp, active_tool_id, len, std::atoi(speed) * 60));
+      ws.gcode_script(fmt::format("M109 S{} T{}\nM83\nG1 E-{} F{}", temp, active_tool_id, len, std::stoi(speed) * 60));
       retract_btn.enable();
     }
 
@@ -319,7 +319,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                     length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", code_macro, active_tool_id, temp, len, std::atoi(speed) * 60));
+      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", code_macro, active_tool_id, temp, len, std::stoi(speed) * 60));
       code_btn.enable();
     }
 
@@ -331,7 +331,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                   length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", load_filament_macro, active_tool_id, temp, len, std::atoi(speed) * 60));
+      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", load_filament_macro, active_tool_id, temp, len, std::stoi(speed) * 60));
       load_btn.enable();
     }
 

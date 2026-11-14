@@ -18,7 +18,11 @@ struct ExObj {
 };
 
 std::vector<ExObj> objs;
+// The canvas buffer (map_w x map_h, 32-bit: about 900 KB) exists only while
+// the panel is open and shows the map. Otherwise the canvas points at a
+// single static pixel.
 std::vector<uint8_t> map_buf;
+lv_color_t idle_px[1];
 lv_obj_t *map_cont = NULL;
 lv_obj_t *zoom_in_btn = NULL;
 lv_obj_t *zoom_out_btn = NULL;
@@ -77,8 +81,19 @@ bool point_in_poly(float x, float y, const std::vector<std::pair<float, float>> 
   return in;
 }
 
+void map_alloc() {
+  if (!map_cont || !map_buf.empty()) return;
+  map_buf.assign(LV_CANVAS_BUF_SIZE_TRUE_COLOR(map_w, map_h), 0);
+  lv_canvas_set_buffer(map_cont, map_buf.data(), map_w, map_h, LV_IMG_CF_TRUE_COLOR);
+}
+
+void map_free() {
+  if (map_cont) lv_canvas_set_buffer(map_cont, idle_px, 1, 1, LV_IMG_CF_TRUE_COLOR);
+  std::vector<uint8_t>().swap(map_buf);  // clear() would keep the memory
+}
+
 void redraw() {
-  if (!map_cont) return;
+  if (!map_cont || map_buf.empty()) return;
   lv_canvas_fill_bg(map_cont, lv_color_black(), LV_OPA_COVER);
   lv_draw_line_dsc_t dsc;
   lv_draw_line_dsc_init(&dsc);
@@ -176,8 +191,7 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   map_w = lv_disp_get_hor_res(NULL) - 140;
   map_h = lv_disp_get_ver_res(NULL) - 130;
   map_cont = lv_canvas_create(cont);
-  map_buf.assign(LV_CANVAS_BUF_SIZE_TRUE_COLOR(map_w, map_h), 0);
-  lv_canvas_set_buffer(map_cont, map_buf.data(), map_w, map_h, LV_IMG_CF_TRUE_COLOR);
+  map_free();
   lv_obj_align(map_cont, LV_ALIGN_TOP_LEFT, 0, 0);
   lv_obj_add_flag(map_cont, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(map_cont, map_click_cb, LV_EVENT_CLICKED, NULL);
@@ -240,6 +254,7 @@ void ExcludePanel::reset() {
 
 static void sync_view(lv_obj_t *exclude_cont, lv_obj_t *zin, lv_obj_t *zout) {
   if (has_polygons) {
+    if (active) map_alloc();
     lv_obj_add_flag(exclude_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(map_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(zin, LV_OBJ_FLAG_HIDDEN);
@@ -285,6 +300,7 @@ void ExcludePanel::foreground() {
 
 void ExcludePanel::background() {
   active = false;
+  map_free();
   lv_obj_move_background(cont);
 }
 
