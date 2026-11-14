@@ -2,6 +2,7 @@
 #define __K_UTILS_H__
 
 #include "hv/json.hpp"
+#include "lvgl/lvgl.h"
 #include <vector>
 #include <map>
 #include <functional>
@@ -48,6 +49,17 @@ namespace KUtils {
   };
 
   std::map<std::string, std::map<std::string, std::string>> parse_macros(json &m);
+
+  // LVGL decodes a PNG to 4 bytes per pixel and keeps it in its image cache
+  // until the entry is evicted, even when no image shows it any more.
+
+  // lv_img_set_src(), then drop the decoded copy of the file `img` showed
+  // before (if any) from the image cache.
+  void set_img_src(lv_obj_t *img, const void *src);
+
+  // Drop the decoded copy of the file `img` shows from the image cache, e.g.
+  // when its panel is closed. It is decoded again when next drawn.
+  void uncache_img(lv_obj_t *img);
 
 };
 

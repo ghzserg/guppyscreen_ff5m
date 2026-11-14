@@ -4,6 +4,8 @@
 #include "state.h"
 #include "spdlog/spdlog.h"
 #include "platform.h"
+#include "utils.h"
+#include "lvgl/lvgl.h"
 
 #include <cmath>
 #include <time.h>
@@ -315,5 +317,28 @@ std::string end_time(int64_t seconds_to_add) {
     }
 
     return macros;
+  }
+
+  static std::string file_src(lv_obj_t *img) {
+    const void *src = lv_img_get_src(img);
+    if (src != NULL && lv_img_src_get_type(src) == LV_IMG_SRC_FILE) {
+      return (const char *)src;
+    }
+    return "";
+  }
+
+  void set_img_src(lv_obj_t *img, const void *src) {
+    std::string old = file_src(img);
+    lv_img_set_src(img, src);
+    if (!old.empty()) {
+      lv_img_cache_invalidate_src(old.c_str());
+    }
+  }
+
+  void uncache_img(lv_obj_t *img) {
+    std::string src = file_src(img);
+    if (!src.empty()) {
+      lv_img_cache_invalidate_src(src.c_str());
+    }
   }
   }  // namespace KUtils

@@ -1,4 +1,5 @@
 #include "guppyscreen.h"
+#include "utils.h"
 #include "mini_print_status.h"
 #include "spdlog/spdlog.h"
 
@@ -99,14 +100,14 @@ void MiniPrintStatus::update_img(const std::string &img_path, size_t twidth) {
   auto screen_width = lv_disp_get_physical_hor_res(NULL);
   uint32_t normalized_thumb_scale = ((0.05 * (double)screen_width) / (double)twidth) * 256;
   lv_img_set_zoom(thumb, normalized_thumb_scale);
-  lv_img_set_src(thumb, img_path.c_str());
+  KUtils::set_img_src(thumb, img_path.c_str());
 }
 
 void MiniPrintStatus::reset() {
   lv_arc_set_value(progress_bar, 0);
 
   // free src
-  lv_img_set_src(thumb, NULL);
+  KUtils::set_img_src(thumb, NULL);
   // hack to color in empty space.
   ((lv_img_t*)thumb)->src_type = LV_IMG_SRC_SYMBOL;
 
