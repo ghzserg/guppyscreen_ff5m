@@ -1,0 +1,16 @@
+diff --git a/http/WebSocketParser.cpp b/http/WebSocketParser.cpp
+index e655a56..0b40a6f 100644
+--- a/http/WebSocketParser.cpp
++++ b/http/WebSocketParser.cpp
+@@ -45,6 +45,11 @@ static int on_frame_end(websocket_parser* parser) {
+         if (wp->onMessage) {
+             wp->onMessage(wp->opcode, wp->message);
+         }
++        // Don't keep the buffer of a big message for the life of the
++        // connection: the next frame header reserves what it needs.
++        if (wp->message.capacity() > 64 * 1024) {
++            std::string().swap(wp->message);
++        }
+     }
+     return 0;
+ }
