@@ -80,6 +80,14 @@ lv_obj_t *Nav::content() { return content_; }
 
 lv_obj_t *Nav::add_button(Tab t) {
   lv_obj_t *btn = slot_button(bar_, (int)t);
+  // set_attention(): USER_1 outweighs CHECKED and PRESSED, so each pairing
+  // gets its own shade.
+  lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, LV_STATE_USER_1);
+  lv_obj_set_style_bg_color(btn, lv_palette_main(LV_PALETTE_ORANGE), LV_STATE_USER_1);
+  lv_obj_set_style_bg_color(btn, lv_palette_darken(LV_PALETTE_ORANGE, 1),
+                            LV_STATE_USER_1 | LV_STATE_CHECKED);
+  lv_obj_set_style_bg_color(btn, lv_palette_darken(LV_PALETTE_ORANGE, 3),
+                            LV_STATE_USER_1 | LV_STATE_PRESSED);
   lv_obj_add_event_cb(btn, &Nav::tab_clicked, LV_EVENT_SHORT_CLICKED, (void *)(intptr_t)t);
   buttons[t] = btn;
   return btn;
@@ -139,6 +147,15 @@ void Nav::activate(Tab t) {
 
 Nav::Tab Nav::active() const {
   return active_;
+}
+
+void Nav::set_attention(Tab t, bool on) {
+  if (buttons[t] == NULL) return;
+  if (on) {
+    lv_obj_add_state(buttons[t], LV_STATE_USER_1);
+  } else {
+    lv_obj_clear_state(buttons[t], LV_STATE_USER_1);
+  }
 }
 
 void Nav::on_leave(lv_obj_t *screen, std::function<void()> action) {

@@ -286,6 +286,7 @@ void PrintStatusPanel::init(json &fans) {
   if (!pstat_state.is_null()) {
     auto pstatus = pstat_state.template get<std::string>();
     running = pstatus == "printing" || pstatus == "paused";
+    Nav::get().set_attention(Nav::PRINT, pstatus == "printing");
     if (!running) {
       mini_print_status.hide();
       background();
@@ -402,6 +403,7 @@ void PrintStatusPanel::consume(json &j) {
     auto print_status = pstate.template get<std::string>();
     bool was_running = running;
     running = print_status == "printing" || print_status == "paused";
+    Nav::get().set_attention(Nav::PRINT, print_status == "printing");
     if (!running) {
       mini_print_status.hide();
       background();
