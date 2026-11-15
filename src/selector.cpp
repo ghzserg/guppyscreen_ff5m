@@ -1,5 +1,8 @@
 #include "selector.h"
 #include "spdlog/spdlog.h"
+#ifdef GUPPY_FF5M
+#include "sensor_container.h"
+#endif
 
 #include <limits>
 
@@ -33,6 +36,10 @@ Selector::Selector(lv_obj_t *parent,
 
   lv_btnmatrix_set_map(btnm, &map[0]);
   lv_obj_set_style_pad_all(btnm, 4, LV_PART_MAIN);
+#ifdef GUPPY_FF5M
+  // Every selector holds numbers: the sensor tiles' digit font.
+  lv_obj_set_style_text_font(btnm, SensorContainer::temperature_font(), LV_PART_ITEMS);
+#endif
 
   lv_obj_set_style_outline_width(btnm, 0, LV_PART_ITEMS | LV_STATE_FOCUS_KEY);
 

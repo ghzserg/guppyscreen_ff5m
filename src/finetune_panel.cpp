@@ -1,4 +1,7 @@
 #include "finetune_panel.h"
+#ifdef GUPPY_FF5M
+#include "sensor_container.h"
+#endif
 #include "nav.h"
 #include "grid_layout.h"
 #include "state.h"
@@ -36,7 +39,14 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , flow_up_btn(panel_cont, &flow_up_img, _("Flow+") /* "Поток+" */, &FineTunePanel::_handle_flow, this)
   , flow_down_btn(panel_cont, &flow_down_img, _("Flow-") /* "Поток-" */, &FineTunePanel::_handle_flow, this)
   , zoffset_selector(panel_cont, ("Z ("+ std::string(_("мм")) +") - PA ("+ std::string(_("мм")) +"/"+ _("с") +")").c_str(),
-                     {"0.005", "0.01", "0.05", "0.10", ""}, 0, 30, 15, &FineTunePanel::_handle_callback, this)
+#ifdef GUPPY_FF5M
+                     {".005", ".01", ".05", ".10", ""},  // no leading zero: fits the bigger digits
+                     0, 40, 15,  // as wide as the multiplier's
+#else
+                     {"0.005", "0.01", "0.05", "0.10", ""},
+                     0, 30, 15,
+#endif
+                     &FineTunePanel::_handle_callback, this)
   , multipler_selector(panel_cont, _("Multipler Step") /* "Множитель шага (%)" */,
                        {"1", "5", "10", "25", ""}, 0, 40, 15, &FineTunePanel::_handle_callback, this)
   , z_offset(values_cont, &home_z, 150, 100, 15, ("0.0 "+ std::string(_("мм"))).c_str() )
@@ -49,42 +59,82 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_size(panel_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_clear_flag(panel_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_set_size(values_cont, LV_PCT(20), LV_PCT(80));
   lv_obj_clear_flag(values_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(values_cont, 0, 0);
+#ifdef GUPPY_FF5M
+  // The values in one row at the bottom, each under its column, no icons.
+  lv_obj_set_size(values_cont, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_border_width(values_cont, 0, 0);
+  lv_obj_set_style_bg_opa(values_cont, LV_OPA_TRANSP, 0);
+  {
+    static const lv_coord_t value_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    static const lv_coord_t value_rows[] = {LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
+    lv_obj_set_grid_dsc_array(values_cont, value_cols, value_rows);
+  }
+  int col = 0;
+  for (ImageLabel *value : {&z_offset, &pa, &speed_factor, &flow_factor}) {
+    value->hide_image();
+    lv_obj_set_height(value->get_container(), LV_SIZE_CONTENT);
+    lv_obj_set_grid_cell(value->get_container(), LV_GRID_ALIGN_STRETCH, col++, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    // In the buttons' digits.
+    lv_obj_set_style_text_font(value->get_label(), SensorContainer::temperature_font(), 0);
+  }
+#else
+  lv_obj_set_size(values_cont, LV_PCT(20), LV_PCT(80));
   lv_obj_set_flex_flow(values_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(values_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+#endif
 
   static GridLayout layout = GridLayout::from_config("finetune",
+#ifdef GUPPY_FF5M
+      // Four columns of buttons; the values in the last row.
+      {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
+      {LV_GRID_FR(3), LV_GRID_FR(3), LV_GRID_FR(3), LV_GRID_FR(3), LV_GRID_FR(2)});
+#else
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)});
+#endif
 
   layout.apply_tracks(panel_cont);
 
+#ifdef GUPPY_FF5M
+  // The step buttons on top, the values at the bottom.
+  const int SELECT = 0, RESET = 1, UP = 2, DOWN = 3;
+#else
+  const int RESET = 0, UP = 1, DOWN = 2, SELECT = 3;
+#endif
+
   // col 1
-  layout.place(zreset_btn.get_container(), "zreset", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  layout.place(zup_btn.get_container(), "zup", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  layout.place(zdown_btn.get_container(), "zdown", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  layout.place(zoffset_selector.get_container(), "zoffset_selector", LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 3, 1);
+  layout.place(zreset_btn.get_container(), "zreset", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, RESET, 1);
+  layout.place(zup_btn.get_container(), "zup", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, UP, 1);
+  layout.place(zdown_btn.get_container(), "zdown", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, DOWN, 1);
+  layout.place(zoffset_selector.get_container(), "zoffset_selector", LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, SELECT, 1);
 
   // col 2
-  layout.place(pareset_btn.get_container(), "pareset", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  layout.place(paup_btn.get_container(), "paup", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  layout.place(padown_btn.get_container(), "padown", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  layout.place(pareset_btn.get_container(), "pareset", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, RESET, 1);
+  layout.place(paup_btn.get_container(), "paup", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, UP, 1);
+  layout.place(padown_btn.get_container(), "padown", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, DOWN, 1);
 
   // col 3
-  layout.place(speed_reset_btn.get_container(), "speed_reset", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  layout.place(speed_up_btn.get_container(), "speed_up", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  layout.place(speed_down_btn.get_container(), "speed_down", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  layout.place(multipler_selector.get_container(), "multiplier_selector", LV_GRID_ALIGN_CENTER, 2, 2, LV_GRID_ALIGN_CENTER, 3, 1);
+  layout.place(speed_reset_btn.get_container(), "speed_reset", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, RESET, 1);
+  layout.place(speed_up_btn.get_container(), "speed_up", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, UP, 1);
+  layout.place(speed_down_btn.get_container(), "speed_down", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, DOWN, 1);
+  layout.place(multipler_selector.get_container(), "multiplier_selector", LV_GRID_ALIGN_CENTER, 2, 2, LV_GRID_ALIGN_CENTER, SELECT, 1);
 
   // col 4
-  layout.place(flow_reset_btn.get_container(), "flow_reset", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  layout.place(flow_up_btn.get_container(), "flow_up", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  layout.place(flow_down_btn.get_container(), "flow_down", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  layout.place(flow_reset_btn.get_container(), "flow_reset", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, RESET, 1);
+  layout.place(flow_up_btn.get_container(), "flow_up", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, UP, 1);
+  layout.place(flow_down_btn.get_container(), "flow_down", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, DOWN, 1);
 
+#ifdef GUPPY_FF5M
+  // last row
+  layout.place(values_cont, "values", LV_GRID_ALIGN_STRETCH, 0, 4, LV_GRID_ALIGN_CENTER, 4, 1);
+  // Its columns lined up with the panel's.
+  lv_obj_set_style_pad_column(values_cont, lv_obj_get_style_pad_column(panel_cont, 0), 0);
+#else
   // col 5
   layout.place(values_cont, "values", LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 0, 3);
+#endif
 
   ws.register_notify_update(this);
 }
