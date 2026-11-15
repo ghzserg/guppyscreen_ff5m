@@ -49,6 +49,10 @@ class Nav {
   void activate(Tab t);
   Tab active() const;
 
+  // An orange tab button (the Print tab while printing), darker when the
+  // tab is the active one.
+  void set_attention(Tab t, bool on);
+
   // Run `action` when `screen` (a screen or a tab root) is closed or left
   // through the bar: what its Back button did besides hiding it.
   void on_leave(lv_obj_t *screen, std::function<void()> action);
