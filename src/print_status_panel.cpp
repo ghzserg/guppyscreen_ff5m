@@ -33,6 +33,10 @@ LV_IMG_DECLARE(speed_img);  // unlike the Tune tab's sliders in the nav bar
 LV_IMG_DECLARE(fine_tune_img);
 #define FINE_TUNE_IMG fine_tune_img
 #endif
+#ifdef GUPPY_FF5M
+LV_IMG_DECLARE(sd_img);
+#include "sensor_container.h"
+#endif
 LV_IMG_DECLARE(pause_img);
 LV_IMG_DECLARE(resume);
 LV_IMG_DECLARE(cancel);
@@ -54,6 +58,9 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , mini_print_status(mini_parent, &PrintStatusPanel::_handle_callback, this, websocket_client)
   , status_cont(lv_obj_create(Nav::get().content()))
   , buttons_cont(lv_obj_create(status_cont))
+#ifdef GUPPY_FF5M
+  , files_btn(buttons_cont, &sd_img, _("Files") /* "Файлы" */, &PrintStatusPanel::_handle_callback, this)
+#endif
   , finetune_btn(buttons_cont, &FINE_TUNE_IMG, _("Fine Tune") /* "Настройки" */, &PrintStatusPanel::_handle_callback, this)
   , retract_btn(buttons_cont, &retract, _("Retract") /* "Ретракт" */, &PrintStatusPanel::_handle_callback, this)
   , pause_btn(buttons_cont, &pause_img, _("Pause") /* "Пауза" */, &PrintStatusPanel::_handle_callback, this)
@@ -68,7 +75,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
                })
   , thumbnail_cont(lv_obj_create(status_cont))
   , thumbnail(lv_img_create(thumbnail_cont))
+#ifdef GUPPY_FF5M
+  , pbar_cont(lv_obj_create(status_cont))  // a row of its own
+#else
   , pbar_cont(lv_obj_create(thumbnail_cont))
+#endif
   , progress_bar(lv_bar_create(pbar_cont))
   , progress_label(lv_label_create(pbar_cont))
   , progress_end(lv_label_create(pbar_cont))
@@ -100,29 +111,58 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(detail_cont, LV_PCT(60), LV_PCT(60));
 
+#ifdef GUPPY_FF5M
+  // Each value fills its cell: room for the bigger digits.
+  const lv_grid_align_t DETAIL_X = LV_GRID_ALIGN_STRETCH;
+#else
+  const lv_grid_align_t DETAIL_X = LV_GRID_ALIGN_START;
+#endif
   //detail containter row 1
-  lv_obj_set_grid_cell(extruder_temp.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1);
-  lv_obj_set_grid_cell(bed_temp.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 0, 1);
+  lv_obj_set_grid_cell(extruder_temp.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 0, 1);
+  lv_obj_set_grid_cell(bed_temp.get_container(), DETAIL_X, 1, 1, LV_GRID_ALIGN_START, 0, 1);
 
   //detail containter row 2
-  lv_obj_set_grid_cell(print_speed.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(z_offset.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 1, 1);
+  lv_obj_set_grid_cell(print_speed.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  lv_obj_set_grid_cell(z_offset.get_container(), DETAIL_X, 1, 1, LV_GRID_ALIGN_START, 1, 1);
 
   //detail containter row 3
-  lv_obj_set_grid_cell(flow_rate.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(layers.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(flow_rate.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(layers.get_container(), DETAIL_X, 1, 1, LV_GRID_ALIGN_START, 2, 1);
 
   //detail containter row 4
-  lv_obj_set_grid_cell(elapsed.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 3, 1);
-  lv_obj_set_grid_cell(fan0.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 3, 1);
+  lv_obj_set_grid_cell(elapsed.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 3, 1);
+  lv_obj_set_grid_cell(fan0.get_container(), DETAIL_X, 1, 1, LV_GRID_ALIGN_START, 3, 1);
 
   //detail containter row 5
-  lv_obj_set_grid_cell(time_left.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
-  lv_obj_set_grid_cell(filament.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);
+  lv_obj_set_grid_cell(time_left.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 4, 1);
+  lv_obj_set_grid_cell(filament.get_container(), DETAIL_X, 1, 1, LV_GRID_ALIGN_START, 4, 1);
   // lv_obj_set_grid_cell(fan2.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);
+#ifdef GUPPY_FF5M
+  // The values as big as Home's temperatures, right of their icons; one
+  // longer than its cell (three fans at 100%) scrolls, as the file name does.
+  for (ImageLabel *value : {&extruder_temp, &bed_temp, &print_speed, &z_offset, &flow_rate, &layers, &fan0,
+                            &elapsed, &time_left, &filament}) {
+    lv_obj_t *box = value->get_container();
+    lv_obj_t *label = value->get_label();
+    lv_obj_set_flex_flow(box, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(box, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(box, 6, 0);
+    lv_obj_set_flex_grow(label, 1);
+    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_RIGHT, 0);
+    lv_label_set_long_mode(label, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_obj_set_style_text_font(label, SensorContainer::temperature_font(), 0);
+  }
+#endif
 
+#ifdef GUPPY_FF5M
+  // The progress bar on a row of its own, between them and the buttons.
+  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_CONTENT, LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+  // The details wider: the bigger digits.
+  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST};
+#else
   static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+#endif
 
   lv_obj_set_grid_dsc_array(status_cont, grid_main_col_dsc, grid_main_row_dsc);
 
@@ -130,6 +170,17 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_clear_flag(buttons_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(buttons_cont, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(buttons_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+#ifdef GUPPY_FF5M
+  // Five buttons with Files: a fifth of the row each.
+  lv_obj_set_style_pad_hor(buttons_cont, 0, 0);
+  lv_obj_set_style_pad_column(buttons_cont, 0, 0);
+  // 14 px lower than its cell's centre: away from the progress bar, still
+  // on the screen (369..453 on the AD5M).
+  lv_obj_set_style_translate_y(buttons_cont, 14, 0);
+  for (ButtonContainer *b : {&files_btn, &finetune_btn, &retract_btn, &pause_btn, &resume_btn, &cancel_btn}) {
+    lv_obj_set_width(b->get_container(), LV_PCT(20));
+  }
+#endif
 
   lv_obj_set_style_pad_all(pbar_cont, 0, 0);
   lv_obj_set_size(pbar_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -140,18 +191,43 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   // lv_obj_set_style_border_width(pbar_cont, 2, 0);
   // lv_obj_set_style_border_width(thumbnail_cont, 2, 0);
 
+#ifdef GUPPY_FF5M
+  // 30%: the thumbnail is 192 px; the details' column takes the rest.
+  auto side_width = (double)Nav::content_width() * 0.30;
+#else
   // 35% of the content area beside the nav bar.
   auto side_width = (double)Nav::content_width() * 0.35;
+#endif
   auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
 
+#ifdef GUPPY_FF5M
+  // Across the screen, under the thumbnail and the details, twice as tall:
+  // the ETA at its left, the progress in the middle, the end time at its
+  // right, in the details' font.
+  lv_obj_set_height(pbar_cont, 40 * hscale);
+  lv_obj_set_size(progress_bar, LV_PCT(100), LV_PCT(100));
+  lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_CLICKABLE);  // only shows
+  progress_eta = lv_label_create(pbar_cont);
+  lv_obj_move_to_index(progress_eta, 1);  // сразу за полосой: время окончания остаётся последним
+  for (lv_obj_t *label : {progress_eta, progress_label, progress_end}) {
+    lv_obj_set_style_text_font(label, SensorContainer::temperature_font(), 0);
+  }
+  show_time_left("...");
+  lv_obj_align(progress_eta, LV_ALIGN_LEFT_MID, 10, 0);
+#else
   lv_obj_set_size(progress_bar, side_width, 20 * hscale);
+#endif
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
 
   lv_label_set_text(progress_label, "0%");
   lv_obj_center(progress_label);
   lv_label_set_text(progress_end, "00:00");
   lv_obj_set_align(progress_bar, LV_ALIGN_CENTER);
+#ifdef GUPPY_FF5M
+  lv_obj_align(progress_end, LV_ALIGN_RIGHT_MID, -10, 0);
+#else
   lv_obj_set_align(progress_end, LV_ALIGN_RIGHT_MID);
+#endif
 
   lv_obj_set_flex_flow(thumbnail_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
@@ -167,13 +243,28 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_move_to_index(filename_label, 0);
   lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+#ifdef GUPPY_FF5M
+  // Laid out at its zoomed size (192 px), not the file's (often 300 px): else
+  // the column outgrows the screen, the file name goes off the top and the
+  // progress bar slides under the buttons.
+  lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_REAL);
+#endif
 
   // row 1
   lv_obj_set_grid_cell(thumbnail_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+#ifdef GUPPY_FF5M
+  lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+#else
   lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+#endif
 
+#ifdef GUPPY_FF5M
+  lv_obj_set_grid_cell(pbar_cont, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
+  lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+#else
   //row 2
   lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
+#endif
 
   lv_obj_add_flag(print_speed.get_container(), LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(print_speed.get_container(), &PrintStatusPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
@@ -237,7 +328,7 @@ void PrintStatusPanel::reset() {
   print_speed.update_label(("0 "+ std::string(_("мм")) +"/"+ _("с")).c_str());
   flow_rate.update_label(("0.0 "+ std::string(_("мм")) +"3/"+ _("с")).c_str());
   elapsed.update_label(("0 "+ std::string(_("с"))).c_str());
-  time_left.update_label("...");
+  show_time_left("...");
   filament.update_label("0 м");
   filament_m = 0;
   estimated_time_s = 0;
@@ -351,7 +442,7 @@ void PrintStatusPanel::populate() {
   if (!v.is_null()) {
     int new_value = static_cast<int>(v.template get<double>() * 100);
     lv_bar_set_value(progress_bar, new_value, LV_ANIM_ON);
-    lv_label_set_text(progress_label, fmt::format("{}%", new_value).c_str());
+    KUtils::set_label_text(progress_label, fmt::format("{}%", new_value).c_str());
     mini_print_status.update_progress(new_value);
     sync();
     std::ofstream("/proc/sys/vm/drop_caches") << "3";
@@ -409,9 +500,11 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, uint32_t g
     //auto screen_width = lv_disp_get_physical_hor_res(NULL);
     //uint32_t normalized_thumb_scale = ((0.34 * (double)screen_width) / (double)thumb_detail.second) * 256;
     //lv_img_set_zoom(thumbnail, normalized_thumb_scale);
-    KUtils::set_img_src(thumbnail, img_path.c_str());
     uint32_t target_zoom = (192 * 256) / thumb_detail.second;
+    // The zoom first: setting the source sizes the image (FF5M lays it out
+    // zoomed); setting the zoom later doesn't.
     lv_img_set_zoom(thumbnail, target_zoom);
+    KUtils::set_img_src(thumbnail, img_path.c_str());
     mini_print_status.update_img(img_path, thumb_detail.second);
   }
 }
@@ -571,7 +664,7 @@ void PrintStatusPanel::consume(json &j) {
   if (!v.is_null()) {
     int new_value = static_cast<int>(v.template get<double>() * 100);
     lv_bar_set_value(progress_bar, new_value, LV_ANIM_ON);
-    lv_label_set_text(progress_label, fmt::format("{}%", new_value).c_str());
+    KUtils::set_label_text(progress_label, fmt::format("{}%", new_value).c_str());
     mini_print_status.update_progress(new_value);
   }
 
@@ -612,6 +705,11 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
     ws.send_jsonrpc("printer.print.cancel");
   } else if (btn == retract_btn.get_container()) {
     retract_panel.foreground();
+#ifdef GUPPY_FF5M
+  } else if (btn == files_btn.get_container()) {
+    // The file list over the print screen; the Print tab comes back here.
+    if (idle_screen != NULL) lv_obj_move_foreground(idle_screen);
+#endif
   } else if (btn == mini_print_status.get_container()) {
     foreground();
   } else if ((btn == finetune_btn.get_container()) or
@@ -627,11 +725,18 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
   }
 }
 
+void PrintStatusPanel::show_time_left(const std::string &eta) {
+  time_left.update_label(eta.c_str());
+#ifdef GUPPY_FF5M
+  KUtils::set_label_text(progress_eta, fmt::format(_("ETA: {}"), eta).c_str());
+#endif
+}
+
 void PrintStatusPanel::update_time_progress(uint32_t time_passed) {
     if (time_passed > estimated_time_s) {
       if (std::strcmp(lv_label_get_text(progress_end), "...") != 0) {
         lv_label_set_text_static(progress_end, "...");
-        time_left.update_label("...");
+        show_time_left("...");
         mini_print_status.update_eta("...");
       }
     } else {
@@ -639,8 +744,8 @@ void PrintStatusPanel::update_time_progress(uint32_t time_passed) {
       auto eta_str = KUtils::eta_string(remaining);
       auto end_str = KUtils::end_time(remaining);
       auto str = eta_str + " / " + end_str;
-      lv_label_set_text(progress_end, end_str.c_str());
-      time_left.update_label((eta_str).c_str());
+      KUtils::set_label_text(progress_end, end_str.c_str());
+      show_time_left(eta_str);
       mini_print_status.update_eta(str);
     }
 

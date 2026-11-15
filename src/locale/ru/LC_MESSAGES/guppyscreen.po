@@ -143,6 +143,11 @@ msgstr ""
 "Осталось: {}\n"
 "Статус: {}"
 
+#: ../print_status_panel.cpp:731
+#, c++-format
+msgid "ETA: {}"
+msgstr "Осталось: {}"
+
 #: ../sysinfo_panel.cpp:197
 msgid "Emergency stop confirmation"
 msgstr "Подтверждение аварийной остановки"
@@ -178,6 +183,10 @@ msgstr "Скорость экструзии (мм/с)"
 #: ../main_panel.cpp:52
 msgid "Fans"
 msgstr "Обдув"
+
+#: ../print_status_panel.cpp:62
+msgid "Files"
+msgstr "Файлы"
 
 #: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
 msgid "Fine Tune"

@@ -341,6 +341,10 @@ std::string end_time(int64_t seconds_to_add) {
     return "";
   }
 
+  void set_label_text(lv_obj_t *label, const char *text) {
+    if (strcmp(lv_label_get_text(label), text) != 0) lv_label_set_text(label, text);
+  }
+
   void set_img_src(lv_obj_t *img, const void *src) {
     std::string old = file_src(img);
     lv_img_set_src(img, src);

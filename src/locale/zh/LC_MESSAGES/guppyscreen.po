@@ -141,6 +141,11 @@ msgstr ""
 "预计剩余时间：{}\n"
 "状态：{}"
 
+#: ../print_status_panel.cpp:731
+#, c++-format
+msgid "ETA: {}"
+msgstr "预计剩余时间：{}"
+
 #: ../sysinfo_panel.cpp:197
 msgid "Emergency stop confirmation"
 msgstr "紧急停止确认"
@@ -176,6 +181,10 @@ msgstr "挤出速度（毫米/秒）"
 #: ../main_panel.cpp:52
 msgid "Fans"
 msgstr "风扇"
+
+#: ../print_status_panel.cpp:62
+msgid "Files"
+msgstr "文件"
 
 #: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
 msgid "Fine Tune"
