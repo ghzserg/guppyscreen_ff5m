@@ -1,4 +1,5 @@
 #include "guppyscreen.h"
+#include "nav.h"
 #include "grid_layout.h"
 #include "prompt_panel.h"
 #include "state.h"
@@ -27,7 +28,7 @@ static std::string trim(const std::string& str) {
 PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, lv_obj_t *parent, ExtruderPanel &ep)
     : NotifyConsumer(lock)
     , ws(websocket_client)
-    , prompt_cont(lv_obj_create(lv_scr_act()))
+    , prompt_cont(lv_obj_create(Nav::get().content()))
     , flex(lv_obj_create(prompt_cont))
     , header(lv_label_create(prompt_cont))
     , footer_cont(lv_obj_create(prompt_cont))
@@ -77,6 +78,7 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(15));
 
     lv_obj_clear_flag(prompt_cont, LV_OBJ_FLAG_SCROLLABLE);
+    Nav::get().add_dialog(prompt_cont);  // stays on top of a tab switch, blocks the tabs
     lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(flex, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(footer_cont, LV_OBJ_FLAG_SCROLLABLE);
