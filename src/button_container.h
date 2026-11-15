@@ -28,6 +28,12 @@ class ButtonContainer {
   void handle_callback(lv_event_t *event);
 
   void handle_prompt();
+
+  // The emergency-stop style confirmation: a modal msgbox with Ok / Cancel;
+  // Ok runs on_ok.
+  static void confirm(const std::string &text, std::function<void()> on_ok);
+  // guppyconfig.json /prompt_emergency_stop: ask before an emergency stop.
+  static bool prompt_emergency_stop();
   void run_callback();
 
   static void _handle_callback(lv_event_t *event) {

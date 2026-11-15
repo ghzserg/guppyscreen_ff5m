@@ -16,6 +16,8 @@ LV_IMG_DECLARE(display_on_img);
 LV_IMG_DECLARE(web_img);
 LV_IMG_DECLARE(refresh_img);
 LV_IMG_DECLARE(zrestore_img);
+LV_IMG_DECLARE(auto_img);
+LV_IMG_DECLARE(code_img);
 //LV_IMG_DECLARE(spoolman_img);
 #ifndef GUPPY_FF5M
 LV_IMG_DECLARE(update_img);
@@ -29,7 +31,8 @@ LV_IMG_DECLARE(sysinfo_img);
 
 LV_IMG_DECLARE(print);
 
-SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent/*, SpoolmanPanel &sm*/)
+SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
+                           std::function<void()> open_macros_cb, std::function<void()> open_console_cb/*, SpoolmanPanel &sm*/)
   : ws(c)
   , cont(lv_obj_create(parent))
 #ifndef GUPPY_FF5M
@@ -55,6 +58,10 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent/
   , display_on_btn(cont, &display_on_img, _("Native screen") /* "Родной экран" */, &SettingPanel::_handle_callback, this)
   , web_btn(cont, &web_img, _("Change WEB") /* "Сменить WEB" */, &SettingPanel::_handle_callback, this)
   , zrestore_btn(cont, &zrestore_img, _("Restore Print") /* "Восстановить печать" */, &SettingPanel::_handle_callback, this)
+  , macros_btn(cont, &auto_img, _("Macros") /* "Макросы" */, &SettingPanel::_handle_callback, this)
+  , console_btn(cont, &code_img, _("Console") /* "Консоль" */, &SettingPanel::_handle_callback, this)
+  , open_macros(std::move(open_macros_cb))
+  , open_console(std::move(open_console_cb))
 #ifndef GUPPY_FF5M
   , guppy_update_btn(cont, &update_img, "Update Guppy", &SettingPanel::_handle_callback, this)
   , printer_select_btn(cont, &print, "Printers", &SettingPanel::_handle_callback, this)
@@ -80,7 +87,7 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent/
 
   static GridLayout layout = GridLayout::from_config("settings",
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
-      {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5)});
+      {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5), LV_GRID_FR(5)});
 
   layout.apply_tracks(cont);
 
@@ -98,6 +105,10 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent/
   layout.place(display_on_btn.get_container(), "display_on", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
   layout.place(web_btn.get_container(), "web", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
   layout.place(zrestore_btn.get_container(), "zrestore", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
+  // row 3
+  layout.place(macros_btn.get_container(), "macros", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 3, 1);
+  layout.place(console_btn.get_container(), "console", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 3, 1);
+
 //  lv_obj_set_grid_cell(spoolman_btn.get_container(),         LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 
 #ifndef GUPPY_FF5M
@@ -129,7 +140,11 @@ void SettingPanel::handle_callback(lv_event_t *event) {
 #endif
     } else
 #endif
-    if (btn == sysinfo_btn.get_container()) {
+    if (btn == macros_btn.get_container()) {
+      open_macros();
+    } else if (btn == console_btn.get_container()) {
+      open_console();
+    } else if (btn == sysinfo_btn.get_container()) {
       spdlog::trace("setting system info pressed");
       sysinfo_panel.foreground();
     } else if (btn == restart_klipper_btn.get_container()) {

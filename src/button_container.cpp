@@ -29,9 +29,7 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
   lv_obj_add_flag(btn, LV_OBJ_FLAG_EVENT_BUBBLE);
   // lv_obj_add_flag(btn_cont, LV_OBJ_FLAG_EVENT_BUBBLE);
 
-  Config *conf = Config::get_instance();
-  auto estop = conf->get_json("/prompt_emergency_stop");
-  auto prompt_estop = estop.is_null() ? false : estop.template get<bool>();
+  bool prompt_estop = prompt_emergency_stop();
 
   if (cb != NULL && !pcb) {
     lv_obj_add_event_cb(btn_cont, &ButtonContainer::_handle_callback, LV_EVENT_PRESSED, this);
@@ -107,9 +105,18 @@ void ButtonContainer::handle_callback(lv_event_t *e) {
 }
 
 void ButtonContainer::handle_prompt() {
+  confirm(prompt_text, [this]() { run_callback(); });
+}
+
+bool ButtonContainer::prompt_emergency_stop() {
+  auto estop = Config::get_instance()->get_json("/prompt_emergency_stop");
+  return !estop.is_null() && estop.template get<bool>();
+}
+
+void ButtonContainer::confirm(const std::string &text, std::function<void()> on_ok) {
   static const char * btns[] = {"Ok", "Cancel", ""};
 
-  lv_obj_t *mbox1 = lv_msgbox_create(NULL, NULL, prompt_text.c_str(), btns, false);
+  lv_obj_t *mbox1 = lv_msgbox_create(NULL, NULL, text.c_str(), btns, false);
   lv_obj_t *msg = ((lv_msgbox_t*)mbox1)->text;
   lv_obj_set_style_text_align(msg, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_set_width(msg, LV_PCT(100));
@@ -126,16 +133,21 @@ void ButtonContainer::handle_prompt() {
   lv_obj_set_size(btnm, LV_PCT(90), 50 *hscale);
   lv_obj_set_size(mbox1, LV_PCT(50), LV_PCT(35));
 
+  // The msgbox owns the callback: freed when it is deleted (closed).
+  auto *cb = new std::function<void()>(std::move(on_ok));
   lv_obj_add_event_cb(mbox1, [](lv_event_t *e) {
     lv_obj_t *obj = lv_obj_get_parent(lv_event_get_target(e));
     uint32_t clicked_btn = lv_msgbox_get_active_btn(obj);
     if(clicked_btn == 0) {
-      ((ButtonContainer*)e->user_data)->run_callback();
+      (*(std::function<void()> *)e->user_data)();
     }
 
     lv_msgbox_close(obj);
 
-  }, LV_EVENT_VALUE_CHANGED, this);
+  }, LV_EVENT_VALUE_CHANGED, cb);
+  lv_obj_add_event_cb(mbox1, [](lv_event_t *e) {
+    delete (std::function<void()> *)e->user_data;
+  }, LV_EVENT_DELETE, cb);
 
   lv_obj_center(mbox1);
 }
