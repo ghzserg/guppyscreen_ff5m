@@ -25,7 +25,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
   , cont(lv_obj_create(Nav::get().content()))
-  , prompt(lv_obj_create(lv_scr_act()))
+  , prompt(lv_obj_create(Nav::get().content()))
   , top_cont(lv_obj_create(cont))
   , mesh_table(lv_table_create(top_cont))
   , profile_cont(lv_table_create(top_cont))
@@ -148,6 +148,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_keyboard_set_textarea(kb, input);
 
   lv_obj_move_background(prompt);
+  Nav::get().add_dialog(prompt);  // stays on top of a tab switch, blocks the tabs
 
   ws.register_notify_update(this);
 }
