@@ -19,15 +19,11 @@ void plain(lv_obj_t *obj) {
   lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
 }
 
-lv_coord_t slot_height() {
-  return lv_disp_get_ver_res(NULL) / SLOTS;
-}
-
 lv_obj_t *slot_button(lv_obj_t *bar, int slot) {
   lv_obj_t *btn = lv_obj_create(bar);
   plain(btn);
-  lv_obj_set_size(btn, BAR_WIDTH, slot_height());
-  lv_obj_set_pos(btn, 0, slot * slot_height());
+  lv_obj_set_size(btn, BAR_WIDTH, Nav::slot_height());
+  lv_obj_set_pos(btn, 0, slot * Nav::slot_height());
   lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
   lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, LV_STATE_CHECKED);
   lv_obj_set_style_bg_color(btn, lv_palette_main(LV_PALETTE_GREY), LV_STATE_CHECKED);
@@ -77,6 +73,14 @@ lv_coord_t Nav::content_width() {
   return lv_disp_get_hor_res(NULL) - BAR_WIDTH;
 }
 lv_obj_t *Nav::content() { return content_; }
+
+lv_coord_t Nav::slot_height() {
+  return lv_disp_get_ver_res(NULL) / SLOTS;
+}
+
+lv_coord_t Nav::slot_top(Tab t) {
+  return (int)t * slot_height();
+}
 
 lv_obj_t *Nav::add_button(Tab t) {
   lv_obj_t *btn = slot_button(bar_, (int)t);
