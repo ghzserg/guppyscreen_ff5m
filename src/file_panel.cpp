@@ -1,4 +1,5 @@
 #include "file_panel.h"
+#include "grid_layout.h"
 #include "config.h"
 #include "state.h"
 #include "utils.h"
@@ -28,14 +29,15 @@ FilePanel::FilePanel(lv_obj_t *parent, KWebSocketClient &c)
   lv_label_set_long_mode(fname_label, LV_LABEL_LONG_SCROLL);
   lv_obj_set_style_text_align(fname_label, LV_TEXT_ALIGN_CENTER, 0);
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+  static GridLayout layout = GridLayout::from_config("file_info",
+      {LV_GRID_FR(1)},
+      {LV_GRID_FR(3), LV_GRID_FR(2)});
 
-  lv_obj_set_grid_dsc_array(file_cont, grid_main_col_dsc, grid_main_row_dsc);
+  layout.apply_tracks(file_cont);
 
-  lv_obj_set_grid_cell(thumbnail, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(fname_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(detail_label, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+  layout.place(thumbnail, "thumbnail", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(fname_label, "name", LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(detail_label, "details", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_label_set_text(detail_label, "---");
   lv_label_set_text(fname_label, "---");
 }

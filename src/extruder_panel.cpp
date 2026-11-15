@@ -1,4 +1,5 @@
 #include "extruder_panel.h"
+#include "grid_layout.h"
 #include "state.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
@@ -104,13 +105,13 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   spoolman_btn.disable();
 #endif
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(6), LV_GRID_FR(6), LV_GRID_FR(6),
-    LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(7), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST};
+  static GridLayout layout = GridLayout::from_config("extruder",
+      {LV_GRID_FR(2), LV_GRID_FR(7), LV_GRID_FR(2)},
+      {LV_GRID_FR(3), LV_GRID_FR(6), LV_GRID_FR(6), LV_GRID_FR(6)});
 
   lv_obj_clear_flag(panel_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_set_grid_dsc_array(panel_cont, grid_main_col_dsc, grid_main_row_dsc);
+  layout.apply_tracks(panel_cont);
   lv_obj_add_flag(extruder_temp.get_sensor(), LV_OBJ_FLAG_FLOATING);
   lv_obj_align(extruder_temp.get_sensor(), LV_ALIGN_TOP_LEFT, 50, 0);
 
@@ -120,14 +121,14 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   //lv_obj_set_grid_cell(load_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 0, 2);
   //lv_obj_set_grid_cell(code_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 2);
   //lv_obj_set_grid_cell(cooldown_btn.get_container(), LV_GRID_ALIGN_END, 0, 1, LV_GRID_ALIGN_END, 2, 2);
-  lv_obj_set_grid_cell(leftside_btns_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 3);
+  layout.place(leftside_btns_cont, "leftside_btns", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 3);
 
   // col 1
   // lv_obj_set_grid_cell(extruder_temp.get_sensor(), LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(spoolman_btn.get_container(),    LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START,  0, 1);
-  lv_obj_set_grid_cell(temp_selector.get_container(),   LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(length_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(speed_selector.get_container(),  LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
+  layout.place(spoolman_btn.get_container(), "spoolman", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START,  0, 1);
+  layout.place(temp_selector.get_container(), "temp_selector", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+  layout.place(length_selector.get_container(), "length_selector", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  layout.place(speed_selector.get_container(), "speed_selector", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
 
   // col 2
   // lv_obj_set_grid_cell(spoolman_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 0, 2);
@@ -135,7 +136,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   // lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 2);
   // lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_END, 2, 2);
 
-  lv_obj_set_grid_cell(rightside_btns_cont, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 0, 3);
+  layout.place(rightside_btns_cont, "rightside_btns", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 0, 3);
   // lv_obj_set_grid_cell(retract_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 0, 2);
   // lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 2);
   // lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_END, 2, 2);

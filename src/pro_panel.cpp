@@ -1,4 +1,5 @@
 #include "pro_panel.h"
+#include "grid_layout.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -24,23 +25,23 @@ ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
-      LV_GRID_TEMPLATE_LAST};
+  static GridLayout layout = GridLayout::from_config("pro",
+      {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
+      {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5)});
 
-  lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
+  layout.apply_tracks(cont);
 
   // row 1
-  lv_obj_set_grid_cell(air_circulation_internal_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(air_circulation_external_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(air_circulation_stop_btn.get_container(),     LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(air_circulation_internal_btn.get_container(), "air_circulation_internal", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(air_circulation_external_btn.get_container(), "air_circulation_external", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(air_circulation_stop_btn.get_container(), "air_circulation_stop", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
 
   // row 2
-  lv_obj_set_grid_cell(calibrate_extruders_btn.get_container(),      LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(calibrate_vfa_btn.get_container(),            LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(calibrate_extruders_btn.get_container(), "calibrate_extruders", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(calibrate_vfa_btn.get_container(), "calibrate_vfa", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
 
   // row 3
-  lv_obj_set_grid_cell(back_btn.get_container(),                     LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 3, 1);
+  layout.place(back_btn.get_container(), "back", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 }
 
 ProPanel::~ProPanel() {

@@ -1,4 +1,5 @@
 #include "guppyscreen.h"
+#include "grid_layout.h"
 #include "prompt_panel.h"
 #include "state.h"
 #include "utils.h"
@@ -39,9 +40,10 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
 
     // lv_obj_clear_flag(promptpanel_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-    static lv_coord_t grid_main_row_dsc_detail[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    static GridLayout layout = GridLayout::from_config("prompt",
+        {LV_GRID_FR(1)},
+        {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)});
     // header, flex, buttons
-    static lv_coord_t grid_main_col_dsc_detail[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
     // single column
 
     lv_obj_center(prompt_cont);
@@ -62,13 +64,13 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_obj_set_style_min_width(prompt_cont, lv_pct(100), 0);
     lv_obj_set_size(prompt_cont, lv_pct(100), lv_pct(100));
 
-    lv_obj_set_grid_dsc_array(prompt_cont, grid_main_col_dsc_detail, grid_main_row_dsc_detail);
+    layout.apply_tracks(prompt_cont);
 
     lv_obj_set_style_pad_all(flex, 0, 0);
 
-    lv_obj_set_grid_cell(header,                LV_GRID_ALIGN_START,    0, 1, LV_GRID_ALIGN_START,  0, 1);
-    lv_obj_set_grid_cell(flex,                  LV_GRID_ALIGN_START,    0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(footer_cont,           LV_GRID_ALIGN_CENTER,   0, 1, LV_GRID_ALIGN_END,    2, 1);
+    layout.place(header, "header", LV_GRID_ALIGN_START,    0, 1, LV_GRID_ALIGN_START,  0, 1);
+    layout.place(flex, "body", LV_GRID_ALIGN_START,    0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    layout.place(footer_cont, "footer", LV_GRID_ALIGN_CENTER,   0, 1, LV_GRID_ALIGN_END,    2, 1);
 
     lv_obj_set_size(header, lv_pct(100), lv_pct(10));
     lv_obj_set_size(flex, lv_pct(100), lv_pct(60));

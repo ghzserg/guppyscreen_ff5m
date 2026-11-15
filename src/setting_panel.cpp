@@ -1,4 +1,5 @@
 #include "setting_panel.h"
+#include "grid_layout.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
 #include "subprocess.hpp"
@@ -77,31 +78,31 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent/
 #endif
 #endif
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
-      LV_GRID_TEMPLATE_LAST};
+  static GridLayout layout = GridLayout::from_config("settings",
+      {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
+      {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5)});
 
-  lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
+  layout.apply_tracks(cont);
 
   // row 1
 #ifndef GUPPY_FF5M
-  lv_obj_set_grid_cell(wifi_btn.get_container(),             LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(wifi_btn.get_container(), "wifi", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
 #endif
-  lv_obj_set_grid_cell(restart_klipper_btn.get_container(),  LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(restart_firmware_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(guppy_restart_btn.get_container(),    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(sysinfo_btn.get_container(),          LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(restart_klipper_btn.get_container(), "restart_klipper", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(restart_firmware_btn.get_container(), "restart_firmware", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(guppy_restart_btn.get_container(), "guppy_restart", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(sysinfo_btn.get_container(), "sysinfo", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
 
   // row 2
-  lv_obj_set_grid_cell(power_btn.get_container(),            LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(display_on_btn.get_container(),       LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(web_btn.get_container(),              LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(zrestore_btn.get_container(),         LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(power_btn.get_container(), "power", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(display_on_btn.get_container(), "display_on", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(web_btn.get_container(), "web", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(zrestore_btn.get_container(), "zrestore", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 //  lv_obj_set_grid_cell(spoolman_btn.get_container(),         LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 
 #ifndef GUPPY_FF5M
-  lv_obj_set_grid_cell(guppy_update_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(printer_select_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(guppy_update_btn.get_container(), "guppy_update", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(printer_select_btn.get_container(), "printer_select", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
 #endif
 }
 

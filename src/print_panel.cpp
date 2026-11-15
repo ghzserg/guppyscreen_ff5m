@@ -1,4 +1,5 @@
 #include "print_panel.h"
+#include "grid_layout.h"
 #include "file_panel.h"
 #include "state.h"
 #include "utils.h"
@@ -92,14 +93,15 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_size(file_view, LV_PCT(50), LV_PCT(100));
   lv_obj_clear_flag(file_view, LV_OBJ_FLAG_SCROLLABLE);
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(8), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-  lv_obj_set_grid_dsc_array(file_view, grid_main_col_dsc, grid_main_row_dsc);
-  lv_obj_set_grid_cell(file_panel.get_container(), LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
+  static GridLayout layout = GridLayout::from_config("print_files",
+      {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
+      {LV_GRID_FR(8), LV_GRID_FR(1)});
+  layout.apply_tracks(file_view);
+  layout.place(file_panel.get_container(), "file_info", LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
 
-  lv_obj_set_grid_cell(status_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 1, 1);
-  lv_obj_set_grid_cell(print_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_END, 1, 1);
-  lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 1, 1);
+  layout.place(status_btn.get_container(), "status", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 1, 1);
+  layout.place(print_btn.get_container(), "print", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_END, 1, 1);
+  layout.place(back_btn.get_container(), "back", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 1, 1);
 
   lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(print_btn.get_container());

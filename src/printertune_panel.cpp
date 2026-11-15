@@ -1,4 +1,5 @@
 #include "printertune_panel.h"
+#include "grid_layout.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -70,27 +71,27 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
 #ifndef GUPPY_FF5M
   tmc_tune_btn.disable();
 #endif
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
-      LV_GRID_TEMPLATE_LAST};
+  static GridLayout layout = GridLayout::from_config("tune",
+      {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
+      {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5)});
 
-  lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
+  layout.apply_tracks(cont);
 
   // row 1
-  lv_obj_set_grid_cell(finetune_btn.get_container(),          LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(limits_btn.get_container(),            LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(retract_btn.get_container(),           LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(bedmesh_btn.get_container(),           LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(finetune_btn.get_container(), "finetune", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(limits_btn.get_container(), "limits", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(retract_btn.get_container(), "retract", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(bedmesh_btn.get_container(), "bedmesh", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
 
   // row 2
-  lv_obj_set_grid_cell(inputshaper_btn.get_container(),       LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(belts_calibration_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(pro_btn.get_container(),               LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(pid_btn.get_container(),               LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(inputshaper_btn.get_container(), "inputshaper", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(belts_calibration_btn.get_container(), "belts_calibration", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(pro_btn.get_container(), "pro", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(pid_btn.get_container(), "pid", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 #ifndef GUPPY_FF5M
-  lv_obj_set_grid_cell(tmc_tune_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(tmc_status_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(power_devices_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(tmc_tune_btn.get_container(), "tmc_tune", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(tmc_status_btn.get_container(), "tmc_status", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(power_devices_btn.get_container(), "power_devices", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 #endif
   // lv_obj_set_grid_cell(restart_firmware_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 }

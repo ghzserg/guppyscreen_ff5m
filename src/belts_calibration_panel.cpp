@@ -1,4 +1,5 @@
 #include "belts_calibration_panel.h"
+#include "grid_layout.h"
 #include "utils.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
@@ -94,16 +95,17 @@ BeltsCalibrationPanel::BeltsCalibrationPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_flex_align(button_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
   lv_obj_set_size(button_cont, LV_PCT(100), LV_SIZE_CONTENT);
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(4), LV_GRID_FR(1), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+  static GridLayout layout = GridLayout::from_config("belts",
+      {LV_GRID_FR(1)},
+      {LV_GRID_FR(4), LV_GRID_FR(1), LV_GRID_FR(2)});
 
-  lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
+  layout.apply_tracks(cont);
 
-  lv_obj_set_grid_cell(graph_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 0, 1);
-  lv_obj_set_grid_cell(spinner, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(excite_control, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+  layout.place(graph_cont, "graph", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 0, 1);
+  layout.place(spinner, "spinner", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(excite_control, "excite_control", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
-  lv_obj_set_grid_cell(button_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  layout.place(button_cont, "buttons", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
   ws.register_method_callback("notify_gcode_response",
                               "BeltsCalibrationPanel",

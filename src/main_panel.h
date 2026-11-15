@@ -19,6 +19,7 @@
 #include "setting_panel.h"
 #include "print_status_panel.h"
 #include "spoolman_panel.h"
+#include "grid_layout.h"
 #include "lvgl/lvgl.h"
 
 #include <mutex>
@@ -145,6 +146,9 @@ class MainPanel : public NotifyConsumer {
   ButtonContainer led_btn;
   ButtonContainer print_btn;
   ButtonContainer emergency_btn;
+
+  // guppyconfig.json "layout"/"main"; holds the grid arrays main_cont uses.
+  GridLayout main_layout;
 
 };
 #endif // __MAIN_PANEL_H__

@@ -1,4 +1,5 @@
 #include "print_status_panel.h"
+#include "grid_layout.h"
 #include "main_panel.h"
 #include "finetune_panel.h"
 #include "retract_panel.h"
@@ -93,39 +94,40 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_clear_flag(status_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(status_cont, LV_PCT(100), LV_PCT(100));
 
-  static lv_coord_t grid_main_row_dsc_detail[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
-    LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc_detail[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-  lv_obj_set_grid_dsc_array(detail_cont, grid_main_col_dsc_detail, grid_main_row_dsc_detail);
+  static GridLayout details_layout = GridLayout::from_config("print_status_details",
+      {LV_GRID_FR(1), LV_GRID_FR(1)},
+      {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)});
+  details_layout.apply_tracks(detail_cont);
 
   lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(detail_cont, LV_PCT(60), LV_PCT(60));
 
   //detail containter row 1
-  lv_obj_set_grid_cell(extruder_temp.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1);
-  lv_obj_set_grid_cell(bed_temp.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 0, 1);
+  details_layout.place(extruder_temp.get_container(), "extruder_temp", LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1);
+  details_layout.place(bed_temp.get_container(), "bed_temp", LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 0, 1);
 
   //detail containter row 2
-  lv_obj_set_grid_cell(print_speed.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(z_offset.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 1, 1);
+  details_layout.place(print_speed.get_container(), "print_speed", LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  details_layout.place(z_offset.get_container(), "z_offset", LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 1, 1);
 
   //detail containter row 3
-  lv_obj_set_grid_cell(flow_rate.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(layers.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  details_layout.place(flow_rate.get_container(), "flow_rate", LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  details_layout.place(layers.get_container(), "layers", LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 2, 1);
 
   //detail containter row 4
-  lv_obj_set_grid_cell(elapsed.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 3, 1);
-  lv_obj_set_grid_cell(fan0.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 3, 1);
+  details_layout.place(elapsed.get_container(), "elapsed", LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 3, 1);
+  details_layout.place(fan0.get_container(), "fan0", LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 3, 1);
 
   //detail containter row 5
-  lv_obj_set_grid_cell(time_left.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
-  lv_obj_set_grid_cell(filament.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);
+  details_layout.place(time_left.get_container(), "time_left", LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
+  details_layout.place(filament.get_container(), "filament", LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);
   // lv_obj_set_grid_cell(fan2.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+  static GridLayout layout = GridLayout::from_config("print_status",
+      {LV_GRID_FR(1), LV_GRID_FR(1)},
+      {LV_GRID_FR(2), LV_GRID_FR(1)});
 
-  lv_obj_set_grid_dsc_array(status_cont, grid_main_col_dsc, grid_main_row_dsc);
+  layout.apply_tracks(status_cont);
 
   lv_obj_set_size(buttons_cont, LV_PCT(100), LV_PCT(40));
   lv_obj_clear_flag(buttons_cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -169,11 +171,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
 
   // row 1
-  lv_obj_set_grid_cell(thumbnail_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(thumbnail_cont, "thumbnail", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(detail_cont, "details", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
   //row 2
-  lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
+  layout.place(buttons_cont, "buttons", LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
 
   lv_obj_add_flag(print_speed.get_container(), LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(print_speed.get_container(), &PrintStatusPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);

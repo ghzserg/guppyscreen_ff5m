@@ -1,4 +1,5 @@
 #include "inputshaper_panel.h"
+#include "grid_layout.h"
 #include "state.h"
 #include "utils.h"
 #include "config.h"
@@ -193,29 +194,28 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
 
   lv_dropdown_set_options(yshaper_dd, fmt::format("{}", fmt::join(shapers, "\n")).c_str());
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(1), LV_GRID_FR(1),
-    LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(7), LV_GRID_FR(7),
-    LV_GRID_TEMPLATE_LAST};
+  static GridLayout layout = GridLayout::from_config("inputshaper",
+      {LV_GRID_FR(3), LV_GRID_FR(7), LV_GRID_FR(7)},
+      {LV_GRID_FR(2), LV_GRID_FR(1), LV_GRID_FR(1)});
 
-  lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
+  layout.apply_tracks(cont);
 
   // row 1, col 2/3
-  lv_obj_set_grid_cell(xspinner, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(yspinner, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(xgraph_cont, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(ygraph_cont, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(xoutput, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(youtput, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(xspinner, "xspinner", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(yspinner, "yspinner", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(xgraph_cont, "xgraph", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(ygraph_cont, "ygraph", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(xoutput, "xoutput", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  layout.place(youtput, "youtput", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
   // row 2, col 2 span 2
-  lv_obj_set_grid_cell(xcontrol, LV_GRID_ALIGN_START, 1, 2, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(xcontrol, "xcontrol", LV_GRID_ALIGN_START, 1, 2, LV_GRID_ALIGN_START, 1, 1);
 
   // row 3, col 2 span 2
-  lv_obj_set_grid_cell(ycontrol, LV_GRID_ALIGN_START, 1, 2, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(ycontrol, "ycontrol", LV_GRID_ALIGN_START, 1, 2, LV_GRID_ALIGN_START, 2, 1);
 
   // row 1, col 1
-  lv_obj_set_grid_cell(button_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 3);
+  layout.place(button_cont, "buttons", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 3);
 
   lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
   lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);

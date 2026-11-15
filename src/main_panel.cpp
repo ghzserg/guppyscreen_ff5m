@@ -64,6 +64,9 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
                     spdlog::debug("emergency stop pressed");
                     websocket.send_jsonrpc("printer.emergency_stop");
                   })
+  , main_layout(GridLayout::from_config("main",
+      {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
+      {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)}))
 {
     lv_style_init(&style);
     lv_style_set_img_recolor_opa(&style, LV_OPA_30);
@@ -230,26 +233,22 @@ void MainPanel::create_main(lv_obj_t * parent)
 {
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_ROW_WRAP);
 
-    static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-    static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
-      LV_GRID_TEMPLATE_LAST};
-
     lv_obj_clear_flag(main_cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_height(main_cont, LV_PCT(100));
 
     lv_obj_set_flex_grow(main_cont, 1);
-    lv_obj_set_grid_dsc_array(main_cont, grid_main_col_dsc, grid_main_row_dsc);
 #ifdef GUPPY_FF5M
     lv_obj_set_style_pad_top(main_cont, 0, 0);
     lv_obj_set_style_pad_bottom(main_cont, 0, 0);
 #endif
+    main_layout.apply_tracks(main_cont);  // after the padding: the config's wins
 
-    lv_obj_set_grid_cell(homing_btn.get_container(),    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-    lv_obj_set_grid_cell(extrude_btn.get_container(),   LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-    lv_obj_set_grid_cell(action_btn.get_container(),    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(led_btn.get_container(),       LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(print_btn.get_container(),     LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-    lv_obj_set_grid_cell(emergency_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+    main_layout.place(homing_btn.get_container(),    "homing",  LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    main_layout.place(extrude_btn.get_container(),   "extrude", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    main_layout.place(action_btn.get_container(),    "fans",    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    main_layout.place(led_btn.get_container(),       "led",     LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    main_layout.place(print_btn.get_container(),     "print",   LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+    main_layout.place(emergency_btn.get_container(), "stop",    LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
     // Разрешаем прокрутку контейнера
     lv_obj_add_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -270,7 +269,7 @@ void MainPanel::create_main(lv_obj_t * parent)
     // Выстраиваем датчики строго в вертикальную колонку
     lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_COLUMN);
 
-    lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 2);
+    main_layout.place(temp_cont, "temps", LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 2);
 
     lv_obj_align(temp_chart, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_size(temp_chart, LV_PCT(45), LV_PCT(40));
@@ -281,7 +280,7 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_style_size(temp_chart, 0, LV_PART_INDICATOR);
 
     lv_chart_set_range(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 300);
-    lv_obj_set_grid_cell(temp_chart, LV_GRID_ALIGN_END, 0, 2, LV_GRID_ALIGN_END, 2, 1);
+    main_layout.place(temp_chart, "chart", LV_GRID_ALIGN_END, 0, 2, LV_GRID_ALIGN_END, 2, 1);
     lv_chart_set_axis_tick(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 6, 5, true, 50);
 
     lv_chart_set_div_line_count(temp_chart, 3, 8);
