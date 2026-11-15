@@ -3,6 +3,9 @@
 
 #include <string>
 
+LV_FONT_DECLARE(notosemi_22_digits);  // digits, minus and point only
+LV_FONT_DECLARE(notosemi_16);
+
 SensorContainer::SensorContainer(KWebSocketClient &c,
                                  lv_obj_t *parent,
                                  const void *img,
@@ -33,7 +36,7 @@ SensorContainer::SensorContainer(KWebSocketClient &c,
     lv_obj_clear_flag(sensor_cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_border_color(sensor_cont, color, LV_PART_MAIN);
     lv_obj_set_style_border_side(sensor_cont, LV_BORDER_SIDE_LEFT, LV_PART_MAIN);
-    lv_obj_set_style_border_width(sensor_cont, 5, LV_PART_MAIN);
+    lv_obj_set_style_border_width(sensor_cont, stripe_width(), LV_PART_MAIN);
 
     // auto cont_width = (double)lv_disp_get_physical_hor_res(NULL) * 0.4125;
     // cont_width = cont_width > 330 ? 330 : cont_width;
@@ -155,9 +158,18 @@ lv_obj_t *SensorContainer::get_sensor() {
 }
 
 void SensorContainer::update_target(int new_target) {
+#ifdef GUPPY_FF5M
+  if (tile && new_target == target) return;  // no text and colour restyle
+#endif
   if (new_target >= 0) {
     target = new_target;
     lv_label_set_text(target_label, fmt::format("{}", new_target).c_str());
+#ifdef GUPPY_FF5M
+    if (tile) {
+      lv_obj_set_style_text_color(target_label,
+          lv_palette_main(new_target > 0 ? LV_PALETTE_RED : LV_PALETTE_GREY), 0);
+    }
+#endif
   }
 }
 
@@ -167,6 +179,54 @@ void SensorContainer::update_value(int new_value) {
     lv_label_set_text(value_label, fmt::format("{}", new_value).c_str());
   }
 }
+
+#ifdef GUPPY_FF5M
+const lv_font_t *SensorContainer::temperature_font() {
+  return &notosemi_22_digits;
+}
+
+lv_coord_t SensorContainer::tile_width() {
+  return 84 * ((double)lv_disp_get_physical_hor_res(NULL) / 800.0);
+}
+
+void SensorContainer::as_tile() {
+  tile = true;
+  auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  // The colour stripe along the bottom. The border counts on every side of
+  // the content area, not only the drawn one: the content is 74x68, 4 tiles
+  // fill the 356 px temperature column.
+  lv_obj_set_style_border_side(sensor_cont, LV_BORDER_SIDE_BOTTOM, LV_PART_MAIN);
+  lv_obj_set_size(sensor_cont, tile_width(), 78 * scale);
+
+  // Top: the icon, the target and the current temperature stacked right of it.
+  lv_img_set_zoom(sensor_img, 128);  // the 64 px icons at 32 px
+  lv_img_set_size_mode(sensor_img, LV_IMG_SIZE_MODE_REAL);  // the zoomed size
+  lv_obj_align(sensor_img, LV_ALIGN_TOP_LEFT, 0, 4 * scale);
+
+  lv_obj_add_flag(divider_label, LV_OBJ_FLAG_HIDDEN);
+  for (lv_obj_t *l : {value_label, target_label}) {
+    lv_obj_set_width(l, LV_SIZE_CONTENT);
+    lv_obj_set_style_pad_all(l, 0, 0);
+    lv_obj_set_style_border_width(l, 0, 0);
+    lv_obj_set_style_text_font(l, temperature_font(), 0);  // bigger than the name
+  }
+  if (lv_obj_has_flag(target_label, LV_OBJ_FLAG_HIDDEN)) {
+    lv_obj_align(value_label, LV_ALIGN_TOP_RIGHT, 0, 12 * scale);
+  } else {
+    lv_obj_align(target_label, LV_ALIGN_TOP_RIGHT, 0, 2 * scale);
+    lv_obj_align(value_label, LV_ALIGN_TOP_RIGHT, 0, 24 * scale);
+    update_target(target < 0 ? 0 : target);
+  }
+
+  // Bottom: the name, the tile's whole width.
+  lv_label_set_long_mode(sensor_label, LV_LABEL_LONG_CLIP);
+  lv_obj_set_width(sensor_label, LV_PCT(100));
+  // 16 px задан явно: шрифт по умолчанию 20 px, и с ним «Extruder» и «Chamber»
+  // не помещаются в плитку.
+  lv_obj_set_style_text_font(sensor_label, &notosemi_16, 0);
+  lv_obj_align(sensor_label, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+}
+#endif
 
 int SensorContainer::get_target_value() {
   return target;

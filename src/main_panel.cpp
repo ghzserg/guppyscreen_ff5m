@@ -4,6 +4,9 @@
 #include "spdlog/spdlog.h"
 
 #include <string>
+#include <map>
+#include <optional>
+#include <vector>
 
 #ifdef GUPPY_FF5M
 LV_IMG_DECLARE(extrude_img);  // as on the extruder screen's Load button
@@ -21,6 +24,7 @@ LV_IMG_DECLARE(heater);
 #ifdef GUPPY_FF5M
 LV_IMG_DECLARE(speed_up_img);  // Fine Tune's Speed+; unlike the Tune tab's sliders
 LV_IMG_DECLARE(bedmesh_img);
+LV_IMG_DECLARE(thermometer_img);
 #endif
 
 #define TUNE_SYMBOL "\xF3\xB1\x95\x82"
@@ -56,6 +60,9 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , numpad(Numpad(main_cont))
   , spoolman_panel(sm)
   , temp_cont(lv_obj_create(main_cont))
+#ifdef GUPPY_FF5M
+  , sensor_tiles(lv_obj_create(temp_cont))
+#endif
   , temp_chart(lv_chart_create(main_cont))
   , homing_btn(main_cont, &move, _("Homing") /* "Домой" */, &MainPanel::_handle_homing_cb, this)
   , extrude_btn(main_cont, &EXTRUDE_IMG, _("Extrude") /* "Экструдер" */, &MainPanel::_handle_extrude_cb, this)
@@ -226,19 +233,40 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_grid_cell(bedmesh_btn.get_container(),   LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 #endif
 
+#ifdef GUPPY_FF5M
+    // The sensors as tiles, 4 per row, and the print status on its own line
+    // under them: everything above the chart without scrolling, even with
+    // C5 Pro's six heaters. show() keeps the status the column's last child.
+    lv_obj_clear_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_size(temp_cont, LV_PCT(50), LV_SIZE_CONTENT);
+    lv_obj_set_style_pad_all(temp_cont, 0, 0);
+    const lv_coord_t TILE_GAP = SensorContainer::tile_gap();
+    lv_obj_set_style_pad_top(temp_cont, TILE_GAP, 0);
+    lv_obj_set_style_pad_row(temp_cont, TILE_GAP, 0);
+    lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_COLUMN);
+
+    lv_obj_remove_style_all(sensor_tiles);
+    lv_obj_clear_flag(sensor_tiles, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_size(sensor_tiles, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_pad_row(sensor_tiles, TILE_GAP, 0);
+    lv_obj_set_style_pad_column(sensor_tiles, TILE_GAP, 0);
+    lv_obj_set_flex_flow(sensor_tiles, LV_FLEX_FLOW_ROW_WRAP);
+
+    lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 2);
+
+    lv_obj_t *mini_status = print_status_panel.get_mini_print_status().get_container();
+    lv_obj_set_parent(mini_status, temp_cont);
+    lv_obj_clear_flag(mini_status, LV_OBJ_FLAG_FLOATING);
+    // Four tile columns wide, whatever its text.
+    lv_obj_set_width(mini_status, 4 * SensorContainer::tile_width() + 3 * TILE_GAP);
+#else
     // Разрешаем прокрутку контейнера
     lv_obj_add_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
     // Разрешаем скроллинг только по вертикали
     lv_obj_set_scroll_dir(temp_cont, LV_DIR_VER);
     // Отключаем передачу прокрутки наверх, чтобы скроллился именно список
     lv_obj_clear_flag(temp_cont, LV_OBJ_FLAG_SCROLL_CHAIN);
-#ifdef GUPPY_FF5M
-    lv_obj_set_size(temp_cont, LV_PCT(50), LV_PCT(62));
-    lv_obj_set_style_pad_top(temp_cont, 4, 0);
-    lv_obj_set_style_pad_bottom(temp_cont, 0, 0);
-#else
     lv_obj_set_size(temp_cont, LV_PCT(50), LV_PCT(50));
-#endif
 
     lv_obj_set_style_pad_all(temp_cont, 0, 0);
 
@@ -246,6 +274,7 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_COLUMN);
 
     lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 2);
+#endif
 
     lv_obj_align(temp_chart, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_size(temp_chart, LV_PCT(45), LV_PCT(40));
@@ -265,13 +294,78 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_scroll_to_x(temp_chart, LV_COORD_MAX, LV_ANIM_OFF);
 }
 
+#ifdef GUPPY_FF5M
+// The colour of each sensor's stripe and chart line, by sensor id: the one
+// named in its config, unless that name is unknown or an earlier sensor
+// already has it. Those get the first colour of CONTRASTING no sensor has,
+// so no two lines on the chart look alike.
+static std::map<std::string, lv_color_t> sensor_colors(json &temp_sensors) {
+  // In .rodata: looked up once per sensor at startup.
+  static const struct { const char *name; lv_palette_t palette; } NAMED[] = {
+    {"red", LV_PALETTE_RED},       {"purple", LV_PALETTE_PURPLE}, {"blue", LV_PALETTE_BLUE},
+    {"orange", LV_PALETTE_ORANGE}, {"yellow", LV_PALETTE_YELLOW}, {"green", LV_PALETTE_GREEN},
+    {"cyan", LV_PALETTE_CYAN},     {"teal", LV_PALETTE_TEAL},     {"lime", LV_PALETTE_LIME},
+    {"amber", LV_PALETTE_AMBER},   {"pink", LV_PALETTE_PINK},     {"grey", LV_PALETTE_GREY},
+    {"gray", LV_PALETTE_GREY},     {"indigo", LV_PALETTE_INDIGO}, {"deep_purple", LV_PALETTE_DEEP_PURPLE},
+    {"light_blue", LV_PALETTE_LIGHT_BLUE}, {"brown", LV_PALETTE_BROWN},
+  };
+  static const lv_color_t CONTRASTING[] = {
+    lv_palette_main(LV_PALETTE_RED),    lv_palette_main(LV_PALETTE_BLUE),   lv_palette_main(LV_PALETTE_GREEN),
+    lv_palette_main(LV_PALETTE_YELLOW), lv_palette_main(LV_PALETTE_PURPLE), lv_palette_main(LV_PALETTE_CYAN),
+    lv_palette_main(LV_PALETTE_ORANGE), lv_palette_main(LV_PALETTE_PINK),   lv_palette_main(LV_PALETTE_LIME),
+    lv_color_white(),
+  };
+  // The colour a config value names, if any.
+  auto parse = [](const json &color) -> std::optional<lv_color_t> {
+    if (color.is_number()) {
+      int p = color.template get<int>();
+      if (p >= 0 && p < _LV_PALETTE_LAST) return lv_palette_main((lv_palette_t)p);
+    } else if (color.is_string()) {
+      const std::string name = color.template get<std::string>();
+      if (name == "white") return lv_color_white();
+      for (auto &n : NAMED) if (name == n.name) return lv_palette_main(n.palette);
+    }
+    return std::nullopt;
+  };
+  std::map<std::string, lv_color_t> colors;
+  auto taken = [&](lv_color_t c) {
+    for (auto &[k, v] : colors) if (lv_color_to32(v) == lv_color_to32(c)) return true;
+    return false;
+  };
+
+  std::vector<std::string> unset;
+  for (auto &sensor : temp_sensors.items()) {
+    auto c = parse(sensor.value()["color"]);
+    if (c && !taken(*c)) {
+      colors[sensor.key()] = *c;
+    } else {
+      unset.push_back(sensor.key());
+    }
+  }
+  for (auto &key : unset) {
+    lv_color_t pick = lv_palette_main(LV_PALETTE_ORANGE);  // more sensors than CONTRASTING colours
+    for (lv_color_t c : CONTRASTING) {
+      if (!taken(c)) { pick = c; break; }
+    }
+    colors[key] = pick;
+  }
+  return colors;
+}
+#endif
+
 void MainPanel::create_sensors(json &temp_sensors) {
   std::lock_guard<std::mutex> lock(lv_lock);
   sensors.clear();
+#ifdef GUPPY_FF5M
+  std::map<std::string, lv_color_t> colors = sensor_colors(temp_sensors);
+#endif
   for (auto &sensor : temp_sensors.items()) {
     std::string key = sensor.key();
     bool controllable = sensor.value()["controllable"].template get<bool>();
 
+#ifdef GUPPY_FF5M
+    lv_color_t color_code = colors[key];
+#else
     lv_color_t color_code = lv_palette_main(LV_PALETTE_ORANGE);
     if (!sensor.value()["color"].is_number()) {
       std::string color = sensor.value()["color"].template get<std::string>();
@@ -304,6 +398,8 @@ void MainPanel::create_sensors(json &temp_sensors) {
       color_code = lv_palette_main((lv_palette_t)sensor.value()["color"].template get<int>());
     }
 
+#endif
+
     std::string display_name = sensor.value()["display_name"].template get<std::string>();
 
     const void* sensor_img = &heater;
@@ -312,13 +408,26 @@ void MainPanel::create_sensors(json &temp_sensors) {
     } else if (key == "heater_bed") {
       sensor_img = &bed;
     }
+#ifdef GUPPY_FF5M
+    else if (key == "temperature_sensor head") {
+      sensor_img = &thermometer_img;
+    }
+#endif
 
     lv_chart_series_t *temp_series =
       lv_chart_add_series(temp_chart, color_code, LV_CHART_AXIS_PRIMARY_Y);
 
-    sensors.insert({key, std::make_shared<SensorContainer>(ws, temp_cont, sensor_img, 150,
+#ifdef GUPPY_FF5M
+    lv_obj_t *sensor_parent = sensor_tiles;
+#else
+    lv_obj_t *sensor_parent = temp_cont;
+#endif
+    sensors.insert({key, std::make_shared<SensorContainer>(ws, sensor_parent, sensor_img, 150,
                            display_name.c_str(), color_code, controllable, false, numpad, key,
                            temp_chart, temp_series)});
+#ifdef GUPPY_FF5M
+    sensors[key]->as_tile();
+#endif
   }
 }
 
