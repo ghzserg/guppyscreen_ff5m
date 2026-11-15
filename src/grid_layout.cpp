@@ -71,7 +71,7 @@ static std::vector<lv_coord_t> read_tracks(const std::string &panel, const json 
 static std::vector<GridLayout::Item> placed_items;
 // Each panel's tracks as they would be written in the config.
 static nlohmann::ordered_json panel_tracks = nlohmann::ordered_json::object();
-// Each panel's grid container (the first one, for PID and Pro).
+// Each panel's grid container (the first one, if a panel is created twice).
 static std::map<std::string, lv_obj_t *> panel_conts;
 
 static json track_json(lv_coord_t t) {
@@ -179,7 +179,7 @@ nlohmann::ordered_json GridLayout::current_layout() {
     }
     auto &items = out[i.panel]["items"];
     if (items.contains(i.id)) {
-      continue;  // PID and Pro are created twice
+      continue;  // a panel created twice: its first placement
     }
     nlohmann::ordered_json item = {{"col", i.col}, {"row", i.row}};
     if (i.col_span != 1) item["col_span"] = i.col_span;
@@ -190,6 +190,7 @@ nlohmann::ordered_json GridLayout::current_layout() {
       item["align_x"] = align_name(i.x_align);
       item["align_y"] = align_name(i.y_align);
     }
+    if (!i.padding.is_null()) item["padding"] = i.padding;
     if (i.hidden) item["hidden"] = true;
     items[i.id] = item;
   }
@@ -228,19 +229,24 @@ static void apply_spacing(const std::string &where, const json &spec,
   }
 }
 
+// `spec` (a number or {"top", "right", "bottom", "left"}) as obj's padding.
+static void apply_padding(const std::string &where, const json &spec, lv_obj_t *obj) {
+  apply_spacing(where, spec, {"top", "right", "bottom", "left"},
+                [obj](const std::string &k, lv_coord_t v) {
+                  if (k == "top") lv_obj_set_style_pad_top(obj, v, 0);
+                  else if (k == "right") lv_obj_set_style_pad_right(obj, v, 0);
+                  else if (k == "bottom") lv_obj_set_style_pad_bottom(obj, v, 0);
+                  else lv_obj_set_style_pad_left(obj, v, 0);
+                });
+}
+
 void GridLayout::apply_tracks(lv_obj_t *cont) {
   lv_obj_set_grid_dsc_array(cont, cols.data(), rows.data());
 #ifdef GUPPY_LAYOUT_REGISTRY
   panel_conts.emplace(panel, cont);
 #endif
   if (!padding.is_null()) {
-    apply_spacing(panel + ".padding", padding, {"top", "right", "bottom", "left"},
-                  [cont](const std::string &k, lv_coord_t v) {
-                    if (k == "top") lv_obj_set_style_pad_top(cont, v, 0);
-                    else if (k == "right") lv_obj_set_style_pad_right(cont, v, 0);
-                    else if (k == "bottom") lv_obj_set_style_pad_bottom(cont, v, 0);
-                    else lv_obj_set_style_pad_left(cont, v, 0);
-                  });
+    apply_padding(panel + ".padding", padding, cont);
   }
   if (!gap.is_null()) {
     apply_spacing(panel + ".gap", gap, {"row", "column"},
@@ -324,6 +330,14 @@ void GridLayout::place(lv_obj_t *obj, const std::string &id,
   }
   lv_obj_set_grid_cell(obj, x_align, col, col_span, y_align, row, row_span);
 
+  // The item's own padding: moves its content, not its cell.
+  json item_padding;
+  auto padding_spec = item->find("padding");
+  if (padding_spec != item->end()) {
+    apply_padding(where + ".padding", *padding_spec, obj);
+    item_padding = *padding_spec;
+  }
+
   // Hidden items keep their cell: some panels show items themselves
   // (calibration graphs and spinners), and they must appear in place.
   bool hide = false;
@@ -340,6 +354,6 @@ void GridLayout::place(lv_obj_t *obj, const std::string &id,
   }
 #ifdef GUPPY_LAYOUT_REGISTRY
   placed_items.push_back({panel, id, obj, col, col_span, row, row_span, hide,
-                          (int)cols.size() - 1, (int)rows.size() - 1, x_align, y_align});
+                          (int)cols.size() - 1, (int)rows.size() - 1, x_align, y_align, item_padding});
 #endif
 }

@@ -10,7 +10,8 @@
 //     "gap": 6,                    // or {"row": 6, "column": 12}
 //     "items": {"<item>": {"col": 3, "row": 1, "col_span": 1, "row_span": 1,
 //                          "hidden": false, "align": "center",
-//                          "align_x": "start", "align_y": "end"}}}}
+//                          "align_x": "start", "align_y": "end",
+//                          "padding": {"top": 6}}}}}   // inside the item, as the panel's
 //
 // Anything missing or of the wrong type keeps the panel's hard-coded value
 // (a warning is logged). Configured cells are clamped to the grid.
@@ -36,6 +37,7 @@ class GridLayout {
     bool hidden;                       // hidden by the config
     int grid_cols, grid_rows;          // the panel's grid size
     lv_grid_align_t x_align, y_align;
+    json padding;                      // the item's, as configured, or null
   };
 #endif
 
