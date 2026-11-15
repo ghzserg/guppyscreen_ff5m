@@ -30,8 +30,6 @@ LV_IMG_DECLARE(fine_tune_img);
 LV_IMG_DECLARE(pause_img);
 LV_IMG_DECLARE(resume);
 LV_IMG_DECLARE(cancel);
-LV_IMG_DECLARE(emergency);
-LV_IMG_DECLARE(back);
 
 double pi() { return std::atan(1)*4; }
 
@@ -62,13 +60,6 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
                  websocket_client.send_jsonrpc("printer.gcode.script",
                     json::parse(R"({"script":"SDCARD_RESET_FILE"})"));
                })
-  , emergency_btn(buttons_cont, &emergency, _("Stop"), &PrintStatusPanel::_handle_callback, this,
-                  _("Do you want to emergency stop?") /* "Выполнить аварийную остановку?" */,
-                  [&websocket_client]() {
-                    spdlog::debug("emergency stop pressed");
-                    websocket_client.send_jsonrpc("printer.emergency_stop");
-                  })
-  , back_btn(buttons_cont, &back, _("Back") /* "Назад" */, &PrintStatusPanel::_handle_callback, this)
   , thumbnail_cont(lv_obj_create(status_cont))
   , thumbnail(lv_img_create(thumbnail_cont))
   , pbar_cont(lv_obj_create(thumbnail_cont))
@@ -143,10 +134,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   // lv_obj_set_style_border_width(pbar_cont, 2, 0);
   // lv_obj_set_style_border_width(thumbnail_cont, 2, 0);
 
-  auto bar_width = (double)lv_disp_get_physical_hor_res(NULL) * 0.35;
+  // 35% of the content area beside the nav bar.
+  auto side_width = (double)Nav::content_width() * 0.35;
   auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
 
-  lv_obj_set_size(progress_bar, bar_width, 20 * hscale);
+  lv_obj_set_size(progress_bar, side_width, 20 * hscale);
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
 
   lv_label_set_text(progress_label, "0%");
@@ -157,14 +149,14 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_set_flex_flow(thumbnail_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
-  lv_obj_set_size(thumbnail_cont, (double)lv_disp_get_physical_hor_res(NULL) * 0.35, LV_SIZE_CONTENT);
+  lv_obj_set_size(thumbnail_cont, side_width, LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(thumbnail_cont, 0, 0);
   lv_obj_set_style_pad_row(thumbnail_cont, 20, 0);
 
   filename_label = lv_label_create(thumbnail_cont);
   lv_label_set_text(filename_label, "...");
   lv_obj_set_style_text_align(filename_label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_set_width(filename_label, (double)lv_disp_get_physical_hor_res(NULL) * 0.35);
+  lv_obj_set_width(filename_label, side_width);
   lv_label_set_long_mode(filename_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
 
   lv_obj_move_to_index(filename_label, 0);
@@ -203,13 +195,29 @@ PrintStatusPanel::~PrintStatusPanel() {
   ws.unregister_notify_update(this);
 }
 
-void PrintStatusPanel::foreground() {
-  // populate();
-  lv_obj_move_foreground(status_cont);
+void PrintStatusPanel::set_idle_screen(lv_obj_t *screen) {
+  idle_screen = screen;
 }
 
+// The Print tab shows this screen while printing or paused.
+void PrintStatusPanel::show_status() {
+  Nav::get().set_root(Nav::PRINT, status_cont);
+}
+
+// Shows the Print tab: the print status while printing or paused, the
+// file list otherwise.
+void PrintStatusPanel::foreground() {
+  if (running) {
+    show_status();
+  }
+  Nav::get().activate(Nav::PRINT);
+}
+
+// No print: the Print tab goes back to the file list.
 void PrintStatusPanel::background() {
-  lv_obj_move_background(status_cont);
+  if (idle_screen != NULL) {
+    Nav::get().set_root(Nav::PRINT, idle_screen);
+  }
   exclude_panel.background();
 }
 
@@ -297,11 +305,13 @@ void PrintStatusPanel::init(json &fans) {
     ->get_data("/printer_state/print_stats/state"_json_pointer);
   if (!pstat_state.is_null()) {
     auto pstatus = pstat_state.template get<std::string>();
-    if (pstatus != "printing" && pstatus != "paused") {
+    running = pstatus == "printing" || pstatus == "paused";
+    if (!running) {
       file_loaded = false;
       mini_print_status.hide();
+      background();
     } else {
-      foreground();
+      foreground();  // connected during a print
     }
     mini_print_status.update_status(pstatus);
   } else {
@@ -410,7 +420,6 @@ void PrintStatusPanel::consume(json &j) {
     // filename change indicates a start of a print
     reset();
     populate();
-    foreground(); // auto move to front when print is detected
     lv_label_set_text(filename_label, printfile.template get<std::string>().c_str());
   }
 
@@ -418,7 +427,9 @@ void PrintStatusPanel::consume(json &j) {
   if (!pstate.is_null()) {
     update_pause_buttons(pstate);
     auto print_status = pstate.template get<std::string>();
-    if (print_status != "printing" && print_status != "paused") {
+    bool was_running = running;
+    running = print_status == "printing" || print_status == "paused";
+    if (!running) {
       mini_print_status.hide();
       background();
       reset();
@@ -433,7 +444,13 @@ void PrintStatusPanel::consume(json &j) {
         reset();
         populate();
       }
-      foreground();
+      show_status();
+      if (!was_running) {
+        // A print starts, from here or elsewhere (a slicer, a macro, the
+        // same file again). Pause and resume don't switch tabs: a screen
+        // opened meanwhile (e.g. Extruder for a filament change) stays.
+        Nav::get().activate(Nav::PRINT);
+      }
       mini_print_status.show();
     }
 
@@ -578,18 +595,14 @@ void PrintStatusPanel::update_pause_buttons(const json &state) {
 
 void PrintStatusPanel::handle_callback(lv_event_t *event) {
   lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    background();
-  } else if (btn == emergency_btn.get_container()) {
-    ws.send_jsonrpc("printer.emergency_stop");
-  } else if (btn == pause_btn.get_container()) {
+  if (btn == pause_btn.get_container()) {
     ws.send_jsonrpc("printer.print.pause");
   } else if (btn == thumbnail_cont) {
     exclude_panel.foreground();
   } else if (btn == resume_btn.get_container()) {
     ws.send_jsonrpc("printer.print.resume");
   } else if (btn == cancel_btn.get_container()) {
-    // The print status goes when Klipper reports the print cancelled.
+    // The Print tab goes back to the file list when Klipper reports it.
     ws.send_jsonrpc("printer.print.cancel");
   } else if (btn == retract_btn.get_container()) {
     retract_panel.foreground();
