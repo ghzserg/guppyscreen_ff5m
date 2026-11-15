@@ -47,8 +47,6 @@ class BeltsCalibrationPanel {
   lv_obj_t *button_cont;
   ButtonContainer calibrate_btn;
   ButtonContainer excite_btn;
-  ButtonContainer emergency_btn;
-  ButtonContainer back_btn;
   bool image_fullsized;
 
   static std::vector<std::string> axes;

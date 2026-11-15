@@ -1,4 +1,5 @@
 #include "inputshaper_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "utils.h"
 #include "config.h"
@@ -12,8 +13,6 @@ namespace fs = std::experimental::filesystem;
 
 LV_IMG_DECLARE(resume);
 LV_IMG_DECLARE(sd_img);
-LV_IMG_DECLARE(emergency);
-LV_IMG_DECLARE(back);
 
 LV_FONT_DECLARE(dejavusans_mono_14);
 
@@ -34,7 +33,7 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   : ws(c)
   , lv_lock(l)
   , prompt_panel(&p)
-  , cont(lv_obj_create(lv_scr_act()))
+  , cont(lv_obj_create(Nav::get().content()))
 
     // xgraph
   , xgraph_cont(lv_obj_create(cont))
@@ -70,17 +69,15 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   , graph_switch(lv_switch_create(switch_cont))
   , calibrate_btn(button_cont, &resume, _("Calibrate") /* "Калибровка" */, &InputShaperPanel::_handle_callback, this)
   , save_btn(button_cont, &sd_img, _("Save") /* "Сохранить" */, &InputShaperPanel::_handle_callback, this)
-  , emergency_btn(button_cont, &emergency, _("Stop") /* "Стоп" */, &InputShaperPanel::_handle_callback, this,
-                  _("Do you want to emergency stop?") /* "Выполнить аварийную остановку?" */,
-                  [&c]() {
-                    spdlog::debug("emergency stop pressed");
-                    c.send_jsonrpc("printer.emergency_stop");
-                  })
-  , back_btn(cont, &back, _("Back") /* "Назад" */, &InputShaperPanel::_handle_callback, this)
   , ximage_fullsized(false)
   , yimage_fullsized(false)
 {
   lv_obj_move_background(cont);
+  // Leaving the screen: the two graphs are 800x480, 1.5 MB each once decoded.
+  Nav::get().on_leave(cont, [this]() {
+    KUtils::uncache_img(xgraph);
+    KUtils::uncache_img(ygraph);
+  });
 
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
@@ -217,8 +214,6 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   // row 1, col 1
   lv_obj_set_grid_cell(button_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 3);
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
 
   // TODO: show only register when issuing macros inputshaper cares about, then unregister after.
   // ws.register_gcode_resp([this](json& d) { this->handle_macro_response(d); });
@@ -329,13 +324,6 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
     ws.gcode_script(fmt::format("SAVE_SHAPER AXIS=X NAME={} FREQUENCY={}\nSAVE_SHAPER AXIS=Y NAME={} FREQUENCY={}\nSAVE_CONFIG",
                                 xbuf, xhz, ybuf, yhz));
-  } else if (btn == back_btn.get_container()) {
-    // The two graphs are 800x480: 1.5 MB each once decoded.
-    KUtils::uncache_img(xgraph);
-    KUtils::uncache_img(ygraph);
-    lv_obj_move_background(cont);
-  } else if (btn == emergency_btn.get_container()) {
-    ws.send_jsonrpc("printer.emergency_stop");
   }
 
 }
@@ -410,7 +398,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
 
     } else if ("// Resonances data written to " Y_DATA " file" == resp) {
       auto config_root = KUtils::get_root_path("config");
-      auto screen_width = (double)lv_disp_get_physical_hor_res(NULL) / 100.0;
+      auto screen_width = (double)Nav::content_width() / 100.0;  // beside the nav bar
       auto screen_height = (double)lv_disp_get_physical_ver_res(NULL) / 100.0;
       auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , Y_PNG);
       std::string arg = graph_requested
@@ -422,7 +410,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
 
     } else if ("// Resonances data written to " X_DATA " file" == resp) {
       auto config_root = KUtils::get_root_path("config");
-      auto screen_width = (double)lv_disp_get_physical_hor_res(NULL) / 100.0;
+      auto screen_width = (double)Nav::content_width() / 100.0;  // beside the nav bar
       auto screen_height = (double)lv_disp_get_physical_ver_res(NULL) / 100.0;
       auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , X_PNG);
       std::string arg = graph_requested

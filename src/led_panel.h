@@ -20,14 +20,9 @@ class LedPanel : public NotifyConsumer {
   lv_obj_t *get_container();
   void init(json&);
   void foreground();
-  void handle_callback(lv_event_t *event);
   void handle_led_update(lv_event_t *event);
   void handle_led_update_generic(lv_event_t *event);
 
-  static void _handle_callback(lv_event_t *event) {
-    LedPanel *panel = (LedPanel*)event->user_data;
-    panel->handle_callback(event);
-  };
 
   static void _handle_led_update(lv_event_t *event) {
     LedPanel *panel = (LedPanel*)event->user_data;
@@ -45,7 +40,6 @@ class LedPanel : public NotifyConsumer {
   lv_obj_t *ledpanel_cont;
   lv_obj_t *leds_cont;
   std::map<std::string, std::shared_ptr<SliderContainer>> leds;
-  ButtonContainer back_btn;
 
 };
 

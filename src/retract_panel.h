@@ -33,7 +33,6 @@ class RetractPanel : public NotifyConsumer {
   SliderContainer retract_speed;
   SliderContainer unretract_extra_length;
   SliderContainer unretract_speed;
-  ButtonContainer back_btn;
   float retract_length_default;
   int retract_speed_default;
   float unretract_extra_length_default;

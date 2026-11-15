@@ -1,4 +1,5 @@
 #include "limits_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -17,18 +18,16 @@ bool valid_accel(double value) { return std::isfinite(value) && value > 0; }
 }  // namespace
 
 LV_IMG_DECLARE(refresh_img);
-LV_IMG_DECLARE(back);
 
 LimitsPanel::LimitsPanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
-  , cont(lv_obj_create(lv_scr_act()))
+  , cont(lv_obj_create(Nav::get().content()))
   , limit_cont(lv_obj_create(cont))
   , velocity(limit_cont, _("Velocity (mm/s)") /* "Скорость (мм/с)" */, &refresh_img, _("Reset") /* "Сброс" */, &refresh_img, NULL, &LimitsPanel::_handle_callback, this, "")
   , acceleration(limit_cont, _("Acceleration (mm/s2)") /* "Ускорение (мм/с2)" */, &refresh_img, _("Reset") /* "Сброс" */, &refresh_img, NULL, &LimitsPanel::_handle_callback, this, "")
   , square_corner(limit_cont, _("Square Corner Velocity (mm/s)") /* "Скорость на прямых углах SCV (мм/с)" */, &refresh_img, _("Reset") /* "Сброс" */, &refresh_img, NULL, &LimitsPanel::_handle_callback, this, "")
   , accel_to_decel(limit_cont, _("Acceleration to Deceleration (mm/s2)") /* "Ограничение ускорение зигзагов (мм/с2)" */, &refresh_img, _("Reset") /* "Сброс" */, &refresh_img, NULL, &LimitsPanel::_handle_callback, this, "")
-  , back_btn(cont, &back, _("Back") /* "Назад" */, &LimitsPanel::_handle_callback, this)
   , max_velocity_default(1000)
   , max_accel_default(20000)
   , max_accel_to_decel_default(10000)
@@ -43,7 +42,6 @@ LimitsPanel::LimitsPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_size(limit_cont, lv_pct(100), lv_pct(100));
   lv_obj_set_flex_flow(limit_cont, LV_FLEX_FLOW_COLUMN);
 
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
 
   lv_obj_add_flag(accel_to_decel.get_container(), LV_OBJ_FLAG_HIDDEN);
   ws.register_notify_update(this);
@@ -185,11 +183,6 @@ void LimitsPanel::consume(json &j) {
 
 void LimitsPanel::handle_callback(lv_event_t *e) {
   lv_obj_t *btn = lv_event_get_current_target(e);
-
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(cont);
-    return;
-  }
 
   if (lv_event_get_code(e) == LV_EVENT_RELEASED) {
     lv_obj_t *obj = lv_event_get_target(e);

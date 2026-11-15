@@ -84,8 +84,6 @@ class InputShaperPanel {
   lv_obj_t *graph_switch;
   ButtonContainer calibrate_btn;
   ButtonContainer save_btn;
-  ButtonContainer emergency_btn;
-  ButtonContainer back_btn;
   bool ximage_fullsized;
   bool yimage_fullsized;
   json calibrate_output;

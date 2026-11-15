@@ -1,4 +1,5 @@
 #include "pid_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -10,12 +11,11 @@ LV_IMG_DECLARE(clear_nozzle_img);
 LV_IMG_DECLARE(bed_level_screws_tune_img);
 LV_IMG_DECLARE(load_cell_tare_img);
 LV_IMG_DECLARE(heater);
-LV_IMG_DECLARE(back);
 
 PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
-  , cont(lv_obj_create(lv_scr_act()))
+  , cont(lv_obj_create(Nav::get().content()))
   , numpad(Numpad(cont))
   , temp_cont(lv_obj_create(cont))
   , temp_chart(lv_chart_create(cont))
@@ -34,7 +34,6 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   , clear_nozzle_btn(cont, &clear_nozzle_img, _("Clear nozzle") /* "Очистить сопло" */, &PidPanel::_handle_callback, this)
   , load_cell_tare_btn(cont, &load_cell_tare_img, _("Load Cell") /* "Сбросить вес" */, &PidPanel::_handle_callback, this)
   , bed_level_screws_tune_btn(cont, &bed_level_screws_tune_img, _("Screw adjustment") /* "Регулировка винтов" */, &PidPanel::_handle_callback, this)
-  , back_btn(cont, &back, _("Back") /* "Назад" */, &PidPanel::_handle_callback, this)
   , tools_btnmatrix(NULL)
   , active_tool_id(0)
   , total_tools(1)
@@ -110,7 +109,6 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_grid_cell(clear_nozzle_btn.get_container(),          LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(bed_level_screws_tune_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(load_cell_tare_btn.get_container(),        LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(back_btn.get_container(),                  LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
   ws.register_notify_update(this);
 }
 
@@ -218,9 +216,7 @@ void PidPanel::handle_callback(lv_event_t *e) {
 
   lv_obj_t *btn = lv_event_get_current_target(e);
 
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(cont);
-  } else if (btn == pid_extruder_btn.get_container()) {
+  if (btn == pid_extruder_btn.get_container()) {
     pid_extruder_btn.disable();
 
     ws.gcode_script(fmt::format("PID_TUNE_EXTRUDER T={} TEMPERATURE={}", active_tool_id, extruder_temp.get_target_value()));
