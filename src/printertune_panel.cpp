@@ -41,10 +41,14 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   , tmc_status_panel(c, l)
   , power_panel(c, l)
 #endif
+#ifndef GUPPY_FF5M  // on Home on the FF5M
   , finetune_btn(cont, &fine_tune_img, _("Fine Tune") /* "Настройки" */, &PrinterTunePanel::_handle_callback, this)
+#endif
   , limits_btn(cont, &limit_img, _("Limits") /* "Ограничения" */, &PrinterTunePanel::_handle_callback, this)
   , retract_btn(cont, &retract, _("Retract") /* "Ретракт" */, &PrinterTunePanel::_handle_callback, this)
+#ifndef GUPPY_FF5M
   , bedmesh_btn(cont, &bedmesh_img, _("Bed Mesh") /* "Стол" */, &PrinterTunePanel::_handle_callback, this)
+#endif
   , inputshaper_btn(cont, &inputshaper_img, "Input Shaper", &PrinterTunePanel::_handle_callback, this)
 #ifndef ZBOLT
   , belts_calibration_btn(cont, &belts_calibration_img, _("Belts/Shake") /* "Ремни/Тряска" */, &PrinterTunePanel::_handle_callback, this)
@@ -77,6 +81,18 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
 
   layout.apply_tracks(cont);
 
+#ifdef GUPPY_FF5M
+  // Fine Tune and Bed Mesh are on Home.
+  // row 1
+  layout.place(limits_btn.get_container(), "limits", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(retract_btn.get_container(), "retract", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(inputshaper_btn.get_container(), "inputshaper", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
+  layout.place(belts_calibration_btn.get_container(), "belts_calibration", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
+
+  // row 2
+  layout.place(pro_btn.get_container(), "pro", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  layout.place(pid_btn.get_container(), "pid", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+#else
   // row 1
   layout.place(finetune_btn.get_container(), "finetune", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
   layout.place(limits_btn.get_container(), "limits", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
@@ -88,7 +104,7 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   layout.place(belts_calibration_btn.get_container(), "belts_calibration", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
   layout.place(pro_btn.get_container(), "pro", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
   layout.place(pid_btn.get_container(), "pid", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
-#ifndef GUPPY_FF5M
+
   layout.place(tmc_tune_btn.get_container(), "tmc_tune", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
   layout.place(tmc_status_btn.get_container(), "tmc_status", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
   layout.place(power_devices_btn.get_container(), "power_devices", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
@@ -143,13 +159,16 @@ void PrinterTunePanel::handle_callback(lv_event_t *event) {
   if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(event);
 
+#ifndef GUPPY_FF5M
     if (btn == finetune_btn.get_container()) {
       spdlog::trace("tune finetune pressed");
       finetune_panel.foreground();
     } else if (btn == bedmesh_btn.get_container()) {
       spdlog::trace("tune bedmesh pressed");
       bedmesh_panel.foreground();
-    } else if (btn == inputshaper_btn.get_container()) {
+    } else
+#endif
+    if (btn == inputshaper_btn.get_container()) {
       spdlog::trace("tune inputshaper pressed");
       inputshaper_panel.foreground();
     } else if (btn == belts_calibration_btn.get_container()) {

@@ -52,10 +52,14 @@ class PrinterTunePanel {
   TmcStatusPanel tmc_status_panel;
   PowerPanel power_panel;
 #endif
+#ifndef GUPPY_FF5M  // on Home on the FF5M
   ButtonContainer finetune_btn;
+#endif
   ButtonContainer limits_btn;
   ButtonContainer retract_btn;
+#ifndef GUPPY_FF5M
   ButtonContainer bedmesh_btn;
+#endif
   ButtonContainer inputshaper_btn;
   ButtonContainer belts_calibration_btn;
   ButtonContainer pro_btn;

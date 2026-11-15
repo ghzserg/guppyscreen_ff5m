@@ -12,6 +12,10 @@ LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(fan);
 LV_IMG_DECLARE(heater);
+#ifdef GUPPY_FF5M
+LV_IMG_DECLARE(fine_tune_img);
+LV_IMG_DECLARE(bedmesh_img);
+#endif
 
 #define TUNE_SYMBOL "\xF3\xB1\x95\x82"
 #define HOME_SYMBOL "\xF3\xB0\x8B\x9C"
@@ -51,6 +55,10 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , extrude_btn(main_cont, &filament_img, _("Extrude") /* "Экструдер" */, &MainPanel::_handle_extrude_cb, this)
   , action_btn(main_cont, &fan, _("Fans") /* "Обдув" */, &MainPanel::_handle_fanpanel_cb, this)
   , led_btn(main_cont, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
+#ifdef GUPPY_FF5M
+  , finetune_btn(main_cont, &fine_tune_img, _("Fine Tune") /* "Настройки" */, &MainPanel::_handle_finetune_cb, this)
+  , bedmesh_btn(main_cont, &bedmesh_img, _("Bed Mesh") /* "Стол" */, &MainPanel::_handle_bedmesh_cb, this)
+#endif
   , main_layout(GridLayout::from_config("main",
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)}))
@@ -172,6 +180,22 @@ void MainPanel::handle_ledpanel_cb(lv_event_t *event) {
   }
 }
 
+#ifdef GUPPY_FF5M
+void MainPanel::handle_finetune_cb(lv_event_t *event) {
+  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
+    spdlog::trace("clicked fine tune");
+    print_status_panel.get_finetune_panel().foreground();
+  }
+}
+
+void MainPanel::handle_bedmesh_cb(lv_event_t *event) {
+  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
+    spdlog::trace("clicked bed mesh");
+    printertune_panel.get_bedmesh_panel().foreground();
+  }
+}
+#endif
+
 void MainPanel::create_main(lv_obj_t * parent)
 {
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_ROW_WRAP);
@@ -190,6 +214,10 @@ void MainPanel::create_main(lv_obj_t * parent)
     main_layout.place(extrude_btn.get_container(),   "extrude", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     main_layout.place(action_btn.get_container(),    "fans",    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     main_layout.place(led_btn.get_container(),       "led",     LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+#ifdef GUPPY_FF5M
+    main_layout.place(finetune_btn.get_container(),  "finetune", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+    main_layout.place(bedmesh_btn.get_container(),   "bedmesh", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+#endif
 
     // Разрешаем прокрутку контейнера
     lv_obj_add_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
