@@ -114,7 +114,7 @@ lv_obj_t *MiniPrintStatus::get_container() {
 
 void MiniPrintStatus::update_eta(std::string &eta_str) {
   eta = eta_str;
-  lv_label_set_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
+  KUtils::set_label_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
 }
 
 void MiniPrintStatus::update_status(std::string &status_str) {
@@ -151,5 +151,6 @@ void MiniPrintStatus::reset() {
 
   eta = "...";
   status = "-/-";
+  lv_label_set_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
 }
 

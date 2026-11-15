@@ -58,6 +58,11 @@ namespace KUtils {
   // drawn, its size kept.
   void set_img_src(lv_obj_t *img, const void *src);
 
+  // lv_label_set_text() unless `label` already shows `text`: it redraws and
+  // re-measures the label even for the same text, and printer values arrive
+  // several times a second.
+  void set_label_text(lv_obj_t *label, const char *text);
+
   // Drop the decoded copy of the file `img` shows from the image cache, e.g.
   // when its panel is closed. It is decoded again when next drawn.
   void uncache_img(lv_obj_t *img);

@@ -44,6 +44,8 @@ class PrintStatusPanel : public NotifyConsumer {
 
   void consume(json &j);
   void update_time_progress(uint32_t time_passed);
+  // The time left by the hourglass and, on FF5M, as the bar's ETA.
+  void show_time_left(const std::string &eta);
   void update_filament_progress(float value);
   void update_flow_rate(double filament_used);
   void update_layers(json &info);
@@ -70,6 +72,9 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_obj_t *idle_screen = NULL;
   bool running = false;  // print_stats.state is printing or paused
   lv_obj_t *buttons_cont;
+#ifdef GUPPY_FF5M
+  ButtonContainer files_btn;  // first: the left of the row
+#endif
   ButtonContainer finetune_btn;
   ButtonContainer retract_btn;
   ButtonContainer pause_btn;
@@ -81,6 +86,9 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_obj_t *progress_bar;
   lv_obj_t *progress_label;
   lv_obj_t *progress_end;
+#ifdef GUPPY_FF5M
+  lv_obj_t *progress_eta;  // at the bar's left: "ETA: 23м 18с"
+#endif
   lv_obj_t *filename_label;
   lv_obj_t *detail_cont;
 

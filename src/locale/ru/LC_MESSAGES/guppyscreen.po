@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:47+0100\n"
+"POT-Creation-Date: 2026-11-16 16:52+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -46,7 +46,7 @@ msgstr "(Неизвестно)"
 msgid "Acceleration (mm/s2)"
 msgstr "Ускорение (мм/с²)"
 
-#: ../limits_panel.cpp:30 ../limits_panel.cpp:125
+#: ../limits_panel.cpp:30 ../limits_panel.cpp:132
 msgid "Acceleration to Deceleration (mm/s2)"
 msgstr "Ускорение до замедления (мм/с²)"
 
@@ -62,7 +62,7 @@ msgstr "Внимание!"
 msgid "Bed"
 msgstr "Стол"
 
-#: ../main_panel.cpp:60 ../printertune_panel.cpp:50
+#: ../main_panel.cpp:73 ../printertune_panel.cpp:50
 msgid "Bed Mesh"
 msgstr "Сетка стола"
 
@@ -90,7 +90,7 @@ msgstr "Калибровать VFA"
 msgid "Calibrate extruders"
 msgstr "Калибровать экструдеры"
 
-#: ../bedmesh_panel.cpp:140 ../print_panel.cpp:134 ../print_status_panel.cpp:54
+#: ../bedmesh_panel.cpp:140 ../print_panel.cpp:134 ../print_status_panel.cpp:67
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -126,7 +126,7 @@ msgstr "Консоль"
 msgid "Cool down"
 msgstr "Охладить"
 
-#: ../print_status_panel.cpp:55
+#: ../print_status_panel.cpp:68
 msgid "Do you want to cancel the print?"
 msgstr "Вы хотите отменить печать?"
 
@@ -134,8 +134,12 @@ msgstr "Вы хотите отменить печать?"
 msgid "Do you want to emergency stop?"
 msgstr "Выполнить аварийную остановку?"
 
-#: ../mini_print_status.cpp:44 ../mini_print_status.cpp:85
-#: ../mini_print_status.cpp:90
+#: ../print_status_panel.cpp:708
+msgid "ETA: {}"
+msgstr "Осталось: {}"
+
+#: ../mini_print_status.cpp:56 ../mini_print_status.cpp:117
+#: ../mini_print_status.cpp:122 ../mini_print_status.cpp:154
 msgid ""
 "ETA: {}\n"
 "Status: {}"
@@ -155,7 +159,7 @@ msgstr "Запуск"
 msgid "External circulation"
 msgstr "Внешняя циркуляция"
 
-#: ../main_panel.cpp:55
+#: ../main_panel.cpp:68
 msgid "Extrude"
 msgstr "Экструдер"
 
@@ -175,11 +179,15 @@ msgstr "Длина экструзии"
 msgid "Extrusion speed (mm/s)"
 msgstr "Скорость экструзии (мм/с)"
 
-#: ../main_panel.cpp:56
+#: ../main_panel.cpp:69
 msgid "Fans"
 msgstr "Обдув"
 
-#: ../main_panel.cpp:59 ../print_status_panel.cpp:50
+#: ../print_status_panel.cpp:61
+msgid "Files"
+msgstr "Файлы"
+
+#: ../main_panel.cpp:72 ../print_status_panel.cpp:63
 #: ../printertune_panel.cpp:45
 msgid "Fine Tune"
 msgstr "Настройка"
@@ -188,15 +196,15 @@ msgstr "Настройка"
 msgid "Firmware Restart"
 msgstr "Перезапуск прошивки"
 
-#: ../finetune_panel.cpp:35
+#: ../finetune_panel.cpp:38
 msgid "Flow Reset"
 msgstr "Сброс поток"
 
-#: ../finetune_panel.cpp:36
+#: ../finetune_panel.cpp:39
 msgid "Flow+"
 msgstr "Поток+"
 
-#: ../finetune_panel.cpp:37
+#: ../finetune_panel.cpp:40
 msgid "Flow-"
 msgstr "Поток-"
 
@@ -216,7 +224,7 @@ msgstr "Перезапуск Guppy"
 msgid "Home"
 msgstr "Домой"
 
-#: ../main_panel.cpp:54
+#: ../main_panel.cpp:67
 msgid "Homing"
 msgstr "Домой"
 
@@ -256,7 +264,7 @@ msgstr "Макросы"
 msgid "Max"
 msgstr "Макс"
 
-#: ../limits_panel.cpp:119
+#: ../limits_panel.cpp:126
 msgid "Minimum Cruise Ratio"
 msgstr "Минимальная доля равномерного движения"
 
@@ -264,7 +272,7 @@ msgstr "Минимальная доля равномерного движени�
 msgid "Motor off"
 msgstr "Выключить двигатели"
 
-#: ../finetune_panel.cpp:40
+#: ../finetune_panel.cpp:50
 msgid "Multipler Step"
 msgstr "Шаг множителя"
 
@@ -292,7 +300,7 @@ msgstr "PID стола"
 msgid "PID Extruder"
 msgstr "PID экструдера"
 
-#: ../print_status_panel.cpp:52
+#: ../print_status_panel.cpp:65
 msgid "Pause"
 msgstr "Пауза"
 
@@ -342,11 +350,11 @@ msgstr ""
 msgid "Reset"
 msgstr "Сброс"
 
-#: ../finetune_panel.cpp:29
+#: ../finetune_panel.cpp:32
 msgid "Reset PA"
 msgstr "Сброс PA"
 
-#: ../finetune_panel.cpp:26
+#: ../finetune_panel.cpp:29
 msgid "Reset Z"
 msgstr "Сброс Z"
 
@@ -354,11 +362,11 @@ msgstr "Сброс Z"
 msgid "Restore Print"
 msgstr "Восстановить печать"
 
-#: ../print_status_panel.cpp:53
+#: ../print_status_panel.cpp:66
 msgid "Resume"
 msgstr "Продолжить"
 
-#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:48
+#: ../print_status_panel.cpp:64 ../printertune_panel.cpp:48
 msgid "Retract"
 msgstr "Ретракт"
 
@@ -402,15 +410,15 @@ msgstr "Показать скрытые"
 msgid "Show task"
 msgstr "Показать задачу"
 
-#: ../finetune_panel.cpp:32
+#: ../finetune_panel.cpp:35
 msgid "Speed Reset"
 msgstr "Сброс скорость"
 
-#: ../finetune_panel.cpp:33
+#: ../finetune_panel.cpp:36
 msgid "Speed+"
 msgstr "Скор+"
 
-#: ../finetune_panel.cpp:34
+#: ../finetune_panel.cpp:37
 msgid "Speed-"
 msgstr "Скор-"
 
@@ -476,23 +484,23 @@ msgstr "д "
 msgid "м "
 msgstr "м "
 
-#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:42 ../finetune_panel.cpp:43
-#: ../finetune_panel.cpp:104 ../finetune_panel.cpp:110
-#: ../finetune_panel.cpp:147 ../finetune_panel.cpp:152
-#: ../print_status_panel.cpp:71 ../print_status_panel.cpp:72
-#: ../print_status_panel.cpp:73 ../print_status_panel.cpp:227
-#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:340
-#: ../print_status_panel.cpp:484 ../print_status_panel.cpp:490
-#: ../print_status_panel.cpp:544
+#: ../finetune_panel.cpp:41 ../finetune_panel.cpp:52 ../finetune_panel.cpp:53
+#: ../finetune_panel.cpp:154 ../finetune_panel.cpp:160
+#: ../finetune_panel.cpp:197 ../finetune_panel.cpp:202
+#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:89
+#: ../print_status_panel.cpp:90 ../print_status_panel.cpp:325
+#: ../print_status_panel.cpp:326 ../print_status_panel.cpp:438
+#: ../print_status_panel.cpp:584 ../print_status_panel.cpp:590
+#: ../print_status_panel.cpp:644
 msgid "мм"
 msgstr "мм"
 
-#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:43 ../finetune_panel.cpp:110
-#: ../finetune_panel.cpp:152 ../print_status_panel.cpp:71
-#: ../print_status_panel.cpp:73 ../print_status_panel.cpp:76
-#: ../print_status_panel.cpp:227 ../print_status_panel.cpp:228
-#: ../print_status_panel.cpp:229 ../print_status_panel.cpp:484
-#: ../print_status_panel.cpp:544 ../utils.cpp:270
+#: ../finetune_panel.cpp:41 ../finetune_panel.cpp:53 ../finetune_panel.cpp:160
+#: ../finetune_panel.cpp:202 ../print_status_panel.cpp:88
+#: ../print_status_panel.cpp:90 ../print_status_panel.cpp:93
+#: ../print_status_panel.cpp:325 ../print_status_panel.cpp:326
+#: ../print_status_panel.cpp:327 ../print_status_panel.cpp:584
+#: ../print_status_panel.cpp:644 ../utils.cpp:270
 msgid "с"
 msgstr "с"
 

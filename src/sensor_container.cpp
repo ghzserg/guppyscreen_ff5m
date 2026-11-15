@@ -3,7 +3,7 @@
 
 #include <string>
 
-LV_FONT_DECLARE(notosemi_22_digits);  // digits, minus and point only
+LV_FONT_DECLARE(notosemi_22_digits);  // digits, units and the letters of the ETA (assets/fonts/build.sh)
 
 SensorContainer::SensorContainer(KWebSocketClient &c,
                                  lv_obj_t *parent,
