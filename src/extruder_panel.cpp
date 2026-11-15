@@ -45,6 +45,9 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , load_filament_macro("LOAD_FILAMENT")
   , code_macro("_GUPPY_MACRO")
   , cooldown_macro("TURN_OFF_HEATERS")
+#ifdef GUPPY_FF5M
+  , nozzle_tiles(ws, panel_cont, numpad)
+#endif
 {
   Config *conf = Config::get_instance();
   auto df = conf->get_json("/default_printer");
@@ -101,6 +104,8 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 
 #ifndef GUPPY_FF5M
   spoolman_btn.disable();
+#else
+  lv_obj_add_flag(nozzle_tiles.get_container(), LV_OBJ_FLAG_FLOATING);
 #endif
 
   static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(6), LV_GRID_FR(6), LV_GRID_FR(6),
@@ -172,7 +177,11 @@ void ExtruderPanel::consume(json& j) {
    auto v_tools = state->get_data("/printer_state/zmod_color/total_tools"_json_pointer);
    if (!v_tools.is_null()) {
      total_tools = v_tools.template get<int>();
-     if (total_tools > 1) {
+     bool tiles = false;
+#ifdef GUPPY_FF5M
+     tiles = nozzle_tiles.selectable();  // the tiles select the nozzle
+#endif
+     if (total_tools > 1 && !tiles) {
          lv_obj_clear_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
      } else {
          lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
@@ -184,17 +193,16 @@ void ExtruderPanel::consume(json& j) {
    if (!v_active.is_null()) {
      int klipper_tool_id = v_active.template get<int>();
      active_tool_id = klipper_tool_id;
+#ifdef GUPPY_FF5M
+     nozzle_tiles.show_selected(active_tool_id);
+#endif
      if (active_tool_id >= 0 && active_tool_id < total_tools) {
          last_rendered_tool_id = active_tool_id;
          lv_btnmatrix_set_btn_ctrl(tools_btnmatrix, active_tool_id, LV_BTNMATRIX_CTRL_CHECKED);
-         load_btn.enable();
-         retract_btn.enable();
-         coldpull_btn.enable();
+         enable_actions(true);
      } else {
          lv_btnmatrix_clear_btn_ctrl_all(tools_btnmatrix, LV_BTNMATRIX_CTRL_CHECKED);
-         load_btn.disable();
-         retract_btn.disable();
-         coldpull_btn.disable();
+         enable_actions(false);
      }
    }
   } // End Init
@@ -202,6 +210,10 @@ void ExtruderPanel::consume(json& j) {
   auto zmod_active = j["/params/0/zmod_color/active_tool_id"_json_pointer];
   if (!zmod_active.is_null()) {
     int klipper_tool_id = zmod_active.template get<int>();
+#ifdef GUPPY_FF5M
+    // A tool change on the printer replaces the picked nozzle.
+    if (klipper_tool_id != active_tool_id) nozzle_tiles.show_selected(klipper_tool_id);
+#endif
     active_tool_id = klipper_tool_id;
 
     if (klipper_tool_id >= 0 && klipper_tool_id < total_tools) {
@@ -211,20 +223,23 @@ void ExtruderPanel::consume(json& j) {
             last_rendered_tool_id = active_tool_id;
         }
         lv_btnmatrix_set_btn_ctrl(tools_btnmatrix, active_tool_id, LV_BTNMATRIX_CTRL_CHECKED);
-        load_btn.enable();
-        retract_btn.enable();
-        coldpull_btn.enable();
+        enable_actions(true);
     } else {
         last_rendered_target = -99;
         last_rendered_value = -99;
         last_rendered_tool_id = -99;
 
         lv_btnmatrix_clear_btn_ctrl_all(tools_btnmatrix, LV_BTNMATRIX_CTRL_CHECKED);
-        load_btn.disable();
-        retract_btn.disable();
-        coldpull_btn.disable();
+        enable_actions(false);
     }
   }
+
+#ifdef GUPPY_FF5M
+  if (!nozzle_tiles.empty()) {
+    nozzle_tiles.update(j, true);
+    return;  // the extruder line below is hidden
+  }
+#endif
 
   int effective_id = (active_tool_id >= 0) ? active_tool_id : 0;
   std::string ext_name = "extruder" + (effective_id > 0 ? std::to_string(effective_id) : "");
@@ -290,7 +305,8 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
 
     if (btn == coldpull_btn.get_container()) {
       coldpull_btn.disable();
-      ws.gcode_script(fmt::format("COLDPULL T={}", active_tool_id));
+      int tool = action_tool();
+      ws.gcode_script(tool_change(tool) + fmt::format("COLDPULL T={}", tool));
       coldpull_btn.enable();
     }
 
@@ -302,7 +318,8 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                    length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("M109 S{} T{}\nM83\nG1 E-{} F{}", temp, active_tool_id, len, std::stoi(speed) * 60));
+      int tool = action_tool();
+      ws.gcode_script(tool_change(tool) + fmt::format("M109 S{} T{}\nM83\nG1 E-{} F{}", temp, tool, len, std::stoi(speed) * 60));
       retract_btn.enable();
     }
 
@@ -314,7 +331,8 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                     length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", code_macro, active_tool_id, temp, len, std::stoi(speed) * 60));
+      int tool = action_tool();
+      ws.gcode_script(tool_change(tool) + fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", code_macro, tool, temp, len, std::stoi(speed) * 60));
       code_btn.enable();
     }
 
@@ -326,7 +344,8 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                   length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", load_filament_macro, active_tool_id, temp, len, std::stoi(speed) * 60));
+      int tool = action_tool();
+      ws.gcode_script(tool_change(tool) + fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", load_filament_macro, tool, temp, len, std::stoi(speed) * 60));
       load_btn.enable();
     }
 
@@ -343,3 +362,49 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     }
   }
 }
+
+int ExtruderPanel::action_tool() const {
+#ifdef GUPPY_FF5M
+  if (nozzle_tiles.selectable()) return nozzle_tiles.selected();
+#endif
+  return active_tool_id;
+}
+
+std::string ExtruderPanel::tool_change(int tool) const {
+#ifdef GUPPY_FF5M
+  if (nozzle_tiles.selectable() && tool != active_tool_id) return fmt::format("_T_USE T={}\n", tool);
+#endif
+  return "";
+}
+
+void ExtruderPanel::enable_actions(bool tool_in_head) {
+  bool on = tool_in_head;
+#ifdef GUPPY_FF5M
+  // The tool change comes first: any picked nozzle will do, even with no
+  // tool in the head (active_tool_id -1). COLOR changes the tool too.
+  if (nozzle_tiles.selectable()) {
+    on = nozzle_tiles.has_selection();
+    if (on) code_btn.enable(); else code_btn.disable();
+  }
+#endif
+  for (ButtonContainer *b : {&load_btn, &retract_btn, &coldpull_btn}) {
+    if (on) b->enable(); else b->disable();
+  }
+}
+
+#ifdef GUPPY_FF5M
+
+void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &nozzles, lv_coord_t left, lv_coord_t top) {
+  lv_obj_align(nozzle_tiles.get_container(), LV_ALIGN_TOP_LEFT, left, top);  // where Home's are
+  // No colour stripe here. A tap picks the nozzle; the tool change waits for
+  // the button that needs it. During a print the printer's tool stays shown.
+  nozzle_tiles.create(nozzles, extruder_temp, false, active_tool_id, [this](int tool) {
+    auto state = State::get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
+    if (state == "printing" || state == "paused") return false;
+    nozzle_tiles.show_selected(tool);  // now, for the buttons
+    enable_actions(active_tool_id >= 0 && active_tool_id < total_tools);  // one nozzle: the printer's tool
+    return true;
+  });
+  if (nozzle_tiles.selectable()) lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
+}
+#endif
