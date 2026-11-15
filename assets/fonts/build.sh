@@ -19,4 +19,23 @@ OPTS="--bpp 3 --size $SIZE --lcd \
 
 docker run --rm -v "$PWD:/work" -w /work lv_font_conv $OPTS
 
+# The numpad keys (FF5M): twice the 16 px theme font, bold, digits and the
+# backspace and OK symbols only.
+OPTS="--bpp 3 --size 32 --lcd \
+--font NotoSans-Bold.ttf --range 48-57 \
+--font FontAwesome5-Solid+Brands+Regular.woff --range 61452,62810 \
+--format lvgl -o notobold_32_numpad.c"
+
+docker run --rm -v "$PWD:/work" -w /work lv_font_conv $OPTS
+
+# Home's sensor tiles (FF5M): the temperatures a step above the 20 px font;
+# also the number buttons, Fine Tune's values and the print screen's details:
+# digits, space, % , - . / : T and every language's units and times
+# (mm s d h min, Turkish g s d sn; мм с д ч м).
+OPTS="--bpp 3 --size 22 --lcd \
+--font NotoSans-SemiBold.ttf --range 32,37,44-58,84,100,103-105,109,110,115,1076,1084,1089,1095 \
+--format lvgl -o notosemi_22_digits.c"
+
+docker run --rm -v "$PWD:/work" -w /work lv_font_conv $OPTS
+
 mv -f *.c ../

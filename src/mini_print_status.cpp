@@ -1,14 +1,26 @@
 #include "guppyscreen.h"
 #include "utils.h"
 #include "mini_print_status.h"
+#ifdef GUPPY_FF5M
+#include "sensor_container.h"
+#endif
 #include "spdlog/spdlog.h"
+
+#ifdef GUPPY_FF5M
+static const lv_coord_t THUMB_PX = 76;  // the thumbnail's width on Home
+static const lv_coord_t BAR_PX = SensorContainer::stripe_width();  // the progress bar
+#endif
 
 MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
                                  lv_event_cb_t cb,
                                  void* user_data,
                                 KWebSocketClient &c)
   : cont(lv_obj_create(parent))
+#ifdef GUPPY_FF5M
+  , progress_bar(lv_bar_create(cont))
+#else
   , progress_bar(lv_arc_create(cont))
+#endif
   , thumb(lv_img_create(cont))
   , status_label(lv_label_create(cont))
   , status("-/-")
@@ -43,6 +55,23 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 
   lv_label_set_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
 
+#ifdef GUPPY_FF5M
+  // Home: twice as tall as with the ring, the thumbnail filling the height,
+  // the progress a bar along the bottom as thick as the sensor tiles' stripes.
+  lv_obj_set_height(cont, THUMB_PX + BAR_PX + 2 * 2 + 7);  // + border, gap
+  lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+  lv_obj_set_style_pad_column(cont, 10, 0);
+  lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_FLOATING);  // out of the row
+  lv_obj_set_height(progress_bar, BAR_PX);
+  lv_obj_set_width(progress_bar, LV_PCT(100));
+  lv_obj_set_style_radius(progress_bar, 0, LV_PART_MAIN | LV_PART_INDICATOR);
+  lv_obj_align(progress_bar, LV_ALIGN_BOTTOM_MID, 0, 0);
+  lv_obj_set_style_pad_top(status_label, (THUMB_PX - 42) / 2, 0);  // two lines, centred by the thumbnail
+  // Home gives the status a fixed width: the text takes what the thumbnail
+  // leaves and is cut there.
+  lv_obj_set_flex_grow(status_label, 1);
+  lv_label_set_long_mode(status_label, LV_LABEL_LONG_CLIP);
+#else
   lv_arc_set_rotation(progress_bar, 270);
   lv_obj_set_size(progress_bar, 40 * scale, 40 * scale);
   lv_obj_set_style_arc_width(progress_bar, 10 * scale, LV_PART_MAIN);
@@ -51,9 +80,12 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   lv_obj_remove_style(progress_bar, NULL, LV_PART_KNOB);
   lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_center(progress_bar);
+#endif
 
   lv_img_set_size_mode(thumb, LV_IMG_SIZE_MODE_REAL);
+#ifndef GUPPY_FF5M
   lv_obj_set_size(cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+#endif
 //  lv_obj_align(cont, LV_ALIGN_TOP_RIGHT, 30, -14 * scale);
   lv_obj_align(cont, LV_ALIGN_TOP_RIGHT, 0, 0);
 }
@@ -93,18 +125,26 @@ void MiniPrintStatus::update_status(std::string &status_str) {
 }
 
 void MiniPrintStatus::update_progress(int p) {
+#ifdef GUPPY_FF5M
+  lv_bar_set_value(progress_bar, p, LV_ANIM_OFF);
+#else
   lv_arc_set_value(progress_bar, p);
+#endif
 }
 
 void MiniPrintStatus::update_img(const std::string &img_path, size_t twidth) {
+#ifdef GUPPY_FF5M
+  uint32_t normalized_thumb_scale = THUMB_PX * 256 / twidth;
+#else
   auto screen_width = lv_disp_get_physical_hor_res(NULL);
   uint32_t normalized_thumb_scale = ((0.05 * (double)screen_width) / (double)twidth) * 256;
+#endif
   lv_img_set_zoom(thumb, normalized_thumb_scale);
   KUtils::set_img_src(thumb, img_path.c_str());
 }
 
 void MiniPrintStatus::reset() {
-  lv_arc_set_value(progress_bar, 0);
+  update_progress(0);
 
   // free src
   KUtils::set_img_src(thumb, NULL);

@@ -139,6 +139,9 @@ class MainPanel : public NotifyConsumer {
   lv_style_t style;
 
   lv_obj_t *temp_cont;
+#ifdef GUPPY_FF5M
+  lv_obj_t *sensor_tiles;  // the sensor tiles, in temp_cont above the print status
+#endif
   lv_obj_t *temp_chart;
 
   std::map<std::string, std::shared_ptr<SensorContainer>> sensors;
