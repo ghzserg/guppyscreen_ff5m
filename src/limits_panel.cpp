@@ -41,6 +41,9 @@ LimitsPanel::LimitsPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_center(limit_cont);
   lv_obj_set_size(limit_cont, lv_pct(100), lv_pct(100));
   lv_obj_set_flex_flow(limit_cont, LV_FLEX_FLOW_COLUMN);
+#ifdef GUPPY_FF5M
+  SliderContainer::stack_rows(limit_cont);
+#endif
 
 
   lv_obj_add_flag(accel_to_decel.get_container(), LV_OBJ_FLAG_HIDDEN);
@@ -89,6 +92,10 @@ void LimitsPanel::init(json &j) {
   if (!v.is_null()) {
     acceleration.update_value(v.template get<int>());
   }
+
+#ifdef GUPPY_FF5M
+  SliderContainer::end_rows(limit_cont);  // after configure_motion_limit shows or hides its row
+#endif
 
   v = j["/result/status/toolhead/square_corner_velocity"_json_pointer];
   if (!v.is_null()) {

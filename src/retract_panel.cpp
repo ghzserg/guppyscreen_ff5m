@@ -27,6 +27,9 @@ RetractPanel::RetractPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_center(retract_cont);
   lv_obj_set_size(retract_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_flex_flow(retract_cont, LV_FLEX_FLOW_COLUMN);
+#ifdef GUPPY_FF5M
+  SliderContainer::stack_rows(retract_cont);
+#endif
 
 
   ws.register_notify_update(this);

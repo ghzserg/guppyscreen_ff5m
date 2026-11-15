@@ -42,6 +42,13 @@ class SliderContainer {
                   std::string u);
   ~SliderContainer();
   lv_obj_t *get_container();
+#ifdef GUPPY_FF5M
+  // A column `cont` of rows (Retract, Limits): four fit the content area
+  // without a scrollbar, no line under the last.
+  static void stack_rows(lv_obj_t *cont);
+  // After showing or hiding rows: the line under each but the last shown.
+  static void end_rows(lv_obj_t *cont);
+#endif
   lv_obj_t *get_slider();
   lv_obj_t *get_off();
   lv_obj_t *get_max();
