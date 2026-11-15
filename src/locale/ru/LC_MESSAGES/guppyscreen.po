@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:45+0100\n"
+"POT-Creation-Date: 2026-11-16 16:47+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -62,15 +62,15 @@ msgstr "Внимание!"
 msgid "Bed"
 msgstr "Стол"
 
-#: ../printertune_panel.cpp:47
+#: ../main_panel.cpp:60 ../printertune_panel.cpp:50
 msgid "Bed Mesh"
 msgstr "Сетка стола"
 
-#: ../printertune_panel.cpp:50 ../printertune_panel.cpp:52
+#: ../printertune_panel.cpp:54 ../printertune_panel.cpp:56
 msgid "Belts/Shake"
 msgstr "Ремни/Вибрация"
 
-#: ../inputshaper_panel.cpp:518
+#: ../inputshaper_panel.cpp:555
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "Лучший шейпер: {} @ {:.2f} Гц\n"
 
@@ -78,7 +78,7 @@ msgstr "Лучший шейпер: {} @ {:.2f} Гц\n"
 msgid "Brightness"
 msgstr "Яркость"
 
-#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:73
 msgid "Calibrate"
 msgstr "Калибровать"
 
@@ -130,7 +130,7 @@ msgstr "Охладить"
 msgid "Do you want to cancel the print?"
 msgstr "Вы хотите отменить печать?"
 
-#: ../nav.cpp:262
+#: ../nav.cpp:279
 msgid "Do you want to emergency stop?"
 msgstr "Выполнить аварийную остановку?"
 
@@ -155,7 +155,7 @@ msgstr "Запуск"
 msgid "External circulation"
 msgstr "Внешняя циркуляция"
 
-#: ../main_panel.cpp:51
+#: ../main_panel.cpp:55
 msgid "Extrude"
 msgstr "Экструдер"
 
@@ -175,11 +175,12 @@ msgstr "Длина экструзии"
 msgid "Extrusion speed (mm/s)"
 msgstr "Скорость экструзии (мм/с)"
 
-#: ../main_panel.cpp:52
+#: ../main_panel.cpp:56
 msgid "Fans"
 msgstr "Обдув"
 
-#: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
+#: ../main_panel.cpp:59 ../print_status_panel.cpp:50
+#: ../printertune_panel.cpp:45
 msgid "Fine Tune"
 msgstr "Настройка"
 
@@ -203,7 +204,7 @@ msgstr "Поток-"
 msgid "Frequency"
 msgstr "Частота"
 
-#: ../inputshaper_panel.cpp:153
+#: ../inputshaper_panel.cpp:154
 msgid "Graph"
 msgstr "График"
 
@@ -215,7 +216,7 @@ msgstr "Перезапуск Guppy"
 msgid "Home"
 msgstr "Домой"
 
-#: ../main_panel.cpp:50
+#: ../main_panel.cpp:54
 msgid "Homing"
 msgstr "Домой"
 
@@ -227,7 +228,7 @@ msgstr "Внутренняя циркуляция"
 msgid "Klipper Restart"
 msgstr "Перезапуск Klipper"
 
-#: ../printertune_panel.cpp:45
+#: ../printertune_panel.cpp:47
 msgid "Limits"
 msgstr "Лимиты"
 
@@ -238,6 +239,10 @@ msgstr "Загрузить"
 #: ../pid_panel.cpp:36
 msgid "Load Cell"
 msgstr "Тензодатчик"
+
+#: ../inputshaper_panel.cpp:114
+msgid "Load graphs"
+msgstr "Загрузить графики"
 
 #: ../sysinfo_panel.cpp:171
 msgid "Log level"
@@ -353,7 +358,7 @@ msgstr "Восстановить печать"
 msgid "Resume"
 msgstr "Продолжить"
 
-#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:46
+#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:48
 msgid "Retract"
 msgstr "Ретракт"
 
@@ -365,7 +370,7 @@ msgstr "Длина ретракта"
 msgid "Retract Speed"
 msgstr "Скорость ретракта"
 
-#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:72
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:74
 msgid "Save"
 msgstr "Сохранить"
 
@@ -455,11 +460,11 @@ msgstr ""
 "Время: {}\n"
 "Размер: {} МБ"
 
-#: ../inputshaper_panel.cpp:88
+#: ../inputshaper_panel.cpp:87
 msgid "X Frequency Response"
 msgstr "Частотная характеристика X"
 
-#: ../inputshaper_panel.cpp:98
+#: ../inputshaper_panel.cpp:97
 msgid "Y Frequency Response"
 msgstr "Частотная характеристика Y"
 
@@ -476,7 +481,7 @@ msgstr "м "
 #: ../finetune_panel.cpp:147 ../finetune_panel.cpp:152
 #: ../print_status_panel.cpp:71 ../print_status_panel.cpp:72
 #: ../print_status_panel.cpp:73 ../print_status_panel.cpp:227
-#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:341
+#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:340
 #: ../print_status_panel.cpp:484 ../print_status_panel.cpp:490
 #: ../print_status_panel.cpp:544
 msgid "мм"
@@ -495,9 +500,6 @@ msgstr "с"
 msgid "ч "
 msgstr "ч "
 
-#~ msgid "Macro"
-#~ msgstr "Макрос"
-
 #~ msgid "Back"
 #~ msgstr "Назад"
 
@@ -512,3 +514,6 @@ msgstr "ч "
 
 #~ msgid "Stop"
 #~ msgstr "Стоп"
+
+#~ msgid "Macro"
+#~ msgstr "Макрос"

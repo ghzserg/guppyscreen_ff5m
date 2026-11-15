@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:45+0100\n"
+"POT-Creation-Date: 2026-11-16 16:47+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -61,15 +61,15 @@ msgstr "注意！"
 msgid "Bed"
 msgstr "ベッド"
 
-#: ../printertune_panel.cpp:47
+#: ../main_panel.cpp:60 ../printertune_panel.cpp:50
 msgid "Bed Mesh"
 msgstr "ベッドメッシュ"
 
-#: ../printertune_panel.cpp:50 ../printertune_panel.cpp:52
+#: ../printertune_panel.cpp:54 ../printertune_panel.cpp:56
 msgid "Belts/Shake"
 msgstr "ベルト/シェイク"
 
-#: ../inputshaper_panel.cpp:518
+#: ../inputshaper_panel.cpp:555
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "最適なシェイパーは {} で、周波数は {:.2f} Hz\n"
 
@@ -77,7 +77,7 @@ msgstr "最適なシェイパーは {} で、周波数は {:.2f} Hz\n"
 msgid "Brightness"
 msgstr "明るさ"
 
-#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:73
 msgid "Calibrate"
 msgstr "校正する"
 
@@ -129,7 +129,7 @@ msgstr "冷却する"
 msgid "Do you want to cancel the print?"
 msgstr "印刷をキャンセルしますか？"
 
-#: ../nav.cpp:262
+#: ../nav.cpp:279
 msgid "Do you want to emergency stop?"
 msgstr "緊急停止しますか？"
 
@@ -154,7 +154,7 @@ msgstr "励起する"
 msgid "External circulation"
 msgstr "外部循環"
 
-#: ../main_panel.cpp:51
+#: ../main_panel.cpp:55
 msgid "Extrude"
 msgstr "押出す"
 
@@ -174,11 +174,12 @@ msgstr "押出長"
 msgid "Extrusion speed (mm/s)"
 msgstr "押し出し速度（mm/s）"
 
-#: ../main_panel.cpp:52
+#: ../main_panel.cpp:56
 msgid "Fans"
 msgstr "ファン"
 
-#: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
+#: ../main_panel.cpp:59 ../print_status_panel.cpp:50
+#: ../printertune_panel.cpp:45
 msgid "Fine Tune"
 msgstr "微調整"
 
@@ -202,7 +203,7 @@ msgstr "フロー-"
 msgid "Frequency"
 msgstr "周波数"
 
-#: ../inputshaper_panel.cpp:153
+#: ../inputshaper_panel.cpp:154
 msgid "Graph"
 msgstr "グラフ"
 
@@ -214,7 +215,7 @@ msgstr "Guppy再起動"
 msgid "Home"
 msgstr "ホーム"
 
-#: ../main_panel.cpp:50
+#: ../main_panel.cpp:54
 msgid "Homing"
 msgstr "ホーム移動"
 
@@ -226,7 +227,7 @@ msgstr "内部循環"
 msgid "Klipper Restart"
 msgstr "Klipper再起動"
 
-#: ../printertune_panel.cpp:45
+#: ../printertune_panel.cpp:47
 msgid "Limits"
 msgstr "リミット"
 
@@ -237,6 +238,10 @@ msgstr "ロード"
 #: ../pid_panel.cpp:36
 msgid "Load Cell"
 msgstr "ロードセル"
+
+#: ../inputshaper_panel.cpp:114
+msgid "Load graphs"
+msgstr ""
 
 #: ../sysinfo_panel.cpp:171
 msgid "Log level"
@@ -353,7 +358,7 @@ msgstr "印刷を復元"
 msgid "Resume"
 msgstr "再開"
 
-#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:46
+#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:48
 msgid "Retract"
 msgstr "リトラクト"
 
@@ -365,7 +370,7 @@ msgstr "リトラクション長"
 msgid "Retract Speed"
 msgstr "リトラクション速度"
 
-#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:72
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:74
 msgid "Save"
 msgstr "保存"
 
@@ -455,11 +460,11 @@ msgstr ""
 "時間: {}\n"
 "サイズ: {} MB"
 
-#: ../inputshaper_panel.cpp:88
+#: ../inputshaper_panel.cpp:87
 msgid "X Frequency Response"
 msgstr "X軸周波数応答"
 
-#: ../inputshaper_panel.cpp:98
+#: ../inputshaper_panel.cpp:97
 msgid "Y Frequency Response"
 msgstr "Y軸周波数応答"
 
@@ -476,7 +481,7 @@ msgstr "min "
 #: ../finetune_panel.cpp:147 ../finetune_panel.cpp:152
 #: ../print_status_panel.cpp:71 ../print_status_panel.cpp:72
 #: ../print_status_panel.cpp:73 ../print_status_panel.cpp:227
-#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:341
+#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:340
 #: ../print_status_panel.cpp:484 ../print_status_panel.cpp:490
 #: ../print_status_panel.cpp:544
 msgid "мм"

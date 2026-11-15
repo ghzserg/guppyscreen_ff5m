@@ -38,12 +38,14 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
     // xgraph
   , xgraph_cont(lv_obj_create(cont))
   , xgraph(lv_img_create(xgraph_cont))
+  , xload_btn(lv_btn_create(xgraph_cont))
   , xoutput(lv_label_create(cont))
   , xspinner(lv_spinner_create(cont, 1000, 60))
 
     // ygraph
   , ygraph_cont(lv_obj_create(cont))
   , ygraph(lv_img_create(ygraph_cont))
+  , yload_btn(lv_btn_create(ygraph_cont))
   , youtput(lv_label_create(cont))
   , yspinner(lv_spinner_create(cont, 1000, 60))
 
@@ -71,13 +73,10 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   , save_btn(button_cont, &sd_img, _("Save") /* "Сохранить" */, &InputShaperPanel::_handle_callback, this)
   , ximage_fullsized(false)
   , yimage_fullsized(false)
+  , graphs{{xgraph, xload_btn, X_PNG}, {ygraph, yload_btn, Y_PNG}}
 {
   lv_obj_move_background(cont);
-  // Leaving the screen: the two graphs are 800x480, 1.5 MB each once decoded.
-  Nav::get().on_leave(cont, [this]() {
-    KUtils::uncache_img(xgraph);
-    KUtils::uncache_img(ygraph);
-  });
+  Nav::get().on_leave(cont, [this]() { unload_graphs(); });
 
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
@@ -106,14 +105,16 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   // graphs
   lv_img_set_zoom(xgraph, 95);
   lv_obj_center(xgraph);
-  if (fs::exists("/opt/config/mod_data/resonances_X.png")) {
-    KUtils::set_img_src(xgraph, "A:/opt/config/mod_data/resonances_X.png");
-  }
-
   lv_img_set_zoom(ygraph, 95);
   lv_obj_center(ygraph);
-  if (fs::exists("/opt/config/mod_data/resonances_Y.png")) {
-    KUtils::set_img_src(ygraph, "A:/opt/config/mod_data/resonances_Y.png");
+  for (const Graph &g : graphs) {
+    lv_obj_t *btn = g.load_btn;
+    lv_obj_t *l = lv_label_create(btn);
+    lv_label_set_text(l, _("Load graphs") /* "Загрузить графики" */);
+    lv_obj_center(l);
+    lv_obj_center(btn);
+    lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_event_cb(btn, &InputShaperPanel::_handle_load_graphs, LV_EVENT_SHORT_CLICKED, this);
   }
 
   lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
@@ -262,7 +263,45 @@ void InputShaperPanel::foreground() {
     }
   }
 
+  show_load_button();
   lv_obj_move_foreground(cont);
+}
+
+namespace {
+// The last graph of the axis, if there is one: <config root>/mod_data/resonances_<axis>.png.
+std::string graph_file(const char *png) {
+  auto root = KUtils::get_root_path("config");
+  std::string path = fmt::format("{}/{}", root.length() > 0 ? root : "/opt/config", png);
+  return fs::exists(path) ? path : "";
+}
+}  // namespace
+
+// A graph's Load graphs button shows while it has a file but isn't loaded.
+void InputShaperPanel::show_load_button() {
+  for (const Graph &g : graphs) {
+    if (lv_img_get_src(g.img) == NULL && !graph_file(g.png).empty()) {
+      lv_obj_clear_flag(g.load_btn, LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_add_flag(g.load_btn, LV_OBJ_FLAG_HIDDEN);
+    }
+  }
+}
+
+// Either button loads every graph not shown yet.
+void InputShaperPanel::load_graphs() {
+  for (const Graph &g : graphs) {
+    if (lv_img_get_src(g.img) != NULL) continue;
+    std::string f = graph_file(g.png);
+    if (!f.empty()) KUtils::set_img_src(g.img, ("A:" + f).c_str());
+    lv_obj_add_flag(g.load_btn, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
+void InputShaperPanel::unload_graphs() {
+  // set_img_src() drops the decoded image from the cache.
+  for (const Graph &g : graphs) {
+    if (lv_img_get_src(g.img) != NULL) KUtils::set_img_src(g.img, NULL);
+  }
 }
 
 
@@ -283,8 +322,6 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
       // free src
       KUtils::set_img_src(xgraph, NULL);
-      // hack to color in empty space.
-      ((lv_img_t*)xgraph)->src_type = LV_IMG_SRC_SYMBOL;
 
       lv_label_set_text(xoutput, "");
       lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
@@ -298,8 +335,6 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
       // free src
       KUtils::set_img_src(ygraph, NULL);
-      // hack to color in empty space.
-      ((lv_img_t*)ygraph)->src_type = LV_IMG_SRC_SYMBOL;
 
       lv_label_set_text(youtput, "");
       lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
@@ -357,6 +392,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
 
             lv_label_set_text(xoutput, "");
             KUtils::set_img_src(xgraph, png_path.c_str());
+            lv_obj_add_flag(xload_btn, LV_OBJ_FLAG_HIDDEN);
             lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
             set_shaper_detail(res, NULL, &xspinbox, xshaper_dd);
             lv_obj_move_foreground(xgraph_cont);
@@ -383,6 +419,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
 
             lv_label_set_text(youtput, "");
             KUtils::set_img_src(ygraph, png_path.c_str());
+            lv_obj_add_flag(yload_btn, LV_OBJ_FLAG_HIDDEN);
             lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
             set_shaper_detail(res, NULL, &yspinbox, yshaper_dd);
             lv_obj_move_foreground(ygraph_cont);

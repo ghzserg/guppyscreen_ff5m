@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:45+0100\n"
+"POT-Creation-Date: 2026-11-16 16:47+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -60,15 +60,15 @@ msgstr "注意！"
 msgid "Bed"
 msgstr "热床"
 
-#: ../printertune_panel.cpp:47
+#: ../main_panel.cpp:60 ../printertune_panel.cpp:50
 msgid "Bed Mesh"
 msgstr "热床网格校准"
 
-#: ../printertune_panel.cpp:50 ../printertune_panel.cpp:52
+#: ../printertune_panel.cpp:54 ../printertune_panel.cpp:56
 msgid "Belts/Shake"
 msgstr "皮带校准/抖动"
 
-#: ../inputshaper_panel.cpp:518
+#: ../inputshaper_panel.cpp:555
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "最佳整形器为{} @ {:.2f} Hz\n"
 
@@ -76,7 +76,7 @@ msgstr "最佳整形器为{} @ {:.2f} Hz\n"
 msgid "Brightness"
 msgstr "亮度"
 
-#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:73
 msgid "Calibrate"
 msgstr "校准"
 
@@ -128,7 +128,7 @@ msgstr "冷却"
 msgid "Do you want to cancel the print?"
 msgstr "是否取消打印？"
 
-#: ../nav.cpp:262
+#: ../nav.cpp:279
 msgid "Do you want to emergency stop?"
 msgstr "是否紧急停止？"
 
@@ -153,7 +153,7 @@ msgstr "激励频率"
 msgid "External circulation"
 msgstr "外循环模式"
 
-#: ../main_panel.cpp:51
+#: ../main_panel.cpp:55
 msgid "Extrude"
 msgstr "挤出"
 
@@ -173,11 +173,12 @@ msgstr "挤出长度"
 msgid "Extrusion speed (mm/s)"
 msgstr "挤出速度（毫米/秒）"
 
-#: ../main_panel.cpp:52
+#: ../main_panel.cpp:56
 msgid "Fans"
 msgstr "风扇"
 
-#: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
+#: ../main_panel.cpp:59 ../print_status_panel.cpp:50
+#: ../printertune_panel.cpp:45
 msgid "Fine Tune"
 msgstr "精细调整"
 
@@ -201,7 +202,7 @@ msgstr "流量-"
 msgid "Frequency"
 msgstr "频率"
 
-#: ../inputshaper_panel.cpp:153
+#: ../inputshaper_panel.cpp:154
 msgid "Graph"
 msgstr "图表"
 
@@ -213,7 +214,7 @@ msgstr "Guppy界面重启"
 msgid "Home"
 msgstr "归位"
 
-#: ../main_panel.cpp:50
+#: ../main_panel.cpp:54
 msgid "Homing"
 msgstr "归位操作"
 
@@ -225,7 +226,7 @@ msgstr "内循环模式"
 msgid "Klipper Restart"
 msgstr "Klipper重启"
 
-#: ../printertune_panel.cpp:45
+#: ../printertune_panel.cpp:47
 msgid "Limits"
 msgstr "运动限制"
 
@@ -236,6 +237,10 @@ msgstr "加载耗材"
 #: ../pid_panel.cpp:36
 msgid "Load Cell"
 msgstr "称重传感器"
+
+#: ../inputshaper_panel.cpp:114
+msgid "Load graphs"
+msgstr ""
 
 #: ../sysinfo_panel.cpp:171
 msgid "Log level"
@@ -352,7 +357,7 @@ msgstr "恢复打印"
 msgid "Resume"
 msgstr "继续"
 
-#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:46
+#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:48
 msgid "Retract"
 msgstr "回抽"
 
@@ -364,7 +369,7 @@ msgstr "回抽长度"
 msgid "Retract Speed"
 msgstr "回抽速度"
 
-#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:72
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:74
 msgid "Save"
 msgstr "保存"
 
@@ -454,11 +459,11 @@ msgstr ""
 "时间：{}\n"
 "大小：{} MB"
 
-#: ../inputshaper_panel.cpp:88
+#: ../inputshaper_panel.cpp:87
 msgid "X Frequency Response"
 msgstr "X轴频率响应"
 
-#: ../inputshaper_panel.cpp:98
+#: ../inputshaper_panel.cpp:97
 msgid "Y Frequency Response"
 msgstr "Y轴频率响应"
 
@@ -475,7 +480,7 @@ msgstr "min "
 #: ../finetune_panel.cpp:147 ../finetune_panel.cpp:152
 #: ../print_status_panel.cpp:71 ../print_status_panel.cpp:72
 #: ../print_status_panel.cpp:73 ../print_status_panel.cpp:227
-#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:341
+#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:340
 #: ../print_status_panel.cpp:484 ../print_status_panel.cpp:490
 #: ../print_status_panel.cpp:544
 msgid "мм"

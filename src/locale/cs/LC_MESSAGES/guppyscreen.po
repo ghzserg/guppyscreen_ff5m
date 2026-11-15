@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:45+0100\n"
+"POT-Creation-Date: 2026-11-16 16:47+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -56,15 +56,15 @@ msgstr "Pozor!"
 msgid "Bed"
 msgstr "Tisk. plocha"
 
-#: ../printertune_panel.cpp:47
+#: ../main_panel.cpp:60 ../printertune_panel.cpp:50
 msgid "Bed Mesh"
 msgstr "Síť lože"
 
-#: ../printertune_panel.cpp:50 ../printertune_panel.cpp:52
+#: ../printertune_panel.cpp:54 ../printertune_panel.cpp:56
 msgid "Belts/Shake"
 msgstr "Řemeny/Chvění"
 
-#: ../inputshaper_panel.cpp:518
+#: ../inputshaper_panel.cpp:555
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "Nejlepší shaper je {} @ {:.2f} Hz\n"
 
@@ -72,7 +72,7 @@ msgstr "Nejlepší shaper je {} @ {:.2f} Hz\n"
 msgid "Brightness"
 msgstr "Jas"
 
-#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:73
 msgid "Calibrate"
 msgstr "Kalibrovat"
 
@@ -124,7 +124,7 @@ msgstr "Ochladit"
 msgid "Do you want to cancel the print?"
 msgstr "Chcete zrušit tisk?"
 
-#: ../nav.cpp:262
+#: ../nav.cpp:279
 msgid "Do you want to emergency stop?"
 msgstr "Nouzové zastavení?"
 
@@ -149,7 +149,7 @@ msgstr "Excitovat"
 msgid "External circulation"
 msgstr "Vnitřní cirkulace"
 
-#: ../main_panel.cpp:51
+#: ../main_panel.cpp:55
 msgid "Extrude"
 msgstr "Extrudovat"
 
@@ -169,11 +169,12 @@ msgstr "Délka extruze"
 msgid "Extrusion speed (mm/s)"
 msgstr ""
 
-#: ../main_panel.cpp:52
+#: ../main_panel.cpp:56
 msgid "Fans"
 msgstr "Ventilátory"
 
-#: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
+#: ../main_panel.cpp:59 ../print_status_panel.cpp:50
+#: ../printertune_panel.cpp:45
 msgid "Fine Tune"
 msgstr "Jemné doladění"
 
@@ -197,7 +198,7 @@ msgstr "Průtok-"
 msgid "Frequency"
 msgstr "Frekvence"
 
-#: ../inputshaper_panel.cpp:153
+#: ../inputshaper_panel.cpp:154
 msgid "Graph"
 msgstr "Graf"
 
@@ -209,7 +210,7 @@ msgstr "Restart Guppy"
 msgid "Home"
 msgstr "Domů"
 
-#: ../main_panel.cpp:50
+#: ../main_panel.cpp:54
 msgid "Homing"
 msgstr "Homing"
 
@@ -221,7 +222,7 @@ msgstr "Vnitřní cirkulace"
 msgid "Klipper Restart"
 msgstr "Restart Klipperu"
 
-#: ../printertune_panel.cpp:45
+#: ../printertune_panel.cpp:47
 msgid "Limits"
 msgstr "Limity"
 
@@ -232,6 +233,10 @@ msgstr "Načíst"
 #: ../pid_panel.cpp:36
 msgid "Load Cell"
 msgstr "Snímač zatížení"
+
+#: ../inputshaper_panel.cpp:114
+msgid "Load graphs"
+msgstr ""
 
 #: ../sysinfo_panel.cpp:171
 msgid "Log level"
@@ -348,7 +353,7 @@ msgstr "Obnovit tisk"
 msgid "Resume"
 msgstr "Pokračovat"
 
-#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:46
+#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:48
 msgid "Retract"
 msgstr "Retrakce"
 
@@ -360,7 +365,7 @@ msgstr "Délka retrakce"
 msgid "Retract Speed"
 msgstr "Rychlost retrakce"
 
-#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:72
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:74
 msgid "Save"
 msgstr "Uložit"
 
@@ -450,11 +455,11 @@ msgstr ""
 "Čas: {}\n"
 "Velikost: {} MB"
 
-#: ../inputshaper_panel.cpp:88
+#: ../inputshaper_panel.cpp:87
 msgid "X Frequency Response"
 msgstr "Frekvenční odezva X"
 
-#: ../inputshaper_panel.cpp:98
+#: ../inputshaper_panel.cpp:97
 msgid "Y Frequency Response"
 msgstr "Frekvenční odezva Y"
 
@@ -471,7 +476,7 @@ msgstr "min "
 #: ../finetune_panel.cpp:147 ../finetune_panel.cpp:152
 #: ../print_status_panel.cpp:71 ../print_status_panel.cpp:72
 #: ../print_status_panel.cpp:73 ../print_status_panel.cpp:227
-#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:341
+#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:340
 #: ../print_status_panel.cpp:484 ../print_status_panel.cpp:490
 #: ../print_status_panel.cpp:544
 msgid "мм"

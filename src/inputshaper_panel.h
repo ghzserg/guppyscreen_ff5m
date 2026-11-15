@@ -31,6 +31,11 @@ class InputShaperPanel {
     panel->handle_image_clicked(event);
   };
 
+  static void _handle_load_graphs(lv_event_t *event) {
+    InputShaperPanel *panel = (InputShaperPanel*)event->user_data;
+    panel->load_graphs();
+  };
+
   static void _handle_update_slider(lv_event_t *event) {
     InputShaperPanel *panel = (InputShaperPanel*)event->user_data;
     panel->handle_update_slider(event);
@@ -45,6 +50,12 @@ class InputShaperPanel {
                          lv_obj_t *dd);
 
  private:
+  // The graphs are 800x480 PNGs, 1.5 MB each once decoded: shown only
+  // after Load graphs, dropped when the screen is left.
+  void load_graphs();
+  void unload_graphs();
+  void show_load_button();
+
   KWebSocketClient &ws;
   std::mutex &lv_lock;
   PromptPanel *prompt_panel;
@@ -53,12 +64,14 @@ class InputShaperPanel {
   // xgraph
   lv_obj_t *xgraph_cont;
   lv_obj_t *xgraph;
+  lv_obj_t *xload_btn;
   lv_obj_t *xoutput; // calibrate shaper output x
   lv_obj_t *xspinner;
 
   // y graph
   lv_obj_t *ygraph_cont;
   lv_obj_t *ygraph;
+  lv_obj_t *yload_btn;
   lv_obj_t *youtput; // calibrate shaper output y
   lv_obj_t *yspinner;
 
@@ -87,6 +100,14 @@ class InputShaperPanel {
   bool ximage_fullsized;
   bool yimage_fullsized;
   json calibrate_output;
+
+  // Each axis's graph, its Load graphs button and its file under the config root.
+  struct Graph {
+    lv_obj_t *img;
+    lv_obj_t *load_btn;
+    const char *png;
+  };
+  Graph graphs[2];
 
   static std::vector<std::string> shapers;
 
