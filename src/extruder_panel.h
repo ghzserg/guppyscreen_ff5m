@@ -44,7 +44,6 @@ class ExtruderPanel : public NotifyConsumer {
   ButtonContainer spoolman_btn;
   ButtonContainer cooldown_btn;
   ButtonContainer coldpull_btn;
-  ButtonContainer back_btn;
   std::string load_filament_macro;
   std::string code_macro;
   std::string cooldown_macro;

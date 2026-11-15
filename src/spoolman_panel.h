@@ -41,7 +41,6 @@ class SpoolmanPanel {
   lv_obj_t *switch_cont;
   lv_obj_t *show_archived;
   ButtonContainer reload_btn;
-  ButtonContainer back_btn;
   int32_t active_id;
   std::map<uint32_t, json> spools;
   uint32_t sorted_by;

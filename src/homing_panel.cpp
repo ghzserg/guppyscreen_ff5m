@@ -1,4 +1,5 @@
 #include "homing_panel.h"
+#include "nav.h"
 #include "grid_layout.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -11,16 +12,14 @@ LV_IMG_DECLARE(arrow_up);
 LV_IMG_DECLARE(arrow_right);
 LV_IMG_DECLARE(arrow_down);
 LV_IMG_DECLARE(home);
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(z_closer);
 LV_IMG_DECLARE(z_farther);
-LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(motor_off_img);
 
 HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   : NotifyConsumer(lock)
   , ws(websocket_client)
-  , homing_cont(lv_obj_create(lv_scr_act()))
+  , homing_cont(lv_obj_create(Nav::get().content()))
   , home_all_btn(homing_cont, &home, "G28", &HomingPanel::_handle_callback, this)
   , home_xy_btn(homing_cont, &home, "G28 XY", &HomingPanel::_handle_callback, this)
   , y_up_btn(homing_cont, &arrow_up, "Y+", &HomingPanel::_handle_callback, this)
@@ -29,14 +28,7 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   , x_down_btn(homing_cont, &arrow_left, "X-", &HomingPanel::_handle_callback, this)
   , z_up_btn(homing_cont, &z_closer, "Z+", &HomingPanel::_handle_callback, this)
   , z_down_btn(homing_cont, &z_farther, "Z-", &HomingPanel::_handle_callback, this)
-  , emergency_btn(homing_cont, &emergency, _("Stop") /* "Стоп" */, &HomingPanel::_handle_callback, this,
-                  _("Do you want to make an emergency stop?") /* "Вы хотите  аварийную остановку?" */,
-                  [&websocket_client]() {
-                    spdlog::debug("emergency stop pressed");
-                    websocket_client.send_jsonrpc("printer.emergency_stop");
-                  })
   , motoroff_btn(homing_cont, &motor_off_img, _("Motor off") /* "Мотор выкл" */, &HomingPanel::_handle_callback, this)
-  , back_btn(homing_cont, &back, _("Back") /* "Назад" */, &HomingPanel::_handle_callback, this)
   , distance_selector(homing_cont, _("Travel distance (mm)") /* "Расстояние перемещения (мм)" */,
                      {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
 {
@@ -55,7 +47,6 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   layout.place(y_up_btn.get_container(), "y_up", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   layout.place(home_xy_btn.get_container(), "home_xy", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   layout.place(z_up_btn.get_container(), "z_up", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  layout.place(emergency_btn.get_container(), "emergency", LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
   // row 2
   layout.place(x_down_btn.get_container(), "x_down", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
@@ -66,8 +57,6 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
 
   layout.place(distance_selector.get_container(), "distance_selector", LV_GRID_ALIGN_CENTER, 0, 5, LV_GRID_ALIGN_CENTER, 2, 1);
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 10, 0);
 
   ws.register_notify_update(this);
 }
@@ -202,15 +191,9 @@ void HomingPanel::handle_callback(lv_event_t *event) {
     spdlog::debug("z down pressed");
     move_op = fmt::format("_CLIENT_LINEAR_MOVE Z=-{} F=7800", distance);
   }
-  else if (btn == emergency_btn.get_container()) {
-    spdlog::debug("emergency stop pressed");
-    ws.send_jsonrpc("printer.emergency_stop");
-  }
   else if (btn == motoroff_btn.get_container()) {
     spdlog::debug("motor off pressed");
     ws.gcode_script("M84");
-  } else if (btn == back_btn.get_container()) {
-    lv_obj_move_background(homing_cont);
   }
   else {
     spdlog::debug("Unknown action button pressed");

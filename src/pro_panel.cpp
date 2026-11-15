@@ -1,4 +1,5 @@
 #include "pro_panel.h"
+#include "nav.h"
 #include "grid_layout.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -7,18 +8,16 @@ LV_IMG_DECLARE(air_circulation_internal_img);
 LV_IMG_DECLARE(air_circulation_external_img);
 LV_IMG_DECLARE(air_circulation_stop_img);
 LV_IMG_DECLARE(code_img);
-LV_IMG_DECLARE(back);
 
 ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
-  , cont(lv_obj_create(lv_scr_act()))
+  , cont(lv_obj_create(Nav::get().content()))
   , air_circulation_internal_btn(cont, &air_circulation_internal_img, _("Internal circulation") /* "Внутренняя\nциркуляция" */, &ProPanel::_handle_callback, this)
   , air_circulation_external_btn(cont, &air_circulation_external_img, _("External circulation") /* "Внешняя\nциркуляция" */, &ProPanel::_handle_callback, this)
   , air_circulation_stop_btn(cont, &air_circulation_stop_img, _("Stop circulation") /* "Остановить\nциркуляцию" */, &ProPanel::_handle_callback, this)
   , calibrate_extruders_btn(cont, &code_img, _("Calibrate extruders") /* "Калибровка экструдеров" */, &ProPanel::_handle_callback, this)
   , calibrate_vfa_btn(cont, &code_img, _("Calibrate VFA") /* "Калибровка VFA" */, &ProPanel::_handle_callback, this)
-  , back_btn(cont, &back, _("Back") /* "Назад" */, &ProPanel::_handle_callback, this)
 {
   lv_obj_move_background(cont);
 
@@ -41,7 +40,6 @@ ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
   layout.place(calibrate_vfa_btn.get_container(), "calibrate_vfa", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
 
   // row 3
-  layout.place(back_btn.get_container(), "back", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 }
 
 ProPanel::~ProPanel() {
@@ -61,9 +59,7 @@ void ProPanel::foreground() {
 void ProPanel::handle_callback(lv_event_t *e) {
   lv_obj_t *btn = lv_event_get_current_target(e);
 
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(cont);
-  } else if (btn == air_circulation_internal_btn.get_container()) {
+  if (btn == air_circulation_internal_btn.get_container()) {
     ws.gcode_script("AIR_CIRCULATION_INTERNAL");
   } else if (btn == air_circulation_external_btn.get_container()) {
     ws.gcode_script("AIR_CIRCULATION_EXTERNAL");

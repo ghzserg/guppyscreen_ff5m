@@ -1,8 +1,8 @@
 #include "spoolman_panel.h"
+#include "nav.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(refresh_img);
 
 #define SORTED_BY_ID   1 << 0
@@ -14,13 +14,12 @@ LV_IMG_DECLARE(refresh_img);
 SpoolmanPanel::SpoolmanPanel(KWebSocketClient &c, std::mutex &l)
   : ws(c)
   , lv_lock(l)
-  , cont(lv_obj_create(lv_scr_act()))
+  , cont(lv_obj_create(Nav::get().content()))
   , spool_table(lv_table_create(cont))
   , controls(lv_obj_create(cont))
   , switch_cont(lv_obj_create(controls))
   , show_archived(lv_switch_create(switch_cont))
   , reload_btn(controls, &refresh_img, _("Refresh") /* "Обновить" */, &SpoolmanPanel::_handle_callback, this)
-  , back_btn(controls, &back, _("Back") /* "Назад" */, &SpoolmanPanel::_handle_callback, this)
   , active_id(-1)
   , sorted_by(SORTED_BY_ID)
 {
@@ -36,7 +35,7 @@ SpoolmanPanel::SpoolmanPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_align(spool_table, LV_ALIGN_TOP_MID, 0, 5);
 
   lv_table_set_col_cnt(spool_table, 8);
-  auto screen_width = lv_disp_get_physical_hor_res(NULL);
+  auto screen_width = Nav::content_width();  // beside the nav bar
   auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   lv_table_set_col_width(spool_table, 0, 64 * scale); // id
   lv_table_set_col_width(spool_table, 3, 50 * scale); // color
@@ -66,7 +65,6 @@ SpoolmanPanel::SpoolmanPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_clear_state(show_archived, LV_STATE_CHECKED);
   lv_obj_add_event_cb(show_archived, &SpoolmanPanel::_handle_spoolman_action, LV_EVENT_VALUE_CHANGED, this);
 
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, 0);
 
   lv_obj_add_event_cb(spool_table, &SpoolmanPanel::_handle_spoolman_action, LV_EVENT_VALUE_CHANGED, this);
   lv_obj_add_event_cb(spool_table, &SpoolmanPanel::_handle_spoolman_action, LV_EVENT_DRAW_PART_BEGIN, this);
@@ -230,10 +228,7 @@ void SpoolmanPanel::handle_active_id_update(json &j) {
 
 void SpoolmanPanel::handle_callback(lv_event_t *event) {
   lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    spdlog::trace("spoolman back button pressed");
-    lv_obj_move_background(cont);
-  } else if (btn == reload_btn.get_container()) {
+  if (btn == reload_btn.get_container()) {
     spdlog::trace("spoolman reload button pressed");
     init();
   }

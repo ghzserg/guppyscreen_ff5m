@@ -1,18 +1,17 @@
 #include "led_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
 LV_IMG_DECLARE(cancel);
 LV_IMG_DECLARE(light_img);
-LV_IMG_DECLARE(back);
 
 LedPanel::LedPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   : NotifyConsumer(lock)
   , ws(websocket_client)
-  , ledpanel_cont(lv_obj_create(lv_scr_act()))
+  , ledpanel_cont(lv_obj_create(Nav::get().content()))
   , leds_cont(lv_obj_create(ledpanel_cont))
-  , back_btn(ledpanel_cont, &back, _("Back") /* "Назад" */, &LedPanel::_handle_callback, this)
 {
     lv_obj_clear_flag(ledpanel_cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(ledpanel_cont, lv_pct(100), lv_pct(100));
@@ -24,7 +23,6 @@ LedPanel::LedPanel(KWebSocketClient &websocket_client, std::mutex &lock)
     lv_obj_set_flex_flow(leds_cont, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(leds_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
 
     ws.register_notify_update(this);
 }
@@ -87,7 +85,6 @@ void LedPanel::init(json &l) {
     lv_obj_clear_flag(leds_cont, LV_OBJ_FLAG_SCROLLABLE);
   }
 
-  lv_obj_move_foreground(back_btn.get_container());
 }
 
 void LedPanel::foreground() {
@@ -113,16 +110,6 @@ void LedPanel::foreground() {
   }
 
   lv_obj_move_foreground(ledpanel_cont);
-}
-
-void LedPanel::handle_callback(lv_event_t *event) {
-  lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(ledpanel_cont);
-  }
-  else {
-    spdlog::debug("Unknown action button pressed");
-  }
 }
 
 void LedPanel::handle_led_update(lv_event_t *event) {

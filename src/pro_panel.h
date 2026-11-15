@@ -30,7 +30,6 @@ class ProPanel : public NotifyConsumer {
   ButtonContainer air_circulation_stop_btn;
   ButtonContainer calibrate_extruders_btn;
   ButtonContainer calibrate_vfa_btn;
-  ButtonContainer back_btn;
 };
 
 #endif // __PRO_PANEL_H__

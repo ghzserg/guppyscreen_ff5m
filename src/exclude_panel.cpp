@@ -1,4 +1,5 @@
 #include "exclude_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -7,7 +8,6 @@
 #include <vector>
 
 LV_IMG_DECLARE(refresh_img);
-LV_IMG_DECLARE(back);
 
 namespace {
 
@@ -172,9 +172,8 @@ void load_objects(const json &objects, const json &excluded) {
 ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
-  , cont(lv_obj_create(lv_scr_act()))
+  , cont(lv_obj_create(Nav::get().content()))
   , exclude_cont(lv_obj_create(cont))
-  , back_btn(cont, &back, _("Back") /* "Назад" */, &ExcludePanel::_handle_callback, this)
 {
   background();
   ws_ptr = &ws;
@@ -186,9 +185,9 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_size(exclude_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_flex_flow(exclude_cont, LV_FLEX_FLOW_COLUMN);
 
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
 
-  map_w = lv_disp_get_hor_res(NULL) - 140;
+  // The content area beside the nav bar, less the zoom and pan buttons.
+  map_w = Nav::content_width() - 140;
   map_h = lv_disp_get_ver_res(NULL) - 130;
   map_cont = lv_canvas_create(cont);
   map_free();
@@ -231,6 +230,9 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_add_event_cb(pan_btn[i], pan_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_add_flag(pan_btn[i], LV_OBJ_FLAG_HIDDEN);
   }
+
+  // Left through the nav bar (the map's canvas buffer is ~0.9 MB).
+  Nav::get().on_leave(cont, [this]() { background(); });
 
   ws.register_notify_update(this);
 }
@@ -337,11 +339,3 @@ void ExcludePanel::consume(json &j) {
     sync_view(exclude_cont, zoom_in_btn, zoom_out_btn);
 }
 
-void ExcludePanel::handle_callback(lv_event_t *e) {
-  lv_obj_t *btn = lv_event_get_current_target(e);
-
-  if (btn == back_btn.get_container()) {
-    background();
-    return;
-  }
-}

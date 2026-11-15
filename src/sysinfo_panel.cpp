@@ -1,4 +1,5 @@
 #include "sysinfo_panel.h"
+#include "nav.h"
 #include "utils.h"
 #include "config.h"
 #include "theme.h"
@@ -16,7 +17,6 @@
 
 namespace fs = std::experimental::filesystem;
 
-LV_IMG_DECLARE(back);
 
 #ifdef GUPPYSCREEN_VERSION
 #define GS_VERSION GUPPYSCREEN_VERSION
@@ -60,7 +60,7 @@ static std::map<std::string, uint32_t> sleep_label_to_sec = {
 };
 
 SysInfoPanel::SysInfoPanel(KWebSocketClient &c)
-  : cont(lv_obj_create(lv_scr_act()))
+  : cont(lv_obj_create(Nav::get().content()))
   , left_cont(lv_obj_create(cont))
   , right_cont(lv_obj_create(cont))
   , network_label(lv_label_create(right_cont))
@@ -93,7 +93,6 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c)
   , theme(0)
 #endif
 
-  , back_btn(cont, &back, _("Back") /* "Назад" */, &SysInfoPanel::_handle_callback, this)
 {
   lv_obj_move_background(cont);
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -262,8 +261,6 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c)
                       LV_EVENT_VALUE_CHANGED, this);
 #endif
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, 0);
 }
 
 SysInfoPanel::~SysInfoPanel() {
@@ -290,12 +287,6 @@ void SysInfoPanel::foreground() {
 void SysInfoPanel::handle_callback(lv_event_t *e)
 {
   if (lv_event_get_code(e) == LV_EVENT_SHORT_CLICKED) {
-    lv_obj_t *btn = lv_event_get_current_target(e);
-
-    if (btn == back_btn.get_container())
-    {
-      lv_obj_move_background(cont);
-    }
   }
   else if (lv_event_get_code(e) == LV_EVENT_VALUE_CHANGED) {
     lv_obj_t *obj = lv_event_get_target(e);

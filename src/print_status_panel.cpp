@@ -1,6 +1,7 @@
 #include "print_status_panel.h"
 #include "grid_layout.h"
 #include "main_panel.h"
+#include "nav.h"
 #include "finetune_panel.h"
 #include "retract_panel.h"
 #include "exclude_panel.h"
@@ -46,7 +47,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , pro_panel(websocket_client, lock)
   , pid_panel(websocket_client, lock)
   , mini_print_status(mini_parent, &PrintStatusPanel::_handle_callback, this, websocket_client)
-  , status_cont(lv_obj_create(lv_scr_act()))
+  , status_cont(lv_obj_create(Nav::get().content()))
   , buttons_cont(lv_obj_create(status_cont))
   , finetune_btn(buttons_cont, &fine_tune_img, _("Fine Tune") /* "Настройки" */, &PrintStatusPanel::_handle_callback, this)
   , retract_btn(buttons_cont, &retract, _("Retract") /* "Ретракт" */, &PrintStatusPanel::_handle_callback, this)

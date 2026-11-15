@@ -1,4 +1,5 @@
 #include "print_panel.h"
+#include "nav.h"
 #include "grid_layout.h"
 #include "file_panel.h"
 #include "state.h"
@@ -10,7 +11,6 @@
 
 LV_IMG_DECLARE(info_img);
 LV_IMG_DECLARE(print);
-LV_IMG_DECLARE(back);
 
 #define SORTED_BY_NAME 1 << 0
 #define SORTED_BY_MODIFIED  1 << 1
@@ -18,7 +18,7 @@ LV_IMG_DECLARE(back);
 PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatusPanel &ps)
   : NotifyConsumer(lock)
   , ws(websocket)
-  , files_cont(lv_obj_create(lv_scr_act()))
+  , files_cont(lv_obj_create(Nav::get().content()))
 #ifndef GUPPY_FF5M
   , prompt_cont(lv_obj_create(lv_scr_act()))
   , msgbox(lv_obj_create(prompt_cont))
@@ -35,7 +35,6 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , file_view(lv_obj_create(files_cont))
   , status_btn(file_view, &info_img, _("Status") /* "Статус" */, &PrintPanel::_handle_status_btn, this)
   , print_btn(file_view, &print, _("Print") /* "Печать" */, &PrintPanel::_handle_print_callback, this)
-  , back_btn(file_view, &back, _("Back") /* "Назад" */, &PrintPanel::_handle_back_btn, this)
   , root("", "", 0)
   , cur_dir(&root)
   , cur_file(NULL)
@@ -45,6 +44,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 {
   spdlog::trace("building print panel");
   lv_obj_move_background(files_cont);
+  Nav::get().on_leave(files_cont, [this]() { file_panel.uncache_thumbnail(); });
 
   lv_obj_set_size(files_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_clear_flag(files_cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -101,9 +101,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   layout.place(status_btn.get_container(), "status", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 1, 1);
   layout.place(print_btn.get_container(), "print", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_END, 1, 1);
-  layout.place(back_btn.get_container(), "back", LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 1, 1);
 
-  lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(print_btn.get_container());
   lv_obj_move_foreground(status_btn.get_container());
 
@@ -343,15 +341,6 @@ void PrintPanel::handle_metadata(Tree *f, json &j) {
       f->set_metadata(j);
       file_panel.refresh_view(f->metadata, f->full_path);
     }
-  }
-}
-
-void PrintPanel::handle_back_btn(lv_event_t *event) {
-  lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    file_panel.uncache_thumbnail();
-    lv_obj_move_background(files_cont);
-    print_status.background();
   }
 }
 

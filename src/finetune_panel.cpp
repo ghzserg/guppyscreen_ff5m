@@ -1,4 +1,5 @@
 #include "finetune_panel.h"
+#include "nav.h"
 #include "grid_layout.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -16,12 +17,11 @@ LV_IMG_DECLARE(speed_up_img);
 LV_IMG_DECLARE(speed_down_img);
 LV_IMG_DECLARE(flow_up_img);
 LV_IMG_DECLARE(flow_down_img);
-LV_IMG_DECLARE(back);
 
 FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   : NotifyConsumer(l)
   , ws(websocket_client)
-  , panel_cont(lv_obj_create(lv_scr_act()))
+  , panel_cont(lv_obj_create(Nav::get().content()))
   , values_cont(lv_obj_create(panel_cont))
   , zreset_btn(panel_cont, &refresh_img, _("Reset Z") /* "Сброс Z" */, &FineTunePanel::_handle_zoffset, this)
   , zup_btn(panel_cont, &z_farther, "Z+", &FineTunePanel::_handle_zoffset, this)
@@ -35,7 +35,6 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , flow_reset_btn(panel_cont, &refresh_img, _("Flow Reset") /* "Сброс поток" */, &FineTunePanel::_handle_flow, this)
   , flow_up_btn(panel_cont, &flow_up_img, _("Flow+") /* "Поток+" */, &FineTunePanel::_handle_flow, this)
   , flow_down_btn(panel_cont, &flow_down_img, _("Flow-") /* "Поток-" */, &FineTunePanel::_handle_flow, this)
-  , back_btn(panel_cont, &back, _("Back") /* "Назад" */, &FineTunePanel::_handle_callback, this)
   , zoffset_selector(panel_cont, ("Z ("+ std::string(_("мм")) +") - PA ("+ std::string(_("мм")) +"/"+ _("с") +")").c_str(),
                      {"0.005", "0.01", "0.05", "0.10", ""}, 0, 30, 15, &FineTunePanel::_handle_callback, this)
   , multipler_selector(panel_cont, _("Multipler Step") /* "Множитель шага (%)" */,
@@ -86,7 +85,6 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
 
   // col 5
   layout.place(values_cont, "values", LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 0, 3);
-  layout.place(back_btn.get_container(), "back", LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 3, 1);
 
   ws.register_notify_update(this);
 }
@@ -183,10 +181,6 @@ void FineTunePanel::handle_callback(lv_event_t *e) {
   }
 
   if (lv_event_get_code(e) == LV_EVENT_SHORT_CLICKED) {
-    lv_obj_t *btn = lv_event_get_current_target(e);
-    if (btn == back_btn.get_container()) {
-      lv_obj_move_background(panel_cont);
-    }
   }
 }
 

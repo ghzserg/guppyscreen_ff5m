@@ -1,20 +1,19 @@
 #include "retract_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
 LV_IMG_DECLARE(refresh_img);
-LV_IMG_DECLARE(back);
 
 RetractPanel::RetractPanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
-  , cont(lv_obj_create(lv_scr_act()))
+  , cont(lv_obj_create(Nav::get().content()))
   , retract_cont(lv_obj_create(cont))
   , retract_length(retract_cont, _("Retract Length") /* "Длина отката (мм)" */, &refresh_img, _("Reset") /* "Сброс" */, &refresh_img, NULL, &RetractPanel::_handle_callback, this, "")
   , retract_speed(retract_cont, _("Retract Speed") /* "Скорость отката (мм/с)" */, &refresh_img, _("Reset") /* "Сброс" */, &refresh_img, NULL, &RetractPanel::_handle_callback, this, "")
   , unretract_extra_length(retract_cont, _("Unretract Extra Length") /* "Доп. длина подачи (мм)" */, &refresh_img, _("Reset") /* "Сброс" */, &refresh_img, NULL, &RetractPanel::_handle_callback, this, "")
   , unretract_speed(retract_cont, _("Unretract Speed") /* "Скорость подачи (мм/с)" */, &refresh_img, _("Reset") /* "Сброс" */, &refresh_img, NULL, &RetractPanel::_handle_callback, this, "")
-  , back_btn(cont, &back, _("Back") /* "Назад" */, &RetractPanel::_handle_callback, this)
   , retract_length_default(1.4)
   , retract_speed_default(70)
   , unretract_extra_length_default(15)
@@ -29,7 +28,6 @@ RetractPanel::RetractPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_size(retract_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_flex_flow(retract_cont, LV_FLEX_FLOW_COLUMN);
 
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
 
   ws.register_notify_update(this);
 }
@@ -120,11 +118,6 @@ void RetractPanel::consume(json &j) {
 
 void RetractPanel::handle_callback(lv_event_t *e) {
   lv_obj_t *btn = lv_event_get_current_target(e);
-
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(cont);
-    return;
-  }
 
   if (lv_event_get_code(e) == LV_EVENT_RELEASED) {
     lv_obj_t *obj = lv_event_get_target(e);
