@@ -187,6 +187,13 @@ lv_coord_t SensorContainer::tile_width() {
   return 84 * ((double)lv_disp_get_physical_hor_res(NULL) / 800.0);
 }
 
+void SensorContainer::set_color(lv_color_t color) {
+  lv_obj_set_style_border_color(sensor_cont, color, LV_PART_MAIN);
+  if (chart != NULL && series != NULL) {
+    lv_chart_set_series_color(chart, series, color);
+  }
+}
+
 void SensorContainer::as_tile() {
   tile = true;
   auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;

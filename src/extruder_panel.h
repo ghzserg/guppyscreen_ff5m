@@ -8,7 +8,13 @@
 #include "button_container.h"
 #include "sensor_container.h"
 #include "numpad.h"
+#ifdef GUPPY_FF5M
+#include "nozzle_tiles.h"
+#endif
 #include "lvgl/lvgl.h"
+
+#include <string>
+#include <vector>
 
 class ExtruderPanel : public NotifyConsumer {
  public:
@@ -24,6 +30,18 @@ class ExtruderPanel : public NotifyConsumer {
     ExtruderPanel *panel = (ExtruderPanel*)event->user_data;
     panel->handle_callback(event);
   };
+
+#ifdef GUPPY_FF5M
+  // A tile per nozzle, like Home's without the colour stripe, replaces the
+  // extruder line. With several nozzles (C5 Pro) they also replace the T0-T3
+  // buttons: the printer's tool has a blue background, a tap picks another
+  // (not during a print). A tool change moves the head: it is sent with the
+  // next Load, Unload, COLOR or ColdPull, if the picked nozzle isn't the
+  // printer's tool. One nozzle (AD5M, AD5X) is not selectable. Called by
+  // MainPanel::create_sensors, under the LVGL lock, with Home's names and
+  // colours and where Home's tiles start in its content area (`left`, `top`).
+  void create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &nozzles, lv_coord_t left, lv_coord_t top);
+#endif
 
  private:
   KWebSocketClient &ws;
@@ -47,6 +65,16 @@ class ExtruderPanel : public NotifyConsumer {
   std::string load_filament_macro;
   std::string code_macro;
   std::string cooldown_macro;
+#ifdef GUPPY_FF5M
+  NozzleTiles nozzle_tiles;
+#endif
+  // Load, Unload and ColdPull: on with a tool in the head; on FF5M with
+  // selectable nozzles (C5 Pro), while one is picked.
+  void enable_actions(bool tool_in_head);
+  // The tool Load, Unload, COLOR and ColdPull work on, and the tool change
+  // to send before them ("" or "_T_USE T=n\n").
+  int action_tool() const;
+  std::string tool_change(int tool) const;
 };
 
 #endif // __EXTRUDER_PANEL_H__

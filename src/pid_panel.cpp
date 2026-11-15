@@ -27,14 +27,17 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
           _("Extruder") /* "Экструдер" */, lv_palette_main(LV_PALETTE_RED), true, true, numpad, "extruder", temp_chart, extruder_temp_series, true)
   , heater_bed_temp(ws, temp_cont, &bed, 150,
           _("Bed") /* "Стол" */, lv_palette_main(LV_PALETTE_PURPLE), true, true, numpad,
- "heater_bed", temp_chart, heater_bed_temp_series, true)
+ BED, temp_chart, heater_bed_temp_series, true)
   , weight_temp(ws, temp_cont, &heater, 150,
-          _("Weight") /* "Вес" */, lv_palette_main(LV_PALETTE_ORANGE), false, false, numpad, "temperature_sensor weightValue", temp_chart, weight_temp_series, true)
+          _("Weight") /* "Вес" */, lv_palette_main(LV_PALETTE_ORANGE), false, false, numpad, WEIGHT, temp_chart, weight_temp_series, true)
   , pid_extruder_btn(cont, &pid_extruder_img, _("PID Extruder") /* "PID Экструдера" */, &PidPanel::_handle_callback, this)
   , pid_bed_btn(cont, &pid_bed_img, _("PID Bed") /* "PID Стола" */, &PidPanel::_handle_callback, this)
   , clear_nozzle_btn(cont, &clear_nozzle_img, _("Clear nozzle") /* "Очистить сопло" */, &PidPanel::_handle_callback, this)
   , load_cell_tare_btn(cont, &load_cell_tare_img, _("Load Cell") /* "Сбросить вес" */, &PidPanel::_handle_callback, this)
   , bed_level_screws_tune_btn(cont, &bed_level_screws_tune_img, _("Screw adjustment") /* "Регулировка винтов" */, &PidPanel::_handle_callback, this)
+#ifdef GUPPY_FF5M
+  , nozzle_tiles(ws, temp_cont, numpad)
+#endif
   , tools_btnmatrix(NULL)
   , active_tool_id(0)
   , total_tools(1)
@@ -54,6 +57,14 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_pad_all(temp_cont, 0, 0);
 
   lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_ROW_WRAP);
+#ifdef GUPPY_FF5M
+  // The sensors as Home's tiles; create_nozzle_tiles puts them where Home's are.
+  for (SensorContainer *s : {&extruder_temp, &heater_bed_temp, &weight_temp}) {
+    s->as_tile();
+  }
+  lv_obj_set_style_pad_row(temp_cont, SensorContainer::tile_gap(), 0);
+  lv_obj_set_style_pad_column(temp_cont, SensorContainer::tile_gap(), 0);
+#endif
   static GridLayout layout = GridLayout::from_config("pid",
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)});
@@ -145,11 +156,13 @@ void PidPanel::consume(json &j) {
       }
     }
 
+#ifndef GUPPY_FF5M  // FF5M: the nozzles' tiles select the nozzle
     if (total_tools > 1) {
       lv_obj_clear_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
     } else {
       lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
     }
+#endif
   }
 
   // Обновление активного инструмента из входящего сокета
@@ -167,20 +180,30 @@ void PidPanel::consume(json &j) {
     }
   }
 
-  // Вычисляем системное имя текущего нагревателя экструдера (extruder, extruder1, extruder2...)
-  int effective_id = (active_tool_id >= 0) ? active_tool_id : 0;
-  std::string ext_name = "extruder" + (effective_id > 0 ? std::to_string(effective_id) : "");
+  json temp_value;
+#ifdef GUPPY_FF5M
+  if (!nozzle_tiles.empty()) {  // the extruder's tile is hidden
+    if (!nozzle_picked) nozzle_tiles.show_selected(active_tool_id);  // at first, the printer's tool
+    nozzle_tiles.update(j, false);  // their targets: the calibration temperature
+    extruder_temp.update_series(nozzle_tiles.tile(chart_selected_nozzle())->get_value());
+  } else
+#endif
+  {
+    // Вычисляем системное имя текущего нагревателя экструдера (extruder, extruder1, extruder2...)
+    int effective_id = (active_tool_id >= 0) ? active_tool_id : 0;
+    std::string ext_name = "extruder" + (effective_id > 0 ? std::to_string(effective_id) : "");
 
-  // Динамически запрашиваем температуру для активного экструдера
-  auto temp_value = j[json::json_pointer("/params/0/" + ext_name + "/temperature")];
-  if (temp_value.is_null()) {
-    temp_value = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/temperature"));
-  }
+    // Динамически запрашиваем температуру для активного экструдера
+    temp_value = j[json::json_pointer("/params/0/" + ext_name + "/temperature")];
+    if (temp_value.is_null()) {
+      temp_value = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/temperature"));
+    }
 
-  if (!temp_value.is_null()) {
-    int value = temp_value.template get<int>();
-    extruder_temp.update_series(value);
-    extruder_temp.update_value(value);
+    if (!temp_value.is_null()) {
+      int value = temp_value.template get<int>();
+      extruder_temp.update_series(value);
+      extruder_temp.update_value(value);
+    }
   }
 
   temp_value = j["/params/0/heater_bed/temperature"_json_pointer];
@@ -219,7 +242,7 @@ void PidPanel::handle_callback(lv_event_t *e) {
   if (btn == pid_extruder_btn.get_container()) {
     pid_extruder_btn.disable();
 
-    ws.gcode_script(fmt::format("PID_TUNE_EXTRUDER T={} TEMPERATURE={}", active_tool_id, extruder_temp.get_target_value()));
+    ws.gcode_script(fmt::format("PID_TUNE_EXTRUDER T={} TEMPERATURE={}", calibrated_tool(), extruder_temp.get_target_value()));
 
     pid_extruder_btn.enable();
   } else if (btn == pid_bed_btn.get_container()) {
@@ -228,7 +251,7 @@ void PidPanel::handle_callback(lv_event_t *e) {
     pid_bed_btn.enable();
   } else if (btn == clear_nozzle_btn.get_container()) {
     clear_nozzle_btn.disable();
-    ws.gcode_script(fmt::format("CLEAR_NOZZLE T={} EXTRUDER_TEMP={} BED_TEMP={}", active_tool_id, extruder_temp.get_target_value(), heater_bed_temp.get_target_value()));
+    ws.gcode_script(fmt::format("CLEAR_NOZZLE T={} EXTRUDER_TEMP={} BED_TEMP={}", calibrated_tool(), extruder_temp.get_target_value(), heater_bed_temp.get_target_value()));
     clear_nozzle_btn.enable();
   } else if (btn == bed_level_screws_tune_btn.get_container()) {
     bed_level_screws_tune_btn.disable();
@@ -240,3 +263,53 @@ void PidPanel::handle_callback(lv_event_t *e) {
     load_cell_tare_btn.enable();
   }
 }
+
+int PidPanel::calibrated_tool() const {
+#ifdef GUPPY_FF5M
+  // The selected tile's, the only one's on the AD5X: its four filament
+  // channels share `extruder`, whatever active_tool_id says.
+  if (!nozzle_tiles.empty()) return nozzle_tiles.selected();
+#endif
+  return active_tool_id;
+}
+
+#ifdef GUPPY_FF5M
+int PidPanel::chart_selected_nozzle() {
+  // The chart's extruder line: the selected nozzle, in its tile's colour.
+  int tool = nozzle_tiles.selected();
+  if (tool != charted_tool) {
+    if (charted_tool >= 0) {  // another nozzle's history: start afresh
+      lv_chart_set_all_value(temp_chart, extruder_temp_series, LV_CHART_POINT_NONE);
+    }
+    charted_tool = tool;
+    lv_chart_set_series_color(temp_chart, extruder_temp_series, nozzle_tiles.nozzle(tool)->color);
+  }
+  return tool;
+}
+
+void PidPanel::set_colors(lv_color_t bed, lv_color_t weight) {
+  heater_bed_temp.set_color(bed);
+  weight_temp.set_color(weight);
+}
+
+void PidPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &nozzles, lv_coord_t left, lv_coord_t top) {
+  // The tiles where Home's are.
+  lv_obj_set_style_pad_left(temp_cont, left, 0);
+  lv_obj_set_style_pad_top(temp_cont, top, 0);
+  lv_obj_move_to_index(nozzle_tiles.get_container(), 0);  // first, as on Home
+  // With the stripe, as the bed's tile and Home's. A tap selects the nozzle
+  // to calibrate (not the printer's tool) and asks for the temperature.
+  nozzle_tiles.create(nozzles, extruder_temp, true, active_tool_id, [this](int tool) {
+    nozzle_picked = true;
+    nozzle_tiles.show_selected(tool);  // now, for the chart
+    chart_selected_nozzle();
+    numpad.set_callback([this](double v) {
+      extruder_temp.update_target(v);  // what the buttons send
+      nozzle_tiles.set_targets(v);
+    });
+    numpad.foreground_reset();
+    return true;
+  });
+  nozzle_tiles.set_targets(extruder_temp.get_target_value());
+}
+#endif
