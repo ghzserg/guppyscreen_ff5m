@@ -1,0 +1,21 @@
+diff --git a/src/core/lv_obj_pos.c b/src/core/lv_obj_pos.c
+index c50ea3a..4ed363c 100644
+--- a/src/core/lv_obj_pos.c
++++ b/src/core/lv_obj_pos.c
+@@ -814,6 +814,16 @@ void lv_obj_transform_point(const lv_obj_t * obj, lv_point_t * p, bool recursive
+ void lv_obj_get_transformed_area(const lv_obj_t * obj, lv_area_t * area, bool recursive,
+                                  bool inv)
+ {
++    /*Nothing transformed: the area stays as it is. The 5 px margin below is for
++     *rounding in transformations; added to every area, it made an object that
++     *doesn't touch the screen's edges invalidate more than itself, so it never
++     *covered its own redraw and everything under it was drawn too.*/
++    const lv_obj_t * o = obj;
++    while(o && _lv_obj_get_layer_type(o) != LV_LAYER_TYPE_TRANSFORM) {
++        o = recursive ? lv_obj_get_parent(o) : NULL;
++    }
++    if(o == NULL) return;
++
+     lv_point_t p[4] = {
+         {area->x1, area->y1},
+         {area->x1, area->y2},

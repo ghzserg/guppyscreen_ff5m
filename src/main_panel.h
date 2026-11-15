@@ -19,6 +19,7 @@
 #include "setting_panel.h"
 #include "print_status_panel.h"
 #include "spoolman_panel.h"
+#include "nav.h"
 #include "lvgl/lvgl.h"
 
 #include <mutex>
@@ -54,10 +55,8 @@ class MainPanel : public NotifyConsumer {
   PrinterTunePanel& get_tune_panel();
   void enable_spoolman();
   void foreground();
-  void handle_tab_change(lv_event_t *e);
-  static void _handle_tab_change(lv_event_t *e) {
-    ((MainPanel *)e->user_data)->handle_tab_change(e);
-  }
+  void open_macros();
+  void open_console();
 
   void create_panel();
   void create_sensors(json &temp_sensors);
@@ -68,7 +67,6 @@ class MainPanel : public NotifyConsumer {
   void handle_fanpanel_cb(lv_event_t *event);
   void handle_ledpanel_cb(lv_event_t *event);
   void handle_print_cb(lv_event_t *event);
-  void handle_emergency_cb(lv_event_t *event);
 
   lv_obj_t *create_button(lv_obj_t *parent,
                           const void *btn_img,
@@ -105,22 +103,16 @@ class MainPanel : public NotifyConsumer {
     panel->handle_print_cb(event);
   };
 
-  static void _handle_emergency_cb(lv_event_t *event) {
-    MainPanel *panel = (MainPanel*)event->user_data;
-    panel->handle_emergency_cb(event);
-  };
-
  private:
   void create_main(lv_obj_t *parent);
   KWebSocketClient &ws;
   HomingPanel homing_panel;
   FanPanel fan_panel;
   LedPanel led_panel;
-  lv_obj_t *tabview;
-  lv_obj_t *main_tab;
+  lv_obj_t *main_tab;          // tab roots in Nav's content area
   lv_obj_t *printertune_tab;
   lv_obj_t *setting_tab;
-  lv_obj_t *macros_tab;
+  lv_obj_t *macros_tab;         // screens opened from Settings
   MacrosPanel macros_panel;
   lv_obj_t *console_tab;
   ConsolePanel console_panel;
@@ -145,7 +137,6 @@ class MainPanel : public NotifyConsumer {
   ButtonContainer action_btn;
   ButtonContainer led_btn;
   ButtonContainer print_btn;
-  ButtonContainer emergency_btn;
 
 };
 #endif // __MAIN_PANEL_H__
