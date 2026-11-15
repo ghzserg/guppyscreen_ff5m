@@ -108,8 +108,6 @@ void MiniPrintStatus::reset() {
 
   // free src
   KUtils::set_img_src(thumb, NULL);
-  // hack to color in empty space.
-  ((lv_img_t*)thumb)->src_type = LV_IMG_SRC_SYMBOL;
 
   eta = "...";
   status = "-/-";

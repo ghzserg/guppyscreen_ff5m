@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:45+0100\n"
+"POT-Creation-Date: 2026-11-16 16:47+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -61,15 +61,15 @@ msgstr ""
 msgid "Bed"
 msgstr ""
 
-#: ../printertune_panel.cpp:47
+#: ../main_panel.cpp:60 ../printertune_panel.cpp:50
 msgid "Bed Mesh"
 msgstr ""
 
-#: ../printertune_panel.cpp:50 ../printertune_panel.cpp:52
+#: ../printertune_panel.cpp:54 ../printertune_panel.cpp:56
 msgid "Belts/Shake"
 msgstr ""
 
-#: ../inputshaper_panel.cpp:518
+#: ../inputshaper_panel.cpp:555
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr ""
 
@@ -77,7 +77,7 @@ msgstr ""
 msgid "Brightness"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:73
 msgid "Calibrate"
 msgstr ""
 
@@ -129,7 +129,7 @@ msgstr ""
 msgid "Do you want to cancel the print?"
 msgstr ""
 
-#: ../nav.cpp:262
+#: ../nav.cpp:279
 msgid "Do you want to emergency stop?"
 msgstr ""
 
@@ -152,7 +152,7 @@ msgstr ""
 msgid "External circulation"
 msgstr ""
 
-#: ../main_panel.cpp:51
+#: ../main_panel.cpp:55
 msgid "Extrude"
 msgstr ""
 
@@ -172,11 +172,12 @@ msgstr ""
 msgid "Extrusion speed (mm/s)"
 msgstr ""
 
-#: ../main_panel.cpp:52
+#: ../main_panel.cpp:56
 msgid "Fans"
 msgstr ""
 
-#: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
+#: ../main_panel.cpp:59 ../print_status_panel.cpp:50
+#: ../printertune_panel.cpp:45
 msgid "Fine Tune"
 msgstr ""
 
@@ -200,7 +201,7 @@ msgstr ""
 msgid "Frequency"
 msgstr ""
 
-#: ../inputshaper_panel.cpp:153
+#: ../inputshaper_panel.cpp:154
 msgid "Graph"
 msgstr ""
 
@@ -212,7 +213,7 @@ msgstr ""
 msgid "Home"
 msgstr ""
 
-#: ../main_panel.cpp:50
+#: ../main_panel.cpp:54
 msgid "Homing"
 msgstr ""
 
@@ -224,7 +225,7 @@ msgstr ""
 msgid "Klipper Restart"
 msgstr ""
 
-#: ../printertune_panel.cpp:45
+#: ../printertune_panel.cpp:47
 msgid "Limits"
 msgstr ""
 
@@ -234,6 +235,10 @@ msgstr ""
 
 #: ../pid_panel.cpp:36
 msgid "Load Cell"
+msgstr ""
+
+#: ../inputshaper_panel.cpp:114
+msgid "Load graphs"
 msgstr ""
 
 #: ../sysinfo_panel.cpp:171
@@ -346,7 +351,7 @@ msgstr ""
 msgid "Resume"
 msgstr ""
 
-#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:46
+#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:48
 msgid "Retract"
 msgstr ""
 
@@ -358,7 +363,7 @@ msgstr ""
 msgid "Retract Speed"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:72
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:74
 msgid "Save"
 msgstr ""
 
@@ -445,11 +450,11 @@ msgid ""
 "Size: {} MB"
 msgstr ""
 
-#: ../inputshaper_panel.cpp:88
+#: ../inputshaper_panel.cpp:87
 msgid "X Frequency Response"
 msgstr ""
 
-#: ../inputshaper_panel.cpp:98
+#: ../inputshaper_panel.cpp:97
 msgid "Y Frequency Response"
 msgstr ""
 
@@ -466,7 +471,7 @@ msgstr ""
 #: ../finetune_panel.cpp:147 ../finetune_panel.cpp:152
 #: ../print_status_panel.cpp:71 ../print_status_panel.cpp:72
 #: ../print_status_panel.cpp:73 ../print_status_panel.cpp:227
-#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:341
+#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:340
 #: ../print_status_panel.cpp:484 ../print_status_panel.cpp:490
 #: ../print_status_panel.cpp:544
 msgid "мм"

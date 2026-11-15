@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:45+0100\n"
+"POT-Creation-Date: 2026-11-16 16:47+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -61,15 +61,15 @@ msgstr "¡Atención!"
 msgid "Bed"
 msgstr "Cama"
 
-#: ../printertune_panel.cpp:47
+#: ../main_panel.cpp:60 ../printertune_panel.cpp:50
 msgid "Bed Mesh"
 msgstr "Malla de cama"
 
-#: ../printertune_panel.cpp:50 ../printertune_panel.cpp:52
+#: ../printertune_panel.cpp:54 ../printertune_panel.cpp:56
 msgid "Belts/Shake"
 msgstr "Correas/Agitar"
 
-#: ../inputshaper_panel.cpp:518
+#: ../inputshaper_panel.cpp:555
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "El mejor shaper es {} a {:.2f} Hz\n"
 
@@ -77,7 +77,7 @@ msgstr "El mejor shaper es {} a {:.2f} Hz\n"
 msgid "Brightness"
 msgstr "Brillo"
 
-#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:37 ../inputshaper_panel.cpp:73
 msgid "Calibrate"
 msgstr "Calibrar"
 
@@ -129,7 +129,7 @@ msgstr "Enfriar"
 msgid "Do you want to cancel the print?"
 msgstr "¿Desea cancelar la impresión?"
 
-#: ../nav.cpp:262
+#: ../nav.cpp:279
 msgid "Do you want to emergency stop?"
 msgstr "¿Desea detener de emergencia?"
 
@@ -154,7 +154,7 @@ msgstr "Excitar"
 msgid "External circulation"
 msgstr "Circulación externa"
 
-#: ../main_panel.cpp:51
+#: ../main_panel.cpp:55
 msgid "Extrude"
 msgstr "Extruir"
 
@@ -174,11 +174,12 @@ msgstr "Longitud de extrusión"
 msgid "Extrusion speed (mm/s)"
 msgstr "Velocidad de extrusión (mm/s)"
 
-#: ../main_panel.cpp:52
+#: ../main_panel.cpp:56
 msgid "Fans"
 msgstr "Ventiladores"
 
-#: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
+#: ../main_panel.cpp:59 ../print_status_panel.cpp:50
+#: ../printertune_panel.cpp:45
 msgid "Fine Tune"
 msgstr "Ajuste fino"
 
@@ -202,7 +203,7 @@ msgstr "Flujo-"
 msgid "Frequency"
 msgstr "Frecuencia"
 
-#: ../inputshaper_panel.cpp:153
+#: ../inputshaper_panel.cpp:154
 msgid "Graph"
 msgstr "Gráfico"
 
@@ -214,7 +215,7 @@ msgstr "Reinicio de Guppy"
 msgid "Home"
 msgstr "Inicio"
 
-#: ../main_panel.cpp:50
+#: ../main_panel.cpp:54
 msgid "Homing"
 msgstr "Ir a origen"
 
@@ -226,7 +227,7 @@ msgstr "Circulación interna"
 msgid "Klipper Restart"
 msgstr "Reinicio de Klipper"
 
-#: ../printertune_panel.cpp:45
+#: ../printertune_panel.cpp:47
 msgid "Limits"
 msgstr "Límites"
 
@@ -237,6 +238,10 @@ msgstr "Cargar"
 #: ../pid_panel.cpp:36
 msgid "Load Cell"
 msgstr "Célula de carga"
+
+#: ../inputshaper_panel.cpp:114
+msgid "Load graphs"
+msgstr ""
 
 #: ../sysinfo_panel.cpp:171
 msgid "Log level"
@@ -353,7 +358,7 @@ msgstr "Restaurar impresión"
 msgid "Resume"
 msgstr "Reanudar"
 
-#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:46
+#: ../print_status_panel.cpp:51 ../printertune_panel.cpp:48
 msgid "Retract"
 msgstr "Retractar"
 
@@ -365,7 +370,7 @@ msgstr "Longitud de retracción"
 msgid "Retract Speed"
 msgstr "Velocidad de retracción"
 
-#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:72
+#: ../bedmesh_panel.cpp:35 ../bedmesh_panel.cpp:137 ../inputshaper_panel.cpp:74
 msgid "Save"
 msgstr "Guardar"
 
@@ -455,11 +460,11 @@ msgstr ""
 "Tiempo: {}\n"
 "Tamaño: {} MB"
 
-#: ../inputshaper_panel.cpp:88
+#: ../inputshaper_panel.cpp:87
 msgid "X Frequency Response"
 msgstr "Respuesta en frecuencia X"
 
-#: ../inputshaper_panel.cpp:98
+#: ../inputshaper_panel.cpp:97
 msgid "Y Frequency Response"
 msgstr "Respuesta en frecuencia Y"
 
@@ -476,7 +481,7 @@ msgstr "min "
 #: ../finetune_panel.cpp:147 ../finetune_panel.cpp:152
 #: ../print_status_panel.cpp:71 ../print_status_panel.cpp:72
 #: ../print_status_panel.cpp:73 ../print_status_panel.cpp:227
-#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:341
+#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:340
 #: ../print_status_panel.cpp:484 ../print_status_panel.cpp:490
 #: ../print_status_panel.cpp:544
 msgid "мм"

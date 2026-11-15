@@ -54,7 +54,8 @@ namespace KUtils {
   // until the entry is evicted, even when no image shows it any more.
 
   // lv_img_set_src(), then drop the decoded copy of the file `img` showed
-  // before (if any) from the image cache.
+  // before (if any) from the image cache. NULL leaves `img` empty: nothing
+  // drawn, its size kept.
   void set_img_src(lv_obj_t *img, const void *src);
 
   // Drop the decoded copy of the file `img` shows from the image cache, e.g.

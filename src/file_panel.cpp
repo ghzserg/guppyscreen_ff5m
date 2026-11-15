@@ -87,8 +87,6 @@ void FilePanel::refresh_view(json &j, const std::string &gcode_path) {
   } else {
     // free src
     KUtils::set_img_src(thumbnail, NULL);
-    // hack to color in empty space.
-    ((lv_img_t*)thumbnail)->src_type = LV_IMG_SRC_SYMBOL;
   }
 }
 
