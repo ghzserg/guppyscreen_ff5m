@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "mini_print_status.h"
 #ifdef GUPPY_FF5M
+#include "nav.h"
 #include "sensor_container.h"
 #endif
 #include "spdlog/spdlog.h"
@@ -58,10 +59,15 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 #ifdef GUPPY_FF5M
   // Home: twice as tall as with the ring, the thumbnail filling the height,
   // the progress a bar along the bottom as thick as the sensor tiles' stripes.
-  lv_obj_set_height(cont, THUMB_PX + BAR_PX + 2 * 2 + 7);  // + border, gap
+  // As tall as a nav bar button, to line up with the Print tab; the thumbnail
+  // centred between the top and the bar.
+  const lv_coord_t content_px = THUMB_PX + BAR_PX + 2 * 2 + 7;  // + border, gap
+  lv_obj_set_height(cont, LV_MAX(Nav::slot_height(), content_px));
+  lv_obj_set_style_pad_top(cont, LV_MAX(Nav::slot_height() - content_px, 0) / 2, 0);
   lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
   lv_obj_set_style_pad_column(cont, 10, 0);
   lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_FLOATING);  // out of the row
+  lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_CLICKABLE);  // a tap on it opens the print screen too
   lv_obj_set_height(progress_bar, BAR_PX);
   lv_obj_set_width(progress_bar, LV_PCT(100));
   lv_obj_set_style_radius(progress_bar, 0, LV_PART_MAIN | LV_PART_INDICATOR);

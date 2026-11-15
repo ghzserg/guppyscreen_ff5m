@@ -258,6 +258,11 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_clear_flag(mini_status, LV_OBJ_FLAG_FLOATING);
     // Four tile columns wide, whatever its text.
     lv_obj_set_width(mini_status, 4 * SensorContainer::tile_width() + 3 * TILE_GAP);
+    // Level with the Print tab when the tiles leave room above it (one row,
+    // AD5M), else right under them: the tiles' row reaches down to it at
+    // least. temp_cont sits at the top of main_cont's grid.
+    lv_obj_set_style_min_height(sensor_tiles, Nav::slot_top(Nav::PRINT) - lv_obj_get_style_pad_top(main_cont, 0) -
+                                lv_obj_get_style_pad_top(temp_cont, 0) - TILE_GAP, 0);
 #else
     // Разрешаем прокрутку контейнера
     lv_obj_add_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);

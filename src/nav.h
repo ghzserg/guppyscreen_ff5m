@@ -31,6 +31,10 @@ class Nav {
   lv_obj_t *content();
   // The content area's width: what a screen is laid out for (740 on the AD5M).
   static lv_coord_t content_width();
+  // A tab button's place in the bar, in screen coordinates (96 px tall on
+  // the AD5M): what a screen lines up with.
+  static lv_coord_t slot_height();
+  static lv_coord_t slot_top(Tab t);
 
   // A new, empty screen in the content area (100% x 100%, no padding or
   // border, not scrollable).
