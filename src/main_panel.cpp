@@ -8,7 +8,6 @@
 LV_IMG_DECLARE(filament_img);
 LV_IMG_DECLARE(light_img);
 LV_IMG_DECLARE(move);
-LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(fan);
@@ -52,7 +51,6 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , extrude_btn(main_cont, &filament_img, _("Extrude") /* "Экструдер" */, &MainPanel::_handle_extrude_cb, this)
   , action_btn(main_cont, &fan, _("Fans") /* "Обдув" */, &MainPanel::_handle_fanpanel_cb, this)
   , led_btn(main_cont, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
-  , print_btn(main_cont, &print, _("Print") /* "Печать" */, &MainPanel::_handle_print_cb, this)
   , main_layout(GridLayout::from_config("main",
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)},
       {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1)}))
@@ -174,13 +172,6 @@ void MainPanel::handle_ledpanel_cb(lv_event_t *event) {
   }
 }
 
-void MainPanel::handle_print_cb(lv_event_t *event) {
-  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
-    spdlog::trace("clicked print");
-    print_panel.foreground();
-  }
-}
-
 void MainPanel::create_main(lv_obj_t * parent)
 {
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_ROW_WRAP);
@@ -199,7 +190,6 @@ void MainPanel::create_main(lv_obj_t * parent)
     main_layout.place(extrude_btn.get_container(),   "extrude", LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     main_layout.place(action_btn.get_container(),    "fans",    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     main_layout.place(led_btn.get_container(),       "led",     LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    main_layout.place(print_btn.get_container(),     "print",   LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
     // Разрешаем прокрутку контейнера
     lv_obj_add_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);

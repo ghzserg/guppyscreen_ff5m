@@ -30,6 +30,9 @@ class PrintStatusPanel : public NotifyConsumer {
   void populate();
   void foreground();
   void background();
+  void show_status();
+  // The Print tab's screen when nothing is printing (the file list).
+  void set_idle_screen(lv_obj_t *screen);
 
   void handle_metadata(const std::string &gcode_file, json &j);
   void handle_callback(lv_event_t *event);
@@ -63,14 +66,14 @@ class PrintStatusPanel : public NotifyConsumer {
   PidPanel pid_panel;
   MiniPrintStatus mini_print_status;
   lv_obj_t *status_cont;
+  lv_obj_t *idle_screen = NULL;
+  bool running = false;  // print_stats.state is printing or paused
   lv_obj_t *buttons_cont;
   ButtonContainer finetune_btn;
   ButtonContainer retract_btn;
   ButtonContainer pause_btn;
   ButtonContainer resume_btn;
   ButtonContainer cancel_btn;
-  ButtonContainer emergency_btn;
-  ButtonContainer back_btn;
   lv_obj_t *thumbnail_cont;
   lv_obj_t *thumbnail;
   lv_obj_t *pbar_cont;
