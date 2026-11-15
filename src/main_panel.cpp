@@ -8,7 +8,13 @@
 #include <optional>
 #include <vector>
 
+#ifdef GUPPY_FF5M
+LV_IMG_DECLARE(extrude_img);  // as on the extruder screen's Load button
+#define EXTRUDE_IMG extrude_img
+#else
 LV_IMG_DECLARE(filament_img);
+#define EXTRUDE_IMG filament_img
+#endif
 LV_IMG_DECLARE(light_img);
 LV_IMG_DECLARE(move);
 LV_IMG_DECLARE(extruder);
@@ -16,7 +22,7 @@ LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(fan);
 LV_IMG_DECLARE(heater);
 #ifdef GUPPY_FF5M
-LV_IMG_DECLARE(fine_tune_img);
+LV_IMG_DECLARE(speed_up_img);  // Fine Tune's Speed+; unlike the Tune tab's sliders
 LV_IMG_DECLARE(bedmesh_img);
 LV_IMG_DECLARE(thermometer_img);
 #endif
@@ -59,11 +65,11 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
 #endif
   , temp_chart(lv_chart_create(main_cont))
   , homing_btn(main_cont, &move, _("Homing") /* "Домой" */, &MainPanel::_handle_homing_cb, this)
-  , extrude_btn(main_cont, &filament_img, _("Extrude") /* "Экструдер" */, &MainPanel::_handle_extrude_cb, this)
+  , extrude_btn(main_cont, &EXTRUDE_IMG, _("Extrude") /* "Экструдер" */, &MainPanel::_handle_extrude_cb, this)
   , action_btn(main_cont, &fan, _("Fans") /* "Обдув" */, &MainPanel::_handle_fanpanel_cb, this)
   , led_btn(main_cont, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
 #ifdef GUPPY_FF5M
-  , finetune_btn(main_cont, &fine_tune_img, _("Fine Tune") /* "Настройки" */, &MainPanel::_handle_finetune_cb, this)
+  , finetune_btn(main_cont, &speed_up_img, _("Fine Tune") /* "Настройки" */, &MainPanel::_handle_finetune_cb, this)
   , bedmesh_btn(main_cont, &bedmesh_img, _("Bed Mesh") /* "Стол" */, &MainPanel::_handle_bedmesh_cb, this)
 #endif
   , main_layout(GridLayout::from_config("main",

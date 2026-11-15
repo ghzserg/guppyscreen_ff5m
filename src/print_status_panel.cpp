@@ -25,7 +25,13 @@ LV_IMG_DECLARE(fan);
 LV_IMG_DECLARE(layers_img);
 
 LV_IMG_DECLARE(retract);
+#ifdef GUPPY_FF5M
+LV_IMG_DECLARE(speed_img);  // unlike the Tune tab's sliders in the nav bar
+#define FINE_TUNE_IMG speed_img
+#else
 LV_IMG_DECLARE(fine_tune_img);
+#define FINE_TUNE_IMG fine_tune_img
+#endif
 LV_IMG_DECLARE(pause_img);
 LV_IMG_DECLARE(resume);
 LV_IMG_DECLARE(cancel);
@@ -47,7 +53,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , mini_print_status(mini_parent, &PrintStatusPanel::_handle_callback, this, websocket_client)
   , status_cont(lv_obj_create(Nav::get().content()))
   , buttons_cont(lv_obj_create(status_cont))
-  , finetune_btn(buttons_cont, &fine_tune_img, _("Fine Tune") /* "Настройки" */, &PrintStatusPanel::_handle_callback, this)
+  , finetune_btn(buttons_cont, &FINE_TUNE_IMG, _("Fine Tune") /* "Настройки" */, &PrintStatusPanel::_handle_callback, this)
   , retract_btn(buttons_cont, &retract, _("Retract") /* "Ретракт" */, &PrintStatusPanel::_handle_callback, this)
   , pause_btn(buttons_cont, &pause_img, _("Pause") /* "Пауза" */, &PrintStatusPanel::_handle_callback, this)
   , resume_btn(buttons_cont, &resume, _("Resume") /* "Продолжить" */, &PrintStatusPanel::_handle_callback, this)
