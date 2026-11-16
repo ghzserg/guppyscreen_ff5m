@@ -207,6 +207,17 @@ void SensorContainer::set_color(lv_color_t color) {
   }
 }
 
+void SensorContainer::highlight(bool on) {
+  // Как выбранное сопло на экране Extrude.
+  if (on) {
+    lv_obj_set_style_bg_color(sensor_cont, lv_palette_main(LV_PALETTE_BLUE), 0);
+    lv_obj_set_style_bg_opa(sensor_cont, LV_OPA_COVER, 0);
+  } else {
+    lv_obj_remove_local_style_prop(sensor_cont, LV_STYLE_BG_COLOR, 0);
+    lv_obj_remove_local_style_prop(sensor_cont, LV_STYLE_BG_OPA, 0);
+  }
+}
+
 void SensorContainer::as_tile() {
   tile = true;
   auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
@@ -274,7 +285,14 @@ void SensorContainer::handle_edit(lv_event_t *e) {
       }
     });
     numpad.foreground_reset();
-    numpad.set_close_callback(this, nullptr);  // for forget() on delete
+    std::function<void()> on_close;
+#ifdef GUPPY_FF5M
+    if (tile) {  // плитка Home: для какой из них вводится температура
+      highlight(true);
+      on_close = [this] { highlight(false); };
+    }
+#endif
+    numpad.set_close_callback(this, std::move(on_close));  // и для forget() при удалении
   }
 }
 
