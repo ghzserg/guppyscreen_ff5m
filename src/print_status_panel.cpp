@@ -175,7 +175,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_pad_hor(buttons_cont, 0, 0);
   lv_obj_set_style_pad_column(buttons_cont, 0, 0);
   // 14 px lower than its cell's centre: away from the progress bar, still
-  // on the screen (369..453 on the AD5M).
+  // on the screen (371..455 on the AD5M).
   lv_obj_set_style_translate_y(buttons_cont, 14, 0);
   for (ButtonContainer *b : {&limits_btn, &finetune_btn, &retract_btn, &pause_btn, &resume_btn, &cancel_btn}) {
     lv_obj_set_width(b->get_container(), LV_PCT(20));
