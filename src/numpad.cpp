@@ -88,8 +88,7 @@ void Numpad::handle_input(lv_event_t *e) {
   }
 
   if (code == LV_EVENT_CANCEL) {
-    lv_obj_add_flag(edit_cont, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_move_background(edit_cont);
+    hide();
   }
 
   if (code == LV_EVENT_READY) {
@@ -102,10 +101,37 @@ void Numpad::handle_input(lv_event_t *e) {
       }
     }
 
-    lv_obj_add_flag(edit_cont, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_move_background(edit_cont);
+    hide();
     lv_textarea_set_text(input, "");
   }
+}
+
+void Numpad::set_close_callback(const void *owner, std::function<void()> cb) {
+  close_owner = owner;
+  close_cb = std::move(cb);
+}
+
+void Numpad::forget(const void *owner) {
+  if (owner != close_owner) return;
+  // Its OK would call into it: closed without its callbacks.
+  close_owner = nullptr;
+  close_cb = nullptr;
+  ready_cb = [](double) {};
+  lv_obj_add_flag(edit_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_background(edit_cont);
+}
+
+void Numpad::fire_close() {
+  auto cb = std::move(close_cb);
+  close_cb = nullptr;
+  close_owner = nullptr;
+  if (cb) cb();
+}
+
+void Numpad::hide() {
+  lv_obj_add_flag(edit_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_background(edit_cont);
+  fire_close();
 }
 
 // void Numpad::handle_defocused(lv_event_t *e) {
@@ -121,6 +147,7 @@ void Numpad::handle_input(lv_event_t *e) {
 
 void Numpad::foreground_reset() {
   spdlog::trace("resetting foreground");
+  fire_close();  // the previous caller's numpad is closed
   lv_textarea_set_text(input, "");
   lv_obj_clear_flag(edit_cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_foreground(edit_cont);

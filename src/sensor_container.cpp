@@ -139,6 +139,7 @@ SensorContainer::SensorContainer(KWebSocketClient &c,
 }
 
 SensorContainer::~SensorContainer() {
+  numpad.forget(this);
   if (sensor_cont != NULL) {
     spdlog::debug("deleting sensor {}", id);
     lv_obj_del(sensor_cont);
@@ -202,6 +203,17 @@ void SensorContainer::set_color(lv_color_t color) {
   lv_obj_set_style_border_color(sensor_cont, color, LV_PART_MAIN);
   if (chart != NULL && series != NULL) {
     lv_chart_set_series_color(chart, series, color);
+  }
+}
+
+void SensorContainer::highlight(bool on) {
+  // As the selected nozzle on Extrude.
+  if (on) {
+    lv_obj_set_style_bg_color(sensor_cont, lv_palette_main(LV_PALETTE_BLUE), 0);
+    lv_obj_set_style_bg_opa(sensor_cont, LV_OPA_COVER, 0);
+  } else {
+    lv_obj_remove_local_style_prop(sensor_cont, LV_STYLE_BG_COLOR, 0);
+    lv_obj_remove_local_style_prop(sensor_cont, LV_STYLE_BG_OPA, 0);
   }
 }
 
@@ -269,6 +281,14 @@ void SensorContainer::handle_edit(lv_event_t *e) {
       }
     });
     numpad.foreground_reset();
+    std::function<void()> on_close;
+#ifdef GUPPY_FF5M
+    if (tile) {  // Home's: which one the entered temperature is for
+      highlight(true);
+      on_close = [this] { highlight(false); };
+    }
+#endif
+    numpad.set_close_callback(this, std::move(on_close));  // also for forget() on delete
   }
 }
 
