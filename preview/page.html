@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GuppyScreen preview</title>
+<style>
+  :root {
+    --bg: #1b1d21; --panel: #24272c; --fg: #e6e6e6; --muted: #9aa0a6; --line: #3a3e45;
+    --accent: #2196f3; --accent-fg: #fff; --err-bg: #5c1d1d; --err-fg: #ffd7d7;
+    --ok: #66bb6a; --frame: #000;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+  main { display: grid; grid-template-columns: minmax(0, 800px) minmax(0, 1fr); gap: 16px;
+         padding: 16px; max-width: 1600px; margin: 0 auto; align-items: start; }
+  @media (max-width: 1100px) { main { grid-template-columns: minmax(0, 1fr); } }
+  #screen { width: 100%; aspect-ratio: 800 / 480; display: block; background: var(--frame);
+            border-radius: 6px; touch-action: none; cursor: pointer; }
+  #error { display: none; white-space: pre-wrap; background: var(--err-bg); color: var(--err-fg);
+           padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-family: ui-monospace, monospace; }
+  #info { color: var(--muted); margin-top: 8px; }
+  #state { float: right; }
+  code { font-family: ui-monospace, monospace; }
+
+  .editor { background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+            display: flex; flex-direction: column; min-height: 480px; }
+  .tabs { display: flex; border-bottom: 1px solid var(--line); }
+  .tab { background: none; border: 0; color: var(--muted); padding: 10px 14px; cursor: pointer;
+         font: inherit; border-bottom: 2px solid transparent; }
+  .tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+  .tab .dot { color: var(--accent); visibility: hidden; }
+  .tab.dirty .dot { visibility: visible; }
+  textarea { flex: 1; min-height: 420px; resize: vertical; border: 0; outline: none; padding: 12px;
+             background: transparent; color: var(--fg); font: 13px/1.5 ui-monospace, monospace;
+             tab-size: 2; white-space: pre; overflow: auto; }
+  .bar { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line);
+         flex-wrap: wrap; }
+  .btn { font: inherit; padding: 6px 14px; border-radius: 4px; border: 1px solid var(--line);
+         background: transparent; color: var(--fg); cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  #msg { flex: 1 1 200px; color: var(--muted); white-space: pre-wrap; font-family: ui-monospace, monospace;
+         font-size: 12px; }
+  #msg.err { color: var(--err-fg); }
+  #msg.ok { color: var(--ok); }
+  .hint { color: var(--muted); font-size: 12px; }
+  .ref { border-top: 1px solid var(--line); padding: 10px 12px; }
+  .ref summary { cursor: pointer; color: var(--muted); }
+  .ref h4 { margin: 12px 0 4px; font: 600 13px ui-monospace, monospace; }
+  .ref h4 span { color: var(--muted); font-weight: 400; }
+  .ref ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px;
+            font: 12px ui-monospace, monospace; }
+  .ref li.hidden { color: var(--muted); text-decoration: line-through; }
+</style>
+</head>
+<body>
+<main>
+  <section>
+    <div id="error"></div>
+    <canvas id="screen" width="800" height="480"></canvas>
+    <div id="info"><span id="state">…</span>Config: <code id="config">?</code></div>
+  </section>
+
+  <section class="editor">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-name="config" aria-selected="true">guppyconfig.json <span class="dot">●</span></button>
+      <button class="tab" role="tab" data-name="files" aria-selected="false">print_files.json <span class="dot">●</span></button>
+    </div>
+    <textarea id="text" spellcheck="false" autocomplete="off"></textarea>
+    <div class="bar">
+      <button class="btn primary" id="apply">Применить</button>
+      <button class="btn" id="revert">Отменить правки</button>
+      <span id="msg"></span>
+      <span class="hint">Ctrl+S — применить</span>
+    </div>
+    <details class="ref">
+      <summary>Справка: экраны и элементы для <code>layout</code></summary>
+      <p class="hint">Ключ <code>"layout": {"&lt;экран&gt;": {"items": {"&lt;элемент&gt;": {...}}}}</code>.
+        У элемента: <code>col</code>, <code>row</code>, <code>col_span</code>, <code>row_span</code>,
+        <code>hidden</code>, <code>align</code> / <code>align_x</code> / <code>align_y</code>
+        (center, start, end, stretch). У экрана: <code>columns</code>, <code>rows</code>,
+        <code>padding</code> (число или top/right/bottom/left), <code>gap</code> (число или row/column).
+        Ниже — где элементы стоят сейчас: колонка,строка; ×N — клеток по горизонтали, ↓N — по вертикали; зачёркнутые скрыты.</p>
+      <div id="ref"></div>
+    </details>
+  </section>
+</main>
+<script>
+// ---- screen ----
+const canvas = document.getElementById('screen');
+const ctx = canvas.getContext('2d');
+const errBox = document.getElementById('error');
+const stateEl = document.getElementById('state');
+let frame = null, pid = null, down = false, busy = false;
+
+async function poll() {
+  if (busy) return;
+  busy = true;
+  try {
+    const st = await (await fetch('/status', {cache: 'no-store'})).json();
+    document.getElementById('config').textContent = st.config;
+    errBox.style.display = st.error ? 'block' : 'none';
+    errBox.textContent = st.error ? 'Ошибка во входных файлах, показан прошлый вариант:\n' + st.error : '';
+    if (st.pid !== pid) {
+      const first = pid === null;
+      pid = st.pid; frame = null;
+      if (!first) onRestart();
+    }
+    if (st.frame !== frame) {
+      const r = await fetch('/frame.rgba' + (frame === null ? '' : '?since=' + frame), {cache: 'no-store'});
+      if (r.status === 200) {
+        const buf = new Uint8ClampedArray(await r.arrayBuffer());
+        ctx.putImageData(new ImageData(buf, 800, 480), 0, 0);
+        frame = Number(r.headers.get('X-Frame'));
+      }
+    }
+    stateEl.textContent = 'работает';
+  } catch (e) {
+    stateEl.textContent = 'перезапуск…';
+    frame = null;
+  } finally {
+    busy = false;
+  }
+}
+setInterval(poll, 100);
+
+function point(ev) {
+  const r = canvas.getBoundingClientRect();
+  return { x: Math.round((ev.clientX - r.left) * 800 / r.width),
+           y: Math.round((ev.clientY - r.top) * 480 / r.height) };
+}
+// One request at a time, so a release never overtakes a move.
+let chain = Promise.resolve();
+function send(ev, isDown) {
+  const body = JSON.stringify({ ...point(ev), down: isDown });
+  chain = chain.then(() => fetch('/touch', { method: 'POST', body })).catch(() => {});
+}
+canvas.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0) return;
+  down = true; canvas.setPointerCapture(ev.pointerId); send(ev, true);
+});
+canvas.addEventListener('pointermove', ev => { if (down) send(ev, true); });
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  canvas.addEventListener(type, ev => { if (down) { down = false; send(ev, false); } });
+}
+
+// ---- editor ----
+const text = document.getElementById('text');
+const msg = document.getElementById('msg');
+const applyBtn = document.getElementById('apply');
+const tabs = [...document.querySelectorAll('.tab')];
+// Per file: what is on disk and what is in the editor.
+const docs = { config: { saved: null, text: null }, files: { saved: null, text: null } };
+let current = 'config';
+
+function setMsg(s, cls) { msg.textContent = s; msg.className = cls || ''; }
+function markDirty() {
+  for (const t of tabs) {
+    const d = docs[t.dataset.name];
+    t.classList.toggle('dirty', d.text !== null && d.text !== d.saved);
+  }
+}
+
+async function load(name, force) {
+  const d = docs[name];
+  const r = await fetch('/file?name=' + name, {cache: 'no-store'});
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const saved = await r.text();
+  // Keep unsaved edits unless asked to drop them.
+  if (force || d.text === null || d.text === d.saved) d.text = saved;
+  d.saved = saved;
+  if (name === current) text.value = d.text;
+  markDirty();
+}
+
+function show(name) {
+  docs[current].text = text.value;
+  current = name;
+  for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.name === name));
+  text.value = docs[name].text ?? '';
+  setMsg('');
+  markDirty();
+}
+
+// Where a JSON.parse error points, as "line N, column M", when the browser tells.
+function jsonError(s) {
+  try { JSON.parse(s); return null; } catch (e) {
+    const m = /position (\d+)/.exec(e.message);
+    if (!m) return e.message;
+    const before = s.slice(0, Number(m[1]));
+    const line = before.split('\n').length, col = before.length - before.lastIndexOf('\n');
+    return `строка ${line}, столбец ${col}: ${e.message}`;
+  }
+}
+
+async function apply() {
+  const name = current, body = text.value;
+  docs[name].text = body;
+  const local = jsonError(body);
+  if (local) { setMsg('Не JSON — ' + local, 'err'); return; }
+  applyBtn.disabled = true;
+  setMsg('Сохраняю…');
+  try {
+    const r = await fetch('/file?name=' + name, { method: 'POST', body });
+    const res = await r.json();
+    if (!res.ok) { setMsg(res.error, 'err'); return; }
+    docs[name].saved = body;
+    markDirty();
+    setMsg('Сохранено, экран перезапускается…', 'ok');
+  } catch (e) {
+    setMsg('Не удалось сохранить: ' + e.message, 'err');
+  } finally {
+    applyBtn.disabled = false;
+  }
+}
+
+// Loads both files; on failure says so and tries again with the next status.
+let loaded = false;
+function loadAll(force) {
+  return Promise.all(Object.keys(docs).map(name => load(name, force)))
+    .then(() => {
+      if (!loaded && msg.className === 'err') setMsg('');
+      loaded = true;
+    })
+    .catch(e => { loaded = false; setMsg('Не удалось загрузить файлы: ' + e.message, 'err'); });
+}
+
+// The reference list of panels and items, as the running app placed them.
+async function loadRef() {
+  try {
+    const items = await (await fetch('/layout-items', {cache: 'no-store'})).json();
+    const panels = new Map();
+    for (const i of items) {
+      if (!panels.has(i.panel)) panels.set(i.panel, { grid: i.grid, items: [] });
+      panels.get(i.panel).items.push(i);
+    }
+    const ref = document.getElementById('ref');
+    ref.textContent = '';
+    for (const [name, p] of panels) {
+      const h = document.createElement('h4');
+      h.textContent = name + ' ';
+      const g = document.createElement('span');
+      g.textContent = `сетка ${p.grid[0]}×${p.grid[1]}`;
+      h.append(g);
+      const ul = document.createElement('ul');
+      for (const i of p.items) {
+        const li = document.createElement('li');
+        const span = (i.col_span > 1 ? ` ×${i.col_span}` : '') + (i.row_span > 1 ? ` ↓${i.row_span}` : '');
+        li.textContent = `${i.id} ${i.col},${i.row}${span}`;
+        if (i.hidden) { li.className = 'hidden'; li.title = 'скрыт'; }
+        ul.append(li);
+      }
+      ref.append(h, ul);
+    }
+  } catch (e) { /* the app is restarting; next restart reloads it */ }
+}
+
+// After the app restarts (our apply or an edit elsewhere): pick up the files.
+function onRestart() {
+  loadAll(false);
+  loadRef();
+  if (msg.className === 'ok') setMsg('Применено', 'ok');
+}
+
+for (const t of tabs) t.addEventListener('click', () => show(t.dataset.name));
+text.addEventListener('input', () => { docs[current].text = text.value; markDirty(); });
+text.addEventListener('keydown', ev => {
+  if ((ev.ctrlKey || ev.metaKey) && (ev.key === 's' || ev.key === 'Enter')) {
+    ev.preventDefault(); apply();
+  } else if (ev.key === 'Tab' && !ev.shiftKey) {
+    ev.preventDefault();
+    text.setRangeText('  ', text.selectionStart, text.selectionEnd, 'end');
+    docs[current].text = text.value; markDirty();
+  }
+});
+applyBtn.addEventListener('click', apply);
+document.getElementById('revert').addEventListener('click', () => {
+  docs[current].text = docs[current].saved;
+  text.value = docs[current].saved ?? '';
+  setMsg('');
+  markDirty();
+});
+window.addEventListener('beforeunload', ev => {
+  docs[current].text = text.value;
+  if (Object.values(docs).some(d => d.text !== null && d.text !== d.saved)) ev.preventDefault();
+});
+
+loadAll(true);
+loadRef();
+setInterval(() => { if (!loaded) loadAll(true); }, 2000);
+</script>
+</body>
+</html>

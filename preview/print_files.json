@@ -1,0 +1,14 @@
+[
+  {"path": "calibration_cube.gcode", "estimated_time": 1560, "filament_total": 1820, "filament_weight_total": 5.4,
+   "layer_height": 0.2, "object_height": 20, "extruder_temp": 220, "bed_temp": 60, "color": "#e53935"},
+  {"path": "3dbenchy.gcode", "estimated_time": 5400, "filament_total": 4100, "filament_weight_total": 12.2,
+   "layer_height": 0.2, "object_height": 48, "extruder_temp": 215, "bed_temp": 55, "color": "#fb8c00"},
+  {"path": "vase_spiral_petg.gcode", "estimated_time": 9300, "filament_total": 11800, "filament_weight_total": 36.1,
+   "layer_height": 0.24, "object_height": 150, "extruder_temp": 240, "bed_temp": 80, "color": "#43a047"},
+  {"path": "phone_stand.gcode", "estimated_time": 7200, "filament_total": 9300, "filament_weight_total": 27.7,
+   "layer_height": 0.2, "object_height": 85, "extruder_temp": 220, "bed_temp": 60, "color": "#8e24aa"},
+  {"path": "parts/bracket_x4.gcode", "estimated_time": 3900, "filament_total": 6100, "filament_weight_total": 18.2,
+   "layer_height": 0.16, "object_height": 12, "extruder_temp": 225, "bed_temp": 65, "color": "#1e88e5"},
+  {"path": "parts/cable_clip.gcode", "estimated_time": 600, "filament_total": 520, "filament_weight_total": 1.6,
+   "layer_height": 0.2, "object_height": 8, "extruder_temp": 220, "bed_temp": 60, "color": "#fdd835"}
+]

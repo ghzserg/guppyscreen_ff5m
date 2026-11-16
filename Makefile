@@ -169,6 +169,12 @@ cleanall: clean libhvclean spdlogclean
 test:
 	@$(MAKE) --no-print-directory -j$$(nproc) -f tests/Makefile run
 
+# The app on the PC, its screen in a browser; see preview/README.md.
+.PHONY: preview
+preview:
+	@$(MAKE) --no-print-directory -j$$(nproc) -f tests/Makefile preview
+	@$(MAKE) --no-print-directory -f tests/Makefile preview-run PREVIEW_ARGS='$(PREVIEW_ARGS)'
+
 install:
 	install -d $(DESTDIR)$(bindir)
 	install $(BUILD_BIN_DIR)/$(BIN) $(DESTDIR)$(bindir)
