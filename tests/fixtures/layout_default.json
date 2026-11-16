@@ -1,0 +1,765 @@
+{
+  "homing": {
+    "columns": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "rows": [
+      4,
+      4,
+      2
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "home_all": {
+        "col": 0,
+        "row": 0
+      },
+      "y_up": {
+        "col": 1,
+        "row": 0
+      },
+      "home_xy": {
+        "col": 2,
+        "row": 0
+      },
+      "z_up": {
+        "col": 3,
+        "row": 0
+      },
+      "x_down": {
+        "col": 0,
+        "row": 1
+      },
+      "y_down": {
+        "col": 1,
+        "row": 1
+      },
+      "x_up": {
+        "col": 2,
+        "row": 1
+      },
+      "z_down": {
+        "col": 3,
+        "row": 1
+      },
+      "motoroff": {
+        "col": 4,
+        "row": 1
+      },
+      "distance_selector": {
+        "col": 0,
+        "row": 2,
+        "col_span": 5
+      }
+    }
+  },
+  "settings": {
+    "columns": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "rows": [
+      2,
+      5,
+      5,
+      5
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "restart_klipper": {
+        "col": 0,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "restart_firmware": {
+        "col": 1,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "guppy_restart": {
+        "col": 2,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "sysinfo": {
+        "col": 3,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "power": {
+        "col": 0,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "display_on": {
+        "col": 1,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "web": {
+        "col": 2,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "zrestore": {
+        "col": 3,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "macros": {
+        "col": 0,
+        "row": 3,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "console": {
+        "col": 1,
+        "row": 3,
+        "align_x": "center",
+        "align_y": "start"
+      }
+    }
+  },
+  "finetune": {
+    "columns": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "rows": [
+      3,
+      3,
+      3,
+      3,
+      2
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "zreset": {
+        "col": 0,
+        "row": 1
+      },
+      "zup": {
+        "col": 0,
+        "row": 2
+      },
+      "zdown": {
+        "col": 0,
+        "row": 3
+      },
+      "zoffset_selector": {
+        "col": 0,
+        "row": 0,
+        "col_span": 2
+      },
+      "pareset": {
+        "col": 1,
+        "row": 1
+      },
+      "paup": {
+        "col": 1,
+        "row": 2
+      },
+      "padown": {
+        "col": 1,
+        "row": 3
+      },
+      "speed_reset": {
+        "col": 2,
+        "row": 1
+      },
+      "speed_up": {
+        "col": 2,
+        "row": 2
+      },
+      "speed_down": {
+        "col": 2,
+        "row": 3
+      },
+      "multiplier_selector": {
+        "col": 2,
+        "row": 0,
+        "col_span": 2
+      },
+      "flow_reset": {
+        "col": 3,
+        "row": 1
+      },
+      "flow_up": {
+        "col": 3,
+        "row": 2
+      },
+      "flow_down": {
+        "col": 3,
+        "row": 3
+      },
+      "values": {
+        "col": 0,
+        "row": 4,
+        "col_span": 4,
+        "align_x": "stretch",
+        "align_y": "center"
+      }
+    }
+  },
+  "pro": {
+    "columns": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "rows": [
+      2,
+      5,
+      5
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "air_circulation_internal": {
+        "col": 0,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "air_circulation_external": {
+        "col": 1,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "air_circulation_stop": {
+        "col": 2,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "calibrate_extruders": {
+        "col": 0,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "calibrate_vfa": {
+        "col": 1,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "start"
+      }
+    }
+  },
+  "pid": {
+    "columns": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "rows": [
+      1,
+      1,
+      1
+    ],
+    "padding": 0,
+    "gap": 8,
+    "items": {
+      "temps": {
+        "col": 0,
+        "row": 0,
+        "col_span": 2,
+        "row_span": 2,
+        "align": "start"
+      },
+      "chart": {
+        "col": 0,
+        "row": 2,
+        "col_span": 2,
+        "align": "end"
+      },
+      "pid_extruder": {
+        "col": 2,
+        "row": 0
+      },
+      "pid_bed": {
+        "col": 3,
+        "row": 0
+      },
+      "clear_nozzle": {
+        "col": 2,
+        "row": 1
+      },
+      "bed_level_screws_tune": {
+        "col": 3,
+        "row": 1
+      },
+      "load_cell_tare": {
+        "col": 2,
+        "row": 2
+      }
+    }
+  },
+  "print_status_details": {
+    "columns": [
+      1,
+      1
+    ],
+    "rows": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "extruder_temp": {
+        "col": 0,
+        "row": 0,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "bed_temp": {
+        "col": 1,
+        "row": 0,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "print_speed": {
+        "col": 0,
+        "row": 1,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "z_offset": {
+        "col": 1,
+        "row": 1,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "flow_rate": {
+        "col": 0,
+        "row": 2,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "layers": {
+        "col": 1,
+        "row": 2,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "elapsed": {
+        "col": 0,
+        "row": 3,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "fan0": {
+        "col": 1,
+        "row": 3,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "time_left": {
+        "col": 0,
+        "row": 4,
+        "align_x": "stretch",
+        "align_y": "start"
+      },
+      "filament": {
+        "col": 1,
+        "row": 4,
+        "align_x": "stretch",
+        "align_y": "start"
+      }
+    }
+  },
+  "print_status": {
+    "columns": [
+      1,
+      2
+    ],
+    "rows": [
+      2,
+      "content",
+      1
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "thumbnail": {
+        "col": 0,
+        "row": 0
+      },
+      "details": {
+        "col": 1,
+        "row": 0,
+        "align_x": "stretch",
+        "align_y": "center"
+      },
+      "progress": {
+        "col": 0,
+        "row": 1,
+        "col_span": 2,
+        "align_x": "stretch",
+        "align_y": "center"
+      },
+      "buttons": {
+        "col": 0,
+        "row": 2,
+        "col_span": 2
+      }
+    }
+  },
+  "file_info": {
+    "columns": [
+      1
+    ],
+    "rows": [
+      3,
+      2
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "thumbnail": {
+        "col": 0,
+        "row": 0
+      },
+      "name": {
+        "col": 0,
+        "row": 1,
+        "align": "start"
+      },
+      "details": {
+        "col": 0,
+        "row": 1
+      }
+    }
+  },
+  "print_files": {
+    "columns": [
+      1,
+      1,
+      1
+    ],
+    "rows": [
+      8,
+      1
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "file_info": {
+        "col": 0,
+        "row": 0,
+        "col_span": 3
+      },
+      "print": {
+        "col": 1,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "end"
+      }
+    }
+  },
+  "extruder": {
+    "columns": [
+      2,
+      7,
+      2
+    ],
+    "rows": [
+      3,
+      6,
+      6,
+      6
+    ],
+    "padding": 0,
+    "gap": 8,
+    "items": {
+      "leftside_btns": {
+        "col": 0,
+        "row": 1,
+        "row_span": 3
+      },
+      "spoolman": {
+        "col": 1,
+        "row": 0,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "temp_selector": {
+        "col": 1,
+        "row": 1
+      },
+      "length_selector": {
+        "col": 1,
+        "row": 2
+      },
+      "speed_selector": {
+        "col": 1,
+        "row": 3
+      },
+      "rightside_btns": {
+        "col": 2,
+        "row": 0,
+        "row_span": 3,
+        "align_x": "center",
+        "align_y": "start"
+      }
+    }
+  },
+  "prompt": {
+    "columns": [
+      1
+    ],
+    "rows": [
+      1,
+      1,
+      1
+    ],
+    "padding": 5,
+    "gap": 8,
+    "items": {
+      "header": {
+        "col": 0,
+        "row": 0,
+        "align": "start"
+      },
+      "body": {
+        "col": 0,
+        "row": 1,
+        "align_x": "start",
+        "align_y": "center"
+      },
+      "footer": {
+        "col": 0,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "end"
+      }
+    }
+  },
+  "inputshaper": {
+    "columns": [
+      3,
+      7,
+      7
+    ],
+    "rows": [
+      2,
+      1,
+      1
+    ],
+    "padding": 0,
+    "gap": 8,
+    "items": {
+      "xspinner": {
+        "col": 1,
+        "row": 0
+      },
+      "yspinner": {
+        "col": 2,
+        "row": 0
+      },
+      "xgraph": {
+        "col": 1,
+        "row": 0
+      },
+      "ygraph": {
+        "col": 2,
+        "row": 0
+      },
+      "xoutput": {
+        "col": 1,
+        "row": 0
+      },
+      "youtput": {
+        "col": 2,
+        "row": 0
+      },
+      "xcontrol": {
+        "col": 1,
+        "row": 1,
+        "col_span": 2,
+        "align": "start"
+      },
+      "ycontrol": {
+        "col": 1,
+        "row": 2,
+        "col_span": 2,
+        "align": "start"
+      },
+      "buttons": {
+        "col": 0,
+        "row": 0,
+        "row_span": 3
+      }
+    }
+  },
+  "belts": {
+    "columns": [
+      1
+    ],
+    "rows": [
+      4,
+      1,
+      2
+    ],
+    "padding": 0,
+    "gap": 8,
+    "items": {
+      "graph": {
+        "col": 0,
+        "row": 0,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "spinner": {
+        "col": 0,
+        "row": 0
+      },
+      "excite_control": {
+        "col": 0,
+        "row": 1
+      },
+      "buttons": {
+        "col": 0,
+        "row": 2
+      }
+    }
+  },
+  "tune": {
+    "columns": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "rows": [
+      2,
+      5,
+      5
+    ],
+    "padding": 14,
+    "gap": 8,
+    "items": {
+      "limits": {
+        "col": 0,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "retract": {
+        "col": 1,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "inputshaper": {
+        "col": 2,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "belts_calibration": {
+        "col": 3,
+        "row": 1,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "pro": {
+        "col": 0,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "start"
+      },
+      "pid": {
+        "col": 1,
+        "row": 2,
+        "align_x": "center",
+        "align_y": "start"
+      }
+    }
+  },
+  "main": {
+    "columns": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "rows": [
+      1,
+      1,
+      1
+    ],
+    "padding": {
+      "top": 0,
+      "right": 14,
+      "bottom": 0,
+      "left": 14
+    },
+    "gap": 8,
+    "items": {
+      "homing": {
+        "col": 2,
+        "row": 0
+      },
+      "extrude": {
+        "col": 3,
+        "row": 0
+      },
+      "fans": {
+        "col": 2,
+        "row": 1
+      },
+      "led": {
+        "col": 3,
+        "row": 1
+      },
+      "finetune": {
+        "col": 2,
+        "row": 2
+      },
+      "bedmesh": {
+        "col": 3,
+        "row": 2
+      },
+      "temps": {
+        "col": 0,
+        "row": 0,
+        "col_span": 2,
+        "row_span": 2,
+        "align": "start"
+      },
+      "chart": {
+        "col": 0,
+        "row": 2,
+        "col_span": 2,
+        "align": "end"
+      }
+    }
+  }
+}
