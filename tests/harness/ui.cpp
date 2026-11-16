@@ -1,0 +1,303 @@
+#include "ui.h"
+
+#include "app.h"
+#include "fake_hw.h"
+
+#include "guppyscreen.h"
+
+#include "doctest/doctest.h"
+
+#include <cstring>
+#include <functional>
+#include <mutex>
+
+namespace ui {
+
+static std::mutex &lv_lock() {
+  return GuppyScreen::get()->get_lock();
+}
+
+static lv_point_t centre(lv_obj_t *obj) {
+  lv_area_t a;
+  lv_obj_get_coords(obj, &a);
+  return {(lv_coord_t)((a.x1 + a.x2) / 2), (lv_coord_t)((a.y1 + a.y2) / 2)};
+}
+
+static bool is_self_or_ancestor(lv_obj_t *candidate, lv_obj_t *obj) {
+  for (lv_obj_t *o = obj; o != NULL; o = lv_obj_get_parent(o)) {
+    if (o == candidate) return true;
+  }
+  return false;
+}
+
+// Would a tap at obj's centre reach obj (or the clickable parent handling it)?
+// Uses the same search, in the same layer order, as LVGL's input handling.
+static bool shown(lv_obj_t *obj) {
+  if (!lv_obj_is_visible(obj)) return false;
+  lv_point_t p = centre(obj);
+  for (lv_obj_t *root : {lv_layer_sys(), lv_layer_top(), lv_scr_act()}) {
+    lv_obj_t *hit = lv_indev_search_obj(root, &p);
+    if (hit != NULL) {
+      return is_self_or_ancestor(hit, obj);
+    }
+  }
+  return false;
+}
+
+void walk(lv_obj_t *obj, const std::function<void(lv_obj_t *)> &fn) {
+  fn(obj);
+  uint32_t n = lv_obj_get_child_cnt(obj);
+  for (uint32_t i = 0; i < n; i++) {
+    walk(lv_obj_get_child(obj, i), fn);
+  }
+}
+
+std::vector<lv_obj_t *> btnmatrices(const std::string &text, uint32_t idx) {
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  std::vector<lv_obj_t *> found;
+  walk(lv_scr_act(), [&](lv_obj_t *o) {
+    if (lv_obj_check_type(o, &lv_btnmatrix_class)) {
+      const char *t = lv_btnmatrix_get_btn_text(o, idx);
+      if (t != nullptr && text == t) found.push_back(o);
+    }
+  });
+  return found;
+}
+
+static void walk_all(const std::function<void(lv_obj_t *)> &fn) {
+  lv_obj_update_layout(lv_scr_act());
+  for (lv_obj_t *root : {lv_scr_act(), lv_layer_top(), lv_layer_sys()}) {
+    walk(root, fn);
+  }
+}
+
+static bool is_label(lv_obj_t *obj) {
+  return lv_obj_check_type(obj, &lv_label_class);
+}
+
+static bool matches(const std::string &label, const std::string &text, Match match) {
+  return match == Match::Exact ? label == text : label.find(text) != std::string::npos;
+}
+
+static lv_obj_t *find_label_locked(const std::string &text, Match match) {
+  lv_obj_t *found = NULL;
+  walk_all([&](lv_obj_t *obj) {
+    if (found == NULL && is_label(obj)
+        && matches(lv_label_get_text(obj), text, match) && shown(obj)) {
+      found = obj;
+    }
+  });
+  return found;
+}
+
+static std::vector<std::string> texts_in_locked(lv_obj_t *root) {
+  std::vector<std::string> texts;
+  walk(root, [&](lv_obj_t *obj) {
+    if (is_label(obj) && shown(obj)) {
+      texts.push_back(lv_label_get_text(obj));
+    }
+  });
+  return texts;
+}
+
+bool is_shown(lv_obj_t *obj) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_update_layout(lv_scr_act());
+  return shown(obj);
+}
+
+void tap_tab(Nav::Tab tab) {
+  lv_obj_t *btn;
+  {
+    std::lock_guard<std::mutex> lock(lv_lock());
+    btn = Nav::get().tab_button(tab);
+  }
+  REQUIRE(btn != nullptr);
+  tap(btn);
+  app::pump(100);
+}
+
+lv_obj_t *find_label(const std::string &text, Match match) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  return find_label_locked(text, match);
+}
+
+std::vector<std::string> texts_in(lv_obj_t *root) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_update_layout(lv_scr_act());
+  return texts_in_locked(root);
+}
+
+std::vector<std::string> row_texts(const std::string &text) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_t *label = find_label_locked(text, Match::Exact);
+  if (label == NULL) return {};
+  return texts_in_locked(lv_obj_get_parent(label));
+}
+
+lv_obj_t *find_shown(const lv_obj_class_t *cls) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_t *found = NULL;
+  walk_all([&](lv_obj_t *obj) {
+    if (found == NULL && lv_obj_check_type(obj, cls) && shown(obj)) found = obj;
+  });
+  return found;
+}
+
+// LVGL polls the input device every LV_INDEV_DEF_READ_PERIOD (30 ms): make
+// that read happen now instead of waiting for it.
+static void read_input_now() {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  for (lv_indev_t *i = lv_indev_get_next(NULL); i != NULL; i = lv_indev_get_next(i)) {
+    lv_timer_ready(i->driver->read_timer);
+  }
+  lv_timer_handler();
+}
+
+void tap_at(lv_coord_t x, lv_coord_t y) {
+  fake_hw::touch_set(x, y, true);
+  read_input_now();  // pressed
+  fake_hw::touch_set(x, y, false);
+  read_input_now();  // released: the click handlers run here
+  app::pump(20);     // what they queued (lv_async_call), and a redraw
+}
+
+void tap(lv_obj_t *obj) {
+  lv_point_t p;
+  {
+    std::lock_guard<std::mutex> lock(lv_lock());
+    lv_obj_update_layout(lv_scr_act());
+    p = centre(obj);
+  }
+  tap_at(p.x, p.y);
+}
+
+void tap_label(const std::string &text, Match match) {
+  lv_obj_t *label = find_label(text, match);
+  REQUIRE_MESSAGE(label != NULL, "no label \"" << text << "\" on screen; screen shows: " << dump_screen());
+  tap(label);
+}
+
+// The visible table with a row containing `text` and that row, or nullptr.
+static lv_obj_t *find_table_row(const std::string &text, uint16_t &row) {
+  lv_obj_t *table = nullptr;
+  walk_all([&](lv_obj_t *o) {
+    if (table || !lv_obj_check_type(o, &lv_table_class) || !lv_obj_is_visible(o)) return;
+    for (uint16_t r = 0; r < lv_table_get_row_cnt(o); r++) {
+      const char *v = lv_table_get_cell_value(o, r, 0);
+      if (v && strstr(v, text.c_str())) {
+        table = o;
+        row = r;
+        return;
+      }
+    }
+  });
+  return table;
+}
+
+bool table_has_row(const std::string &text) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  uint16_t row;
+  return find_table_row(text, row) != nullptr;
+}
+
+void tap_table_row(const std::string &text) {
+  lv_point_t p{};
+  {
+    std::lock_guard<std::mutex> lock(lv_lock());
+    uint16_t row = 0;
+    lv_obj_t *table = find_table_row(text, row);
+    REQUIRE_MESSAGE(table != nullptr, "no table row \"" << text << "\"");
+    lv_obj_update_layout(table);
+    lv_table_t *t = (lv_table_t *)table;
+    lv_area_t a;
+    lv_obj_get_content_coords(table, &a);
+    lv_coord_t y = a.y1 - lv_obj_get_scroll_y(table);
+    for (uint16_t r = 0; r < row; r++) {
+      y += t->row_h[r];
+    }
+    p = {(lv_coord_t)(a.x1 + 20), (lv_coord_t)(y + t->row_h[row] / 2)};
+  }
+  tap_at(p.x, p.y);
+}
+
+std::string dump_screen() {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  std::vector<std::string> texts;
+  walk_all([&](lv_obj_t *obj) {
+    if (is_label(obj) && shown(obj)) {
+      texts.push_back(lv_label_get_text(obj));
+    }
+  });
+  return join(texts);
+}
+
+std::string join(const std::vector<std::string> &items) {
+  std::string out;
+  for (const auto &s : items) {
+    if (!out.empty()) out += " | ";
+    out += s;
+  }
+  return "[" + out + "]";
+}
+
+lv_obj_t *label_container(const std::string &text) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_t *label = find_label_locked(text, Match::Exact);
+  return label == NULL ? NULL : lv_obj_get_parent(label);
+}
+
+lv_obj_t *tile(const std::string &name) {
+  lv_obj_t *t = label_container(name);
+  REQUIRE_MESSAGE(t != nullptr, name << " not shown: " << dump_screen());
+  return t;
+}
+
+std::pair<lv_area_t, lv_area_t> tile_and_icon(const std::string &name) {
+  lv_obj_t *t = tile(name);
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_update_layout(lv_scr_act());
+  lv_area_t a, i;
+  lv_obj_get_coords(t, &a);
+  lv_obj_get_coords(lv_obj_get_child(t, 0), &i);
+  return {a, i};
+}
+
+lv_area_t coords(lv_obj_t *obj) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_update_layout(lv_scr_act());
+  lv_area_t a;
+  lv_obj_get_coords(obj, &a);
+  return a;
+}
+
+lv_obj_t *find_in(lv_obj_t *root, const lv_obj_class_t *cls) {
+  lv_obj_t *found = nullptr;
+  walk(root, [&](lv_obj_t *o) {
+    if (found == nullptr && lv_obj_check_type(o, cls)) found = o;
+  });
+  return found;
+}
+
+bool has_bg(lv_obj_t *obj, lv_palette_t palette) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  return lv_obj_get_style_bg_opa(obj, 0) == LV_OPA_COVER
+      && lv_color_to32(lv_obj_get_style_bg_color(obj, 0)) == lv_color_to32(lv_palette_main(palette));
+}
+
+void enter_on_numpad(const std::string &value) {
+  lv_obj_t *input = find_shown(&lv_textarea_class);
+  REQUIRE_MESSAGE(input != NULL, "numpad did not open: " << dump_screen());
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_textarea_set_text(input, value.c_str());
+  lv_event_send(input, LV_EVENT_READY, NULL);  // the keyboard's OK key
+}
+
+bool any_shown(const std::vector<lv_obj_t *> &objs) {
+  for (lv_obj_t *o : objs) {
+    if (is_shown(o)) return true;
+  }
+  return false;
+}
+
+}  // namespace ui
