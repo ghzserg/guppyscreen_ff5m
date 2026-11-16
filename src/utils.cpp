@@ -67,22 +67,24 @@ namespace KUtils {
       // assume square, look for closest to 300x300
       auto scaled_width = scale * 300;
       spdlog::debug("using thumb at scaled width {}", scaled_width);
+      // The closest one with a width: callers scale the image by dividing by it.
       uint32_t closest_index = 0;
-      size_t thumb_width = 0;
-      auto width = thumbs.at(0)["width"].is_number()
-        ? thumbs.at(0)["width"].template get<int>()
-        : std::atoi(thumbs.at(0)["width"].template get<std::string>().c_str());
-      int closest = std::abs(scaled_width - width);
+      int thumb_width = 0;
+      int closest = 0;
       for (int i = 0; i < thumbs.size(); i++) {
-        width = thumbs.at(i)["width"].is_number()
+        int width = thumbs.at(i)["width"].is_number()
           ? thumbs.at(i)["width"].template get<int>()
           : std::atoi(thumbs.at(i)["width"].template get<std::string>().c_str());
         int cur_diff = std::abs(scaled_width - width);
-        if (cur_diff < closest) {
+        if (width > 0 && (thumb_width == 0 || cur_diff < closest)) {
           closest = cur_diff;
           closest_index = i;
           thumb_width = width;
         }
+      }
+      if (thumb_width <= 0) {
+        spdlog::warn("no thumbnail of {} has a width, not showing any", gcode_file);
+        return std::make_pair("", 0);
       }
 
       auto &thumb = thumbs.at(closest_index);
