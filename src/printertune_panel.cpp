@@ -92,6 +92,8 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   // row 2
   layout.place(pro_btn.get_container(), "pro", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
   layout.place(pid_btn.get_container(), "pid", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  pro_configured_hidden = lv_obj_has_flag(pro_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  pid_cell = GridLayout::Cell::of(pid_btn.get_container());
 #else
   // row 1
   layout.place(finetune_btn.get_container(), "finetune", LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
@@ -154,6 +156,20 @@ void PrinterTunePanel::init(json &j) {
   }
 #endif
 }
+
+#ifdef GUPPY_FF5M
+void PrinterTunePanel::show_pro(bool show) {
+  if (pro_configured_hidden) return;
+  lv_obj_t *pro = pro_btn.get_container();
+  if (show) {
+    lv_obj_clear_flag(pro, LV_OBJ_FLAG_HIDDEN);
+    pid_cell.apply(pid_btn.get_container());
+  } else {
+    lv_obj_add_flag(pro, LV_OBJ_FLAG_HIDDEN);
+    GridLayout::Cell::of(pro).apply(pid_btn.get_container());  // no gap at the row's start
+  }
+}
+#endif
 
 void PrinterTunePanel::handle_callback(lv_event_t *event) {
   if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {

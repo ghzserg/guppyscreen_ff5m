@@ -73,6 +73,14 @@ class GridLayout {
              lv_grid_align_t x_align, int col, int col_span,
              lv_grid_align_t y_align, int row, int row_span);
 
+  // An object's grid cell as placed, to put another object (or it, back) there.
+  struct Cell {
+    lv_grid_align_t x_align, y_align;
+    lv_coord_t col, col_span, row, row_span;
+    static Cell of(lv_obj_t *obj);
+    void apply(lv_obj_t *obj) const;
+  };
+
  private:
   std::string panel;
   json items;

@@ -357,3 +357,14 @@ void GridLayout::place(lv_obj_t *obj, const std::string &id,
                           (int)cols.size() - 1, (int)rows.size() - 1, x_align, y_align, item_padding});
 #endif
 }
+
+GridLayout::Cell GridLayout::Cell::of(lv_obj_t *obj) {
+  return {(lv_grid_align_t)lv_obj_get_style_grid_cell_x_align(obj, 0),
+          (lv_grid_align_t)lv_obj_get_style_grid_cell_y_align(obj, 0),
+          lv_obj_get_style_grid_cell_column_pos(obj, 0), lv_obj_get_style_grid_cell_column_span(obj, 0),
+          lv_obj_get_style_grid_cell_row_pos(obj, 0), lv_obj_get_style_grid_cell_row_span(obj, 0)};
+}
+
+void GridLayout::Cell::apply(lv_obj_t *obj) const {
+  lv_obj_set_grid_cell(obj, x_align, col, col_span, y_align, row, row_span);
+}

@@ -4,14 +4,30 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
+#include <algorithm>
+
 LV_IMG_DECLARE(cancel);
 LV_IMG_DECLARE(fan_on);
+#ifdef GUPPY_FF5M
+LV_IMG_DECLARE(air_circulation_internal_img);
+LV_IMG_DECLARE(air_circulation_external_img);
+LV_IMG_DECLARE(air_circulation_stop_img);
+#endif
 
 FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   : NotifyConsumer(lock)
   , ws(websocket_client)
   , fanpanel_cont(lv_obj_create(Nav::get().content()))
   , fans_cont(lv_obj_create(fanpanel_cont))
+#ifdef GUPPY_FF5M
+  , air_cont(lv_obj_create(fanpanel_cont))
+  , air_internal_btn(air_cont, &air_circulation_internal_img, _("Int") /* internal circulation */,
+                     &FanPanel::_handle_air_circulation, this)
+  , air_external_btn(air_cont, &air_circulation_external_img, _("Ext") /* external circulation */,
+                     &FanPanel::_handle_air_circulation, this)
+  , air_stop_btn(air_cont, &air_circulation_stop_img, _("Stop") /* stop circulation */,
+                 &FanPanel::_handle_air_circulation, this)
+#endif
 {
   lv_obj_set_style_pad_all(fanpanel_cont, 0, 0);
 
@@ -21,6 +37,19 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_center(fans_cont);
   lv_obj_set_size(fans_cont, lv_pct(80), lv_pct(100));
   lv_obj_set_flex_flow(fans_cont, LV_FLEX_FLOW_COLUMN);
+
+#ifdef GUPPY_FF5M
+  // A column at the right edge, the fans left of it.
+  lv_obj_remove_style_all(air_cont);
+  lv_obj_set_size(air_cont, LV_SIZE_CONTENT, LV_PCT(100));
+  lv_obj_align(air_cont, LV_ALIGN_RIGHT_MID, 0, 0);
+  lv_obj_set_flex_flow(air_cont, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_flex_align(air_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  for (ButtonContainer *b : {&air_internal_btn, &air_external_btn, &air_stop_btn}) {
+    lv_obj_set_width(b->get_container(), 100 * (double)lv_disp_get_physical_hor_res(NULL) / 800.0);  // short labels
+  }
+  show_air_circulation(false);
+#endif
 
   ws.register_notify_update(this);
 }
@@ -58,10 +87,26 @@ void FanPanel::create_fans(json &f) {
   std::lock_guard<std::mutex> lock(lv_lock);
   fans.clear();
 
-  for (auto &fan : f.items()) {
-    std::string key = fan.key();
-    spdlog::trace("create fan {}, {}", f.dump(), fan.value().dump());
-    std::string display_name = fan.value()["display_name"].template get<std::string>();
+  std::vector<std::string> keys;
+  for (auto &fan : f.items()) keys.push_back(fan.key());  // by id
+#ifdef GUPPY_FF5M
+  // M106 first, then the chamber, the rest as Klipper lists them.
+  json objs = State::get_instance()->get_data("/printer_objs/objects"_json_pointer);
+  auto rank = [&objs](const std::string &k) -> long {
+    if (k == "fan_generic fanM106") return -2;
+    if (k == "fan_generic chamber_fan") return -1;
+    auto at = objs.is_array() ? std::find(objs.begin(), objs.end(), k) : objs.end();
+    return objs.is_array() && at != objs.end() ? at - objs.begin() : (long)objs.size();
+  };
+  std::stable_sort(keys.begin(), keys.end(), [&](const std::string &a, const std::string &b) {
+    return rank(a) < rank(b);
+  });
+#endif
+
+  for (const std::string &key : keys) {
+    const json &fan_conf = f[key];
+    spdlog::trace("create fan {}, {}", key, fan_conf.dump());
+    std::string display_name = fan_conf["display_name"].template get<std::string>();
 
     lv_event_cb_t fan_cb = &FanPanel::_handle_fan_update;
     if (key == "fan") {
@@ -72,15 +117,24 @@ void FanPanel::create_fans(json &f) {
     }
     auto fptr = std::make_shared<SliderContainer>(fans_cont, display_name.c_str(), &cancel, _("Off") /* "Выкл" */,
                                                   &fan_on, _("Max") /* "Макс" */, fan_cb, this);
-    fans.insert({key, fptr});
+    fans.push_back({key, fptr});
     // lv_obj_set_grid_cell(fptr->get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, rowidx++, 1);
   }
 
+#ifdef GUPPY_FF5M
+  SliderContainer::stack_rows(fans_cont);  // four fit without scrolling (the AD5M Pro has four)
+  if (fans.size() > 4) {
+    // More scroll, one after another: spread evenly they would overlap.
+    lv_obj_set_flex_align(fans_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_add_flag(fans_cont, LV_OBJ_FLAG_SCROLLABLE);
+  }
+#else
   if (fans.size() > 3) {
     lv_obj_add_flag(fans_cont, LV_OBJ_FLAG_SCROLLABLE);
   } else {
     lv_obj_clear_flag(fans_cont, LV_OBJ_FLAG_SCROLLABLE);
   }
+#endif
 
 }
 
@@ -104,6 +158,32 @@ void FanPanel::foreground() {
 
   lv_obj_move_foreground(fanpanel_cont);
 }
+
+#ifdef GUPPY_FF5M
+void FanPanel::show_air_circulation(bool show) {
+  if (show) {
+    lv_obj_clear_flag(air_cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_update_layout(air_cont);
+    lv_obj_set_width(fans_cont, lv_obj_get_content_width(fanpanel_cont) - lv_obj_get_width(air_cont));
+    lv_obj_align(fans_cont, LV_ALIGN_LEFT_MID, 0, 0);
+  } else {
+    lv_obj_add_flag(air_cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_width(fans_cont, LV_PCT(80));
+    lv_obj_center(fans_cont);
+  }
+}
+
+void FanPanel::handle_air_circulation(lv_event_t *event) {
+  lv_obj_t *btn = lv_event_get_current_target(event);
+  if (btn == air_internal_btn.get_container()) {
+    ws.gcode_script("AIR_CIRCULATION_INTERNAL");
+  } else if (btn == air_external_btn.get_container()) {
+    ws.gcode_script("AIR_CIRCULATION_EXTERNAL");
+  } else if (btn == air_stop_btn.get_container()) {
+    ws.gcode_script("AIR_CIRCULATION_STOP");
+  }
+}
+#endif
 
 void FanPanel::handle_fan_update(lv_event_t *event) {
   lv_obj_t *obj = lv_event_get_target(event);

@@ -5,6 +5,7 @@
 #include "limits_panel.h"
 #include "retract_panel.h"
 #include "pro_panel.h"
+#include "grid_layout.h"
 #include "pid_panel.h"
 #include "bedmesh_panel.h"
 #include "inputshaper_panel.h"
@@ -30,6 +31,11 @@ class PrinterTunePanel {
   PowerPanel &get_power_panel();
 #endif
   void init(json &j);
+#ifdef GUPPY_FF5M
+  // Pro only when its screen has a button for this printer; PID in its cell
+  // when not.
+  void show_pro(bool show);
+#endif
   void handle_callback(lv_event_t *event);
 
   static void _handle_callback(lv_event_t *event) {
@@ -64,6 +70,10 @@ class PrinterTunePanel {
   ButtonContainer belts_calibration_btn;
   ButtonContainer pro_btn;
   ButtonContainer pid_btn;
+#ifdef GUPPY_FF5M
+  bool pro_configured_hidden;  // by the layout config: stays hidden
+  GridLayout::Cell pid_cell;   // as placed
+#endif
 #ifndef GUPPY_FF5M
   ButtonContainer tmc_tune_btn;
   ButtonContainer tmc_status_btn;

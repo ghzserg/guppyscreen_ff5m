@@ -40,7 +40,38 @@ ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
   layout.place(calibrate_vfa_btn.get_container(), "calibrate_vfa", LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
 
   // row 3
+
+#ifdef GUPPY_FF5M
+  for (ButtonContainer *b : {&air_circulation_internal_btn, &air_circulation_external_btn, &air_circulation_stop_btn,
+                             &calibrate_extruders_btn, &calibrate_vfa_btn}) {
+    placed.push_back({*b, lv_obj_has_flag(b->get_container(), LV_OBJ_FLAG_HIDDEN),
+                      GridLayout::Cell::of(b->get_container())});
+  }
+#endif
 }
+
+#ifdef GUPPY_FF5M
+bool ProPanel::configure(bool circulation, bool calibrate_extruders, bool calibrate_vfa) {
+  const bool show[] = {circulation, circulation, circulation, calibrate_extruders, calibrate_vfa};
+  bool any = false;
+  for (size_t i = 0; i < placed.size(); i++) {
+    lv_obj_t *obj = placed[i].btn.get_container();
+    bool shown = show[i] && !placed[i].configured_hidden;
+    if (shown) {
+      lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    }
+    any = any || shown;
+  }
+  // The calibrations in the circulation's cells when it is not here: no
+  // empty first row.
+  for (size_t i = 3; i < 5; i++) {
+    (circulation ? placed[i] : placed[i - 3]).cell.apply(placed[i].btn.get_container());
+  }
+  return any;
+}
+#endif
 
 ProPanel::~ProPanel() {
   if (cont != NULL) {

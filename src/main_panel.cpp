@@ -3,6 +3,7 @@
 #include "lvgl/lvgl.h"
 #include "spdlog/spdlog.h"
 
+#include <algorithm>
 #include <string>
 #include <map>
 #include <optional>
@@ -138,6 +139,26 @@ void MainPanel::init(json &j) {
   auto fans = State::get_instance()->get_display_fans();
   print_status_panel.init(fans);
   printertune_panel.init(j);
+#ifdef GUPPY_FF5M
+  // Air circulation where Klipper has the fans zMod's AIR_CIRCULATION_*
+  // macros move (on AD5X they are empty): the AD5M Pro's internal and
+  // external fans and vent servo, the C5 Pro's chamber fans. Its buttons are
+  // then on the fan screen, not on the Pro screen.
+  json objs = State::get_instance()->get_data("/printer_objs/objects"_json_pointer);
+  auto has = [&objs](std::initializer_list<const char *> names) {
+    for (const char *n : names) {
+      if (!objs.is_array() || std::find(objs.begin(), objs.end(), n) == objs.end()) return false;
+    }
+    return true;
+  };
+  bool air = has({"servo my_servo", "fan_generic internal", "fan_generic external"})
+      || has({"fan_generic chamber_heat_fan", "fan_generic chamber_loop_fan", "fan_generic chamber_cool_fan"});
+  fan_panel.show_air_circulation(air);
+  // zMod defines the calibrations on the C5 Pro with its screen off.
+  bool pro = print_status_panel.get_pro_panel().configure(!air, has({"gcode_macro CALIBRATE_EXTRUDERS"}),
+                                                          has({"gcode_macro CALIBRATE_VFA"}));
+  printertune_panel.show_pro(pro);
+#endif
 //  print_status_panel.get_exclude_panel().init(j);
   print_status_panel.get_retract_panel().init(j);
 }

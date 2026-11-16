@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 16:52+0100\n"
+"POT-Creation-Date: 2026-11-16 16:54+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -61,7 +61,7 @@ msgstr ""
 msgid "Bed"
 msgstr ""
 
-#: ../main_panel.cpp:73 ../printertune_panel.cpp:50
+#: ../main_panel.cpp:74 ../printertune_panel.cpp:50
 msgid "Bed Mesh"
 msgstr ""
 
@@ -129,7 +129,7 @@ msgstr ""
 msgid "Do you want to cancel the print?"
 msgstr ""
 
-#: ../nav.cpp:279
+#: ../nav.cpp:283
 msgid "Do you want to emergency stop?"
 msgstr ""
 
@@ -137,8 +137,8 @@ msgstr ""
 msgid "ETA: {}"
 msgstr ""
 
-#: ../mini_print_status.cpp:56 ../mini_print_status.cpp:117
-#: ../mini_print_status.cpp:122 ../mini_print_status.cpp:154
+#: ../mini_print_status.cpp:57 ../mini_print_status.cpp:123
+#: ../mini_print_status.cpp:128 ../mini_print_status.cpp:160
 msgid ""
 "ETA: {}\n"
 "Status: {}"
@@ -152,11 +152,15 @@ msgstr ""
 msgid "Excitate"
 msgstr ""
 
+#: ../fan_panel.cpp:26
+msgid "Ext"
+msgstr ""
+
 #: ../pro_panel.cpp:17
 msgid "External circulation"
 msgstr ""
 
-#: ../main_panel.cpp:68
+#: ../main_panel.cpp:69
 msgid "Extrude"
 msgstr ""
 
@@ -176,7 +180,7 @@ msgstr ""
 msgid "Extrusion speed (mm/s)"
 msgstr ""
 
-#: ../main_panel.cpp:69
+#: ../main_panel.cpp:70
 msgid "Fans"
 msgstr ""
 
@@ -184,7 +188,7 @@ msgstr ""
 msgid "Files"
 msgstr ""
 
-#: ../main_panel.cpp:72 ../print_status_panel.cpp:63
+#: ../main_panel.cpp:73 ../print_status_panel.cpp:63
 #: ../printertune_panel.cpp:45
 msgid "Fine Tune"
 msgstr ""
@@ -193,15 +197,15 @@ msgstr ""
 msgid "Firmware Restart"
 msgstr ""
 
-#: ../finetune_panel.cpp:38
+#: ../finetune_panel.cpp:39
 msgid "Flow Reset"
 msgstr ""
 
-#: ../finetune_panel.cpp:39
+#: ../finetune_panel.cpp:40
 msgid "Flow+"
 msgstr ""
 
-#: ../finetune_panel.cpp:40
+#: ../finetune_panel.cpp:41
 msgid "Flow-"
 msgstr ""
 
@@ -221,8 +225,12 @@ msgstr ""
 msgid "Home"
 msgstr ""
 
-#: ../main_panel.cpp:67
+#: ../main_panel.cpp:68
 msgid "Homing"
+msgstr ""
+
+#: ../fan_panel.cpp:24
+msgid "Int"
 msgstr ""
 
 #: ../pro_panel.cpp:16
@@ -257,7 +265,7 @@ msgstr ""
 msgid "Macros"
 msgstr ""
 
-#: ../fan_panel.cpp:74 ../led_panel.cpp:78
+#: ../fan_panel.cpp:119 ../led_panel.cpp:78
 msgid "Max"
 msgstr ""
 
@@ -269,7 +277,7 @@ msgstr ""
 msgid "Motor off"
 msgstr ""
 
-#: ../finetune_panel.cpp:50
+#: ../finetune_panel.cpp:51
 msgid "Multipler Step"
 msgstr ""
 
@@ -285,7 +293,7 @@ msgstr ""
 msgid "Network"
 msgstr ""
 
-#: ../fan_panel.cpp:73 ../led_panel.cpp:77
+#: ../fan_panel.cpp:118 ../led_panel.cpp:77
 msgid "Off"
 msgstr ""
 
@@ -343,11 +351,11 @@ msgstr ""
 msgid "Reset"
 msgstr ""
 
-#: ../finetune_panel.cpp:32
+#: ../finetune_panel.cpp:33
 msgid "Reset PA"
 msgstr ""
 
-#: ../finetune_panel.cpp:29
+#: ../finetune_panel.cpp:30
 msgid "Reset Z"
 msgstr ""
 
@@ -403,20 +411,24 @@ msgstr ""
 msgid "Show task"
 msgstr ""
 
-#: ../finetune_panel.cpp:35
+#: ../finetune_panel.cpp:36
 msgid "Speed Reset"
 msgstr ""
 
-#: ../finetune_panel.cpp:36
+#: ../finetune_panel.cpp:37
 msgid "Speed+"
 msgstr ""
 
-#: ../finetune_panel.cpp:37
+#: ../finetune_panel.cpp:38
 msgid "Speed-"
 msgstr ""
 
 #: ../limits_panel.cpp:29
 msgid "Square Corner Velocity (mm/s)"
+msgstr ""
+
+#: ../fan_panel.cpp:28
+msgid "Stop"
 msgstr ""
 
 #: ../pro_panel.cpp:18
@@ -474,9 +486,8 @@ msgstr ""
 msgid "м "
 msgstr ""
 
-#: ../finetune_panel.cpp:41 ../finetune_panel.cpp:52 ../finetune_panel.cpp:53
-#: ../finetune_panel.cpp:154 ../finetune_panel.cpp:160
-#: ../finetune_panel.cpp:197 ../finetune_panel.cpp:202
+#: ../finetune_panel.cpp:42 ../finetune_panel.cpp:53 ../finetune_panel.cpp:54
+#: ../finetune_panel.cpp:174 ../finetune_panel.cpp:179
 #: ../print_status_panel.cpp:88 ../print_status_panel.cpp:89
 #: ../print_status_panel.cpp:90 ../print_status_panel.cpp:325
 #: ../print_status_panel.cpp:326 ../print_status_panel.cpp:438
@@ -485,12 +496,11 @@ msgstr ""
 msgid "мм"
 msgstr ""
 
-#: ../finetune_panel.cpp:41 ../finetune_panel.cpp:53 ../finetune_panel.cpp:160
-#: ../finetune_panel.cpp:202 ../print_status_panel.cpp:88
-#: ../print_status_panel.cpp:90 ../print_status_panel.cpp:93
-#: ../print_status_panel.cpp:325 ../print_status_panel.cpp:326
-#: ../print_status_panel.cpp:327 ../print_status_panel.cpp:584
-#: ../print_status_panel.cpp:644 ../utils.cpp:270
+#: ../finetune_panel.cpp:42 ../finetune_panel.cpp:54 ../finetune_panel.cpp:179
+#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:90
+#: ../print_status_panel.cpp:93 ../print_status_panel.cpp:325
+#: ../print_status_panel.cpp:326 ../print_status_panel.cpp:327
+#: ../print_status_panel.cpp:584 ../print_status_panel.cpp:644 ../utils.cpp:270
 msgid "с"
 msgstr ""
 
