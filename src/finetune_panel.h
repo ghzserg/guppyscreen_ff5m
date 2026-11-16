@@ -70,6 +70,17 @@ class FineTunePanel : public NotifyConsumer {
   ImageLabel pa;
   ImageLabel speed_factor;
   ImageLabel flow_factor;
+
+  // A value the printer reports changed is framed in yellow for a second,
+  // so the user sees which value their tap moved.
+  enum Value { Z_OFFSET, PA, SPEED, FLOW, VALUE_COUNT };
+  ImageLabel *const values[VALUE_COUNT] = {&z_offset, &pa, &speed_factor, &flow_factor};
+  lv_timer_t *flash_timers[VALUE_COUNT];
+  void show(Value value, const std::string &text, bool flash_if_changed);
+  // The four values from Klipper's objects (State's /printer_state or a
+  // notification's params): the ones present are shown.
+  void show_values(const json &printer, bool flash_changes);
+  static void end_flash(lv_timer_t *timer);
 };
 
 #endif  // __FINETINE_PANEL_H__

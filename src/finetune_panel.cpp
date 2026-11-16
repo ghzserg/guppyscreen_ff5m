@@ -9,6 +9,7 @@
 #include "config.h"
 
 #include <algorithm>
+#include <cmath>
 
 LV_IMG_DECLARE(home_z);
 LV_IMG_DECLARE(z_closer);
@@ -71,11 +72,11 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
     static const lv_coord_t value_rows[] = {LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
     lv_obj_set_grid_dsc_array(values_cont, value_cols, value_rows);
   }
-  int col = 0;
-  for (ImageLabel *value : {&z_offset, &pa, &speed_factor, &flow_factor}) {
+  for (int col = 0; col < VALUE_COUNT; col++) {
+    ImageLabel *value = values[col];
     value->hide_image();
     lv_obj_set_height(value->get_container(), LV_SIZE_CONTENT);
-    lv_obj_set_grid_cell(value->get_container(), LV_GRID_ALIGN_STRETCH, col++, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    lv_obj_set_grid_cell(value->get_container(), LV_GRID_ALIGN_STRETCH, col, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     // In the buttons' digits.
     lv_obj_set_style_text_font(value->get_label(), SensorContainer::temperature_font(), 0);
   }
@@ -136,10 +137,18 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   layout.place(values_cont, "values", LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 0, 3);
 #endif
 
+  for (int v = 0; v < VALUE_COUNT; v++) {
+    flash_timers[v] = lv_timer_create(&FineTunePanel::end_flash, 1000, values[v]->get_container());
+    lv_timer_pause(flash_timers[v]);
+  }
+
   ws.register_notify_update(this);
 }
 
 FineTunePanel::~FineTunePanel() {
+  for (lv_timer_t *timer : flash_timers) {
+    lv_timer_del(timer);
+  }
   if (panel_cont != NULL) {
     lv_obj_del(panel_cont);
     panel_cont = NULL;
@@ -147,35 +156,52 @@ FineTunePanel::~FineTunePanel() {
   ws.unregister_notify_update(this);
 }
 
+namespace {
+
+// Klipper's factors as percents: 1.15 * 100 is 114.999..., rounded to 115.
+int percent(double factor) {
+  return static_cast<int>(std::lround(factor * 100));
+}
+
+}  // namespace
+
+void FineTunePanel::show_values(const json &printer, bool flash_changes) {
+  if (!printer.is_object()) {
+    return;  // nothing from the printer yet: value() throws on anything else
+  }
+  auto v = printer.value("/gcode_move/homing_origin/2"_json_pointer, json());
+  if (!v.is_null()) {
+    show(Z_OFFSET, fmt::format("{:.3f} "+ std::string(_("мм")) , v.template get<double>()), flash_changes);
+  }
+
+  v = printer.value("/extruder/pressure_advance"_json_pointer, json());
+  if (!v.is_null()) {
+    show(PA, fmt::format("{:.3f} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()), flash_changes);
+  }
+
+  v = printer.value("/gcode_move/speed_factor"_json_pointer, json());
+  if (!v.is_null()) {
+    show(SPEED, fmt::format("{}%", percent(v.template get<double>())), flash_changes);
+  }
+
+  v = printer.value("/gcode_move/extrude_factor"_json_pointer, json());
+  if (!v.is_null()) {
+    show(FLOW, fmt::format("{}%", percent(v.template get<double>())), flash_changes);
+  }
+}
+
 void FineTunePanel::foreground() {
-  auto v = State::get_instance()->get_data(
-                "/printer_state/gcode_move/homing_origin/2"_json_pointer);
-  if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.3f} "+ std::string(_("мм")) , v.template get<double>()).c_str());
+  // Copies made under State's lock: the websocket thread merges updates
+  // into the same tree.
+  json printer = json::object();
+  for (const char *object : {"gcode_move", "extruder"}) {
+    json v = State::get_instance()->get_data_copy(json::json_pointer(std::string("/printer_state/") + object));
+    if (!v.is_null()) printer[object] = std::move(v);
   }
-
-  v = State::get_instance()->get_data(
-                "/printer_state/extruder/pressure_advance"_json_pointer);
-  if (!v.is_null()) {
-    pa.update_label(fmt::format("{:.3f} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()).c_str());
-  }
-
-  v = State::get_instance()->get_data(
-                "/printer_state/gcode_move/speed_factor"_json_pointer);
-  if (!v.is_null()) {
-    speed_factor.update_label(fmt::format("{}%",
-           static_cast<int>(v.template get<double>() * 100)).c_str());
-  }
-
-  v = State::get_instance()->get_data(
-                "/printer_state/gcode_move/extrude_factor"_json_pointer);
-  if (!v.is_null()) {
-    flow_factor.update_label(fmt::format("{}%",
-           static_cast<int>(v.template get<double>() * 100)).c_str());
-  }
+  show_values(printer, false);
 
   //Set the Z axis buttons
-  v = Config::get_instance()->get_json("/invert_z_icon");
+  auto v = Config::get_instance()->get_json("/invert_z_icon");
   bool inverted = !v.is_null() && v.template get<bool>();
   if (inverted) {
     // UP arrow
@@ -192,27 +218,32 @@ void FineTunePanel::foreground() {
 
 void FineTunePanel::consume(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
-  auto v = j["/params/0/gcode_move/homing_origin/2"_json_pointer];
-  if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.3f} "+ std::string(_("мм")) , v.template get<double>()).c_str());
+  const auto params = "/params/0"_json_pointer;
+  if (j.contains(params)) {
+    show_values(j[params], true);
   }
+}
 
-  v = j["/params/0/extruder/pressure_advance"_json_pointer];
-  if (!v.is_null()) {
-    pa.update_label(fmt::format("{:.3f} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()).c_str());
+void FineTunePanel::show(Value value, const std::string &text, bool flash_if_changed) {
+  ImageLabel &label = *values[value];
+  if (text == lv_label_get_text(label.get_label())) {
+    return;
   }
+  label.update_label(text.c_str());
+  if (!flash_if_changed) {
+    return;
+  }
+  lv_timer_t *timer = flash_timers[value];
+  lv_obj_set_style_border_color(label.get_container(), lv_palette_main(LV_PALETTE_YELLOW), 0);
+  // Another change within the second keeps the frame for one more second.
+  lv_timer_reset(timer);
+  lv_timer_resume(timer);
+}
 
-  v = j["/params/0/gcode_move/speed_factor"_json_pointer];
-  if (!v.is_null()) {
-    speed_factor.update_label(fmt::format("{}%",
-           static_cast<int>(v.template get<double>() * 100)).c_str());
-  }
-
-  v = j["/params/0/gcode_move/extrude_factor"_json_pointer];
-  if (!v.is_null()) {
-    flow_factor.update_label(fmt::format("{}%",
-           static_cast<int>(v.template get<double>() * 100)).c_str());
-  }
+void FineTunePanel::end_flash(lv_timer_t *timer) {
+  // Back to the theme's colour.
+  lv_obj_remove_local_style_prop((lv_obj_t *)timer->user_data, LV_STYLE_BORDER_COLOR, 0);
+  lv_timer_pause(timer);
 }
 
 void FineTunePanel::handle_callback(lv_event_t *e) {
@@ -294,7 +325,7 @@ void FineTunePanel::handle_speed(lv_event_t *e) {
                                                       multipler_selector.get_selected_idx());
 
         int32_t direction = btn == speed_up_btn.get_container() ? std::stoi(step) : -std::stoi(step);
-        int32_t new_speed = static_cast<int32_t>(spd_factor.template get<double>() * 100 + direction);
+        int32_t new_speed = percent(spd_factor.template get<double>()) + direction;
         new_speed = std::max(new_speed, 1);
         spdlog::trace("speed step {}, {}", direction, new_speed);
         ws.gcode_script(fmt::format("M220 S{}", new_speed));
@@ -318,7 +349,7 @@ void FineTunePanel::handle_flow(lv_event_t *e) {
 
         int32_t direction = btn == flow_up_btn.get_container() ? std::stoi(step) : -std::stoi(step);
 
-        int32_t new_flow = static_cast<int32_t>(extrude_factor.template get<double>() * 100 + direction);
+        int32_t new_flow = percent(extrude_factor.template get<double>()) + direction;
         new_flow = std::max(new_flow, 1);
         spdlog::trace("flow step {}, {}", direction, new_flow);
         ws.gcode_script(fmt::format("M221 S{}", new_flow));
