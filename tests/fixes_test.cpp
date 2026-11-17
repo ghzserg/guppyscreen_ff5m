@@ -1,5 +1,5 @@
 // Fixes of the screens as they were: the AD5X's nozzle temperature on the
-// print screen, Fine Tune's percents, Pro's Back button, Cancel, and the
+// print screen, Fine Tune's percents, Cancel, and the
 // numpad of a sensor deleted by a reconnect. The thumbnail fixes are in
 // thumbnail_test.cpp.
 
@@ -28,29 +28,12 @@ void walk(lv_obj_t *obj, const std::function<void(lv_obj_t *)> &fn) {
   for (uint32_t i = 0; i < lv_obj_get_child_cnt(obj); i++) walk(lv_obj_get_child(obj, i), fn);
 }
 
-// Tap tab `idx` (0 Home, 1 Tune, ...) on the main tabview's bar on the left.
-void tap_tab(uint32_t idx) {
-  lv_point_t p;
-  {
-    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    lv_obj_t *tv = nullptr;
-    walk(lv_scr_act(), [&](lv_obj_t *o) {
-      if (!tv && lv_obj_check_type(o, &lv_tabview_class)) tv = o;
-    });
-    REQUIRE(tv != nullptr);
-    uint32_t n = lv_obj_get_child_cnt(lv_tabview_get_content(tv));
-    REQUIRE(idx < n);
-    lv_obj_update_layout(tv);
-    lv_area_t a;
-    lv_obj_get_coords(lv_tabview_get_tab_btns(tv), &a);
-    p = {(lv_coord_t)((a.x1 + a.x2) / 2), (lv_coord_t)(a.y1 + (2 * idx + 1) * lv_area_get_height(&a) / (2 * n))};
-  }
-  ui::tap_at(p.x, p.y);
+// Console is a button in Settings.
+void open_console() {
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("Console");
   app::pump(100);
 }
-
-constexpr uint32_t TUNE_TAB = 1;
-constexpr uint32_t CONSOLE_TAB = 4;
 
 // The print screen's nozzle label ("T<n>: ..."), shown or not.
 std::string nozzle_label() {
@@ -105,7 +88,7 @@ TEST_CASE("Fine Tune shows Klipper's 1.15 as 115% and steps from it") {
   moonraker.push_status({{"gcode_move", {{"speed_factor", 1.15}, {"extrude_factor", 1.15}}}});
   app::settle(moonraker);
 
-  tap_tab(TUNE_TAB);
+  ui::tap_tab(Nav::TUNE);
   ui::tap_label("Fine Tune");
   REQUIRE_MESSAGE(app::wait_until([] { return ui::find_label("115%") != nullptr; }), ui::dump_screen());
 
@@ -115,36 +98,6 @@ TEST_CASE("Fine Tune shows Klipper's 1.15 as 115% and steps from it") {
   ui::tap_label("Flow-");
   CHECK_MESSAGE(app::wait_until([&] { return sent(moonraker, "M221 S114"); }),
                 "gcodes: " << ui::join(moonraker.gcodes()));
-}
-
-// Pro's grid has rows 0..2; a cell in row 3 made LVGL read past the track
-// array and place the button wherever that memory said.
-TEST_CASE("Pro's Back button is in a row of its grid") {
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  app::start(moonraker);
-  app::wait_ready(moonraker);
-
-  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-  lv_obj_t *pro = nullptr;  // the grid holding "Calibrate VFA"
-  walk(lv_scr_act(), [&](lv_obj_t *o) {
-    if (!pro && lv_obj_check_type(o, &lv_label_class) && strcmp(lv_label_get_text(o), "Calibrate VFA") == 0) {
-      pro = lv_obj_get_parent(lv_obj_get_parent(o));
-    }
-  });
-  REQUIRE(pro != nullptr);
-  lv_obj_t *back = nullptr;
-  walk(pro, [&](lv_obj_t *o) {
-    if (!back && lv_obj_check_type(o, &lv_label_class) && strcmp(lv_label_get_text(o), "Back") == 0) {
-      back = lv_obj_get_parent(o);
-    }
-  });
-  REQUIRE(back != nullptr);
-
-  const lv_coord_t *rows = lv_obj_get_style_grid_row_dsc_array(pro, LV_PART_MAIN);
-  REQUIRE(rows != nullptr);
-  int n_rows = 0;
-  while (rows[n_rows] != LV_GRID_TEMPLATE_LAST) n_rows++;
-  CHECK(lv_obj_get_style_grid_cell_row_pos(back, LV_PART_MAIN) < n_rows);
 }
 
 // With prompt_emergency_stop off, Cancel runs at once. The print status
@@ -214,7 +167,7 @@ TEST_CASE("an empty console history saves the first command across reconnect") {
   });
   app::start(moonraker);
   app::wait_ready(moonraker);
-  tap_tab(CONSOLE_TAB);
+  open_console();
 
   const char *command = "M105";
   const auto expected = json::array({command});
@@ -237,7 +190,7 @@ TEST_CASE("an empty console history saves the first command across reconnect") {
   moonraker.drop_client();
   REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.objects.subscribe") > 0; }, 10000));
   app::wait_ready(moonraker);
-  tap_tab(CONSOLE_TAB);
+  open_console();
   const auto restored = State::get_instance()->get_data_copy("/console/commandHistory"_json_pointer);
   CHECK(restored == expected);
   auto *table = ui::find_shown(&lv_table_class);
@@ -270,7 +223,7 @@ TEST_CASE("an expired print estimate clears all displayed ETAs") {
   };
   CHECK(end_time() != "...");
 
-  ui::tap_label("Back");
+  ui::tap_tab(Nav::HOME);
   auto *mini = ui::find_label(previous_eta + " / ", ui::Match::Contains);
   REQUIRE(mini != nullptr);
   ui::tap(mini);
@@ -282,7 +235,7 @@ TEST_CASE("an expired print estimate clears all displayed ETAs") {
   CHECK(ui::find_label(previous_eta) == nullptr);
   CHECK(end_time() == "...");
 
-  ui::tap_label("Back");
+  ui::tap_tab(Nav::HOME);
   CHECK_MESSAGE(ui::find_label("ETA: ...", ui::Match::Contains) != nullptr, ui::dump_screen());
 }
 
@@ -351,7 +304,7 @@ TEST_CASE("late Fluidd history preserves saved and newly entered commands") {
   server.hold_next_reply("server.database.get_item");
   app::start(server);
   app::wait_ready(server);
-  tap_tab(CONSOLE_TAB);
+  open_console();
   auto *input = ui::find_shown(&lv_textarea_class);
   REQUIRE(input != nullptr);
   {

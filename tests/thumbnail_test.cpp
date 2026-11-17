@@ -64,40 +64,6 @@ std::string shown_thumbnail() {
   return found;
 }
 
-// Tap the file table row whose text ends with `name`.
-void tap_file_row(const std::string &name) {
-  lv_point_t p{};
-  {
-    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    lv_obj_t *table = nullptr;
-    std::function<void(lv_obj_t *)> walk = [&](lv_obj_t *o) {
-      if (lv_obj_check_type(o, &lv_table_class) && lv_obj_is_visible(o)) {
-        for (uint16_t r = 0; r < lv_table_get_row_cnt(o); r++) {
-          const char *v = lv_table_get_cell_value(o, r, 0);
-          if (v && strstr(v, name.c_str())) table = o;
-        }
-      }
-      for (uint32_t i = 0; i < lv_obj_get_child_cnt(o); i++) walk(lv_obj_get_child(o, i));
-    };
-    walk(lv_scr_act());
-    REQUIRE_MESSAGE(table != nullptr, "no file row " << name);
-    lv_obj_update_layout(table);
-    lv_table_t *t = (lv_table_t *)table;
-    lv_area_t a;
-    lv_obj_get_content_coords(table, &a);
-    lv_coord_t y = a.y1 - lv_obj_get_scroll_y(table);
-    for (uint16_t r = 0; r < t->row_cnt; r++) {
-      const char *v = lv_table_get_cell_value(table, r, 0);
-      if (v && strstr(v, name.c_str())) {
-        p = {(lv_coord_t)(a.x1 + 20), (lv_coord_t)(y + t->row_h[r] / 2)};
-        break;
-      }
-      y += t->row_h[r];
-    }
-  }
-  ui::tap_at(p.x, p.y);
-}
-
 // Serves part0..part<N_FILES-1>.gcode, each with one THUMB-sized thumbnail.
 void serve_files(FakeMoonraker &moonraker, const std::string &gcodes) {
   moonraker.set_result("server.files.roots", json::array({
@@ -149,10 +115,10 @@ TEST_CASE("browsing files shows thumbnails without keeping old ones decoded") {
   size_t heap0 = __sanitizer_get_current_allocated_bytes();
 #endif
 
-  ui::tap_label("Print");
+  ui::tap_tab(Nav::PRINT);
   for (int i = N_FILES - 1; i >= 0; i--) {
     std::string name = "part" + std::to_string(i);
-    tap_file_row(name + ".gcode");
+    ui::tap_table_row(name + ".gcode");
     std::string want = "A:" + gcodes + "/.thumbs/" + name + ".png";
     bool shown = app::wait_until([&] { return shown_thumbnail() == want; });
     CHECK_MESSAGE(shown, "want " << want << ", shown: " << shown_thumbnail());
@@ -167,22 +133,21 @@ TEST_CASE("browsing files shows thumbnails without keeping old ones decoded") {
   CHECK(growth < (long)(2 * DECODED));
 #endif
 
-  // Closing the file list frees the last one too. Measured right after the
-  // Back handler, before any redraw: drawing the main screen's icons would
-  // evict the entry from the cache anyway on a PC, where decoding is fast
-  // and gives the entry little "life", but not reliably on the printer.
-  lv_obj_t *back = ui::find_label("Back");
-  REQUIRE(back != nullptr);
+  // Leaving the file list frees the last one too (its leave action).
+  // Measured right after leaving, before any redraw: drawing the main
+  // screen's icons would evict the entry from the cache anyway on a PC,
+  // where decoding is fast and gives the entry little "life", but not
+  // reliably on the printer.
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    lv_event_send(lv_obj_get_parent(back), LV_EVENT_SHORT_CLICKED, NULL);
+    Nav::get().activate(Nav::HOME);
 #ifdef __SANITIZE_ADDRESS__
     growth = (long)__sanitizer_get_current_allocated_bytes() - (long)heap0;
     MESSAGE("live heap growth right after closing the file list: " << growth << " bytes");
     CHECK(growth < (long)(DECODED / 2));
 #endif
   }
-  CHECK(app::wait_until([] { return ui::find_label("Print") != nullptr; }));
+  CHECK(app::wait_until([] { return ui::find_label("Extrude") != nullptr; }));
 }
 
 // KUtils::get_thumbnail returned width 0 when the best thumbnail was the
@@ -348,12 +313,12 @@ TEST_CASE("selecting a file without metadata shows that file and not the one bef
   app::start(moonraker);
   app::wait_ready(moonraker);
 
-  ui::tap_label("Print");
-  tap_file_row("part0.gcode");
+  ui::tap_tab(Nav::PRINT);
+  ui::tap_table_row("part0.gcode");
   REQUIRE(app::wait_until([&] { return shown_thumbnail() == "A:" + gcodes + "/.thumbs/part0.png"; }));
   REQUIRE(ui::find_label("part0.gcode") != nullptr);
 
-  tap_file_row("part1.gcode");
+  ui::tap_table_row("part1.gcode");
   CHECK_MESSAGE(app::wait_until([] { return ui::find_label("part1.gcode") != nullptr && ui::find_label("part0.gcode") == nullptr; }),
                 ui::dump_screen());
   CHECK(shown_thumbnail().empty());
@@ -378,13 +343,13 @@ TEST_CASE("a late metadata reply does not replace the file selected since") {
   app::start(moonraker);
   app::wait_ready(moonraker);
 
-  ui::tap_label("Print");
-  tap_file_row("part1.gcode");  // its metadata is cached from now on
+  ui::tap_tab(Nav::PRINT);
+  ui::tap_table_row("part1.gcode");  // its metadata is cached from now on
   REQUIRE(app::wait_until([] { return ui::find_label("part1.gcode") != nullptr; }));
   slow_part0 = true;
-  tap_file_row("part0.gcode");  // its reply comes in a second
+  ui::tap_table_row("part0.gcode");  // its reply comes in a second
   app::pump(100);
-  tap_file_row("part1.gcode");  // shown at once from the cache
+  ui::tap_table_row("part1.gcode");  // shown at once from the cache
   REQUIRE(ui::find_label("part1.gcode") != nullptr);
 
   app::pump(1500);  // part0's reply has come
@@ -401,7 +366,7 @@ TEST_CASE("file browser requests metadata for filenames with quotes and backslas
   app::start(moonraker);
   app::wait_ready(moonraker);
 
-  ui::tap_label("Print");
+  ui::tap_tab(Nav::PRINT);
   REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") > 0; }));
   CHECK(moonraker.requests("server.files.metadata").back().at("filename") == filename);
   CHECK(app::wait_until([] { return ui::find_label("Size: 2 MB", ui::Match::Contains) != nullptr; }));
@@ -415,7 +380,7 @@ TEST_CASE("file browser keeps the file list when refresh fails") {
   app::start(moonraker);
   app::wait_ready(moonraker);
 
-  ui::tap_label("Print");
+  ui::tap_tab(Nav::PRINT);
   REQUIRE(ui::find_label(filename) != nullptr);
   const int requests = moonraker.request_count("server.files.list");
   moonraker.set_handler("server.files.list", [](const json &) {
@@ -438,9 +403,9 @@ TEST_CASE("file browser preserves the chosen sort in folders and after refresh")
   app::start(moonraker);
   app::wait_ready(moonraker);
 
-  ui::tap_label("Print");
+  ui::tap_tab(Nav::PRINT);
   ui::tap_label("A-Z", ui::Match::Contains);
-  tap_file_row("folder");
+  ui::tap_table_row("folder");
   REQUIRE(ui::find_label("alpha.gcode") != nullptr);
   ui::tap_label("A-Z", ui::Match::Contains);
   REQUIRE(ui::find_label("zulu.gcode") != nullptr);
@@ -451,7 +416,7 @@ TEST_CASE("file browser preserves the chosen sort in folders and after refresh")
   app::settle(moonraker);
   CHECK(ui::find_label("zulu.gcode") != nullptr);
 
-  tap_file_row("..");
-  tap_file_row("folder");
+  ui::tap_table_row("..");
+  ui::tap_table_row("folder");
   CHECK(ui::find_label("zulu.gcode") != nullptr);
 }

@@ -12,13 +12,18 @@
 // thread only, and not while holding the lock.
 
 #include "lvgl/lvgl.h"
+#include "nav.h"
 
+#include <functional>
 #include <string>
 #include <vector>
 
 namespace ui {
 
 enum class Match { Exact, Contains };
+
+// fn on obj and every object under it, depth first. Hold the LVGL lock.
+void walk(lv_obj_t *obj, const std::function<void(lv_obj_t *)> &fn);
 
 // First shown label whose text matches, or nullptr.
 lv_obj_t *find_label(const std::string &text, Match match = Match::Exact);
@@ -33,6 +38,12 @@ std::vector<std::string> row_texts(const std::string &text);
 // First shown widget of class `cls` (e.g. &lv_canvas_class), or nullptr.
 lv_obj_t *find_shown(const lv_obj_class_t *cls);
 
+// Would a tap at obj's centre reach it (see "shown" above)?
+bool is_shown(lv_obj_t *obj);
+
+// Tap a tab of the navigation bar, then let the app settle.
+void tap_tab(Nav::Tab tab);
+
 // Tap the centre of `obj` with the fake touch panel (press, then release).
 void tap(lv_obj_t *obj);
 
@@ -41,6 +52,12 @@ void tap_at(lv_coord_t x, lv_coord_t y);
 
 // Tap the shown label `text`. Fails the test if there is none.
 void tap_label(const std::string &text, Match match = Match::Exact);
+
+// Is there a visible table (e.g. the print file list) with a row containing `text`?
+bool table_has_row(const std::string &text);
+
+// Tap the first visible table row containing `text`. Fails the test if there is none.
+void tap_table_row(const std::string &text);
 
 // All shown label texts, " | "-separated. For failure messages.
 std::string dump_screen();

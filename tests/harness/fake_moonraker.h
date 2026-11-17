@@ -34,9 +34,13 @@ class FakeMoonraker {
 
   // Replace the result returned for `method`.
   void set_result(const std::string &method, const json &result);
+  // The result returned for `method` (null if none).
+  json result(const std::string &method);
 
   // Answer `method` with handler(params) instead, e.g. per-file metadata.
-  // The handler runs on the server thread.
+  // An empty handler removes it (back to the fixture's answer).
+  // The handler runs on the server thread, under this object's lock: it must
+  // not call FakeMoonraker. printer.gcode.script is still recorded in gcodes().
   void set_handler(const std::string &method, std::function<json(const json &params)> handler);
 
   void hold_next_reply(const std::string &method);

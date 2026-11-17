@@ -7,6 +7,7 @@
 
 #include "doctest/doctest.h"
 
+#include <cstring>
 #include <functional>
 #include <mutex>
 
@@ -43,7 +44,7 @@ static bool shown(lv_obj_t *obj) {
   return false;
 }
 
-static void walk(lv_obj_t *obj, const std::function<void(lv_obj_t *)> &fn) {
+void walk(lv_obj_t *obj, const std::function<void(lv_obj_t *)> &fn) {
   fn(obj);
   uint32_t n = lv_obj_get_child_cnt(obj);
   for (uint32_t i = 0; i < n; i++) {
@@ -85,6 +86,23 @@ static std::vector<std::string> texts_in_locked(lv_obj_t *root) {
     }
   });
   return texts;
+}
+
+bool is_shown(lv_obj_t *obj) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_update_layout(lv_scr_act());
+  return shown(obj);
+}
+
+void tap_tab(Nav::Tab tab) {
+  lv_obj_t *btn;
+  {
+    std::lock_guard<std::mutex> lock(lv_lock());
+    btn = Nav::get().tab_button(tab);
+  }
+  REQUIRE(btn != nullptr);
+  tap(btn);
+  app::pump(100);
 }
 
 lv_obj_t *find_label(const std::string &text, Match match) {
@@ -146,6 +164,49 @@ void tap_label(const std::string &text, Match match) {
   lv_obj_t *label = find_label(text, match);
   REQUIRE_MESSAGE(label != NULL, "no label \"" << text << "\" on screen; screen shows: " << dump_screen());
   tap(label);
+}
+
+// The visible table with a row containing `text` and that row, or nullptr.
+static lv_obj_t *find_table_row(const std::string &text, uint16_t &row) {
+  lv_obj_t *table = nullptr;
+  walk_all([&](lv_obj_t *o) {
+    if (table || !lv_obj_check_type(o, &lv_table_class) || !lv_obj_is_visible(o)) return;
+    for (uint16_t r = 0; r < lv_table_get_row_cnt(o); r++) {
+      const char *v = lv_table_get_cell_value(o, r, 0);
+      if (v && strstr(v, text.c_str())) {
+        table = o;
+        row = r;
+        return;
+      }
+    }
+  });
+  return table;
+}
+
+bool table_has_row(const std::string &text) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  uint16_t row;
+  return find_table_row(text, row) != nullptr;
+}
+
+void tap_table_row(const std::string &text) {
+  lv_point_t p{};
+  {
+    std::lock_guard<std::mutex> lock(lv_lock());
+    uint16_t row = 0;
+    lv_obj_t *table = find_table_row(text, row);
+    REQUIRE_MESSAGE(table != nullptr, "no table row \"" << text << "\"");
+    lv_obj_update_layout(table);
+    lv_table_t *t = (lv_table_t *)table;
+    lv_area_t a;
+    lv_obj_get_content_coords(table, &a);
+    lv_coord_t y = a.y1 - lv_obj_get_scroll_y(table);
+    for (uint16_t r = 0; r < row; r++) {
+      y += t->row_h[r];
+    }
+    p = {(lv_coord_t)(a.x1 + 20), (lv_coord_t)(y + t->row_h[row] / 2)};
+  }
+  tap_at(p.x, p.y);
 }
 
 std::string dump_screen() {
