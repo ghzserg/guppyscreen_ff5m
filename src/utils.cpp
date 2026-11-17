@@ -63,18 +63,29 @@ namespace KUtils {
 
   std::pair<std::string, size_t> get_thumbnail(const std::string &gcode_file, json &j, double scale) {
     auto &thumbs = j["/result/thumbnails"_json_pointer];
-    if (!thumbs.is_null() && !thumbs.empty()) {
+    if (thumbs.is_array() && !thumbs.empty()) {
       // assume square, look for closest to 300x300
       auto scaled_width = scale * 300;
       spdlog::debug("using thumb at scaled width {}", scaled_width);
-      // The closest one with a width: callers scale the image by dividing by it.
+      // The closest one with a width and a file path: callers scale the image by
+      // dividing by the width. A thumbnail without them (a slicer's or a
+      // metadata parser's) doesn't count instead of throwing.
       uint32_t closest_index = 0;
       int thumb_width = 0;
       int closest = 0;
       for (int i = 0; i < thumbs.size(); i++) {
-        int width = thumbs.at(i)["width"].is_number()
-          ? thumbs.at(i)["width"].template get<int>()
-          : std::atoi(thumbs.at(i)["width"].template get<std::string>().c_str());
+        const json &t = thumbs.at(i);
+        if (!t.is_object() || !t.contains("relative_path") || !t["relative_path"].is_string()) {
+          continue;
+        }
+        const std::string &path = t["relative_path"].get_ref<const std::string &>();
+        if (path.empty() || path.back() == '/' || path.back() == '\\') {
+          continue;  // no file name: it would show the thumbnail directory
+        }
+        const json &w = t.contains("width") ? t["width"] : json();
+        int width = w.is_number() ? w.template get<int>()
+          : w.is_string() ? std::atoi(w.template get<std::string>().c_str())
+          : 0;
         int cur_diff = std::abs(scaled_width - width);
         if (width > 0 && (thumb_width == 0 || cur_diff < closest)) {
           closest = cur_diff;
