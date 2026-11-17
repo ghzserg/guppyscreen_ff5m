@@ -38,9 +38,7 @@ ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
   // row 2
   lv_obj_set_grid_cell(calibrate_extruders_btn.get_container(),      LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(calibrate_vfa_btn.get_container(),            LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-
-  // row 3
-  lv_obj_set_grid_cell(back_btn.get_container(),                     LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 3, 1);
+  lv_obj_set_grid_cell(back_btn.get_container(),                     LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 }
 
 ProPanel::~ProPanel() {
