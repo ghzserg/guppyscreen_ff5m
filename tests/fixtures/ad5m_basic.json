@@ -1,0 +1,112 @@
+{
+  "printer.objects.list": {
+    "objects": [
+      "webhooks", "configfile", "mcu", "mcu eboard", "gcode_move", "print_stats", "virtual_sdcard",
+      "pause_resume", "display_status", "exclude_object", "heaters", "heater_bed", "extruder", "fan",
+      "output_pin fan0", "output_pin fan1", "output_pin fan2", "toolhead", "motion_report",
+      "idle_timeout", "bed_mesh", "firmware_retraction",
+      "gcode_macro START_PRINT", "gcode_macro END_PRINT", "gcode_macro LOAD_FILAMENT"
+    ]
+  },
+  "printer.info": {
+    "state": "ready",
+    "state_message": "Printer is ready",
+    "hostname": "ad5m",
+    "klipper_path": "/opt/klipper",
+    "python_path": "/usr/bin/python3",
+    "log_file": "/tmp/klippy.log",
+    "config_file": "/opt/config/printer.cfg",
+    "software_version": "v0.12.0",
+    "cpu_info": "4 core ARMv7 Processor rev 5 (v7l)"
+  },
+  "server.info": {
+    "klippy_connected": true,
+    "klippy_state": "ready",
+    "components": ["database", "file_manager", "klippy_apis", "machine", "data_store"],
+    "failed_components": [],
+    "registered_directories": ["config", "logs", "gcodes"],
+    "warnings": [],
+    "websocket_count": 1,
+    "moonraker_version": "v0.9.3",
+    "api_version": [1, 5, 0],
+    "api_version_string": "1.5.0"
+  },
+  "server.files.roots": [
+    {"name": "config", "path": "/opt/config", "permissions": "rw"},
+    {"name": "gcodes", "path": "/data", "permissions": "rw"}
+  ],
+  "server.database.get_item": {"namespace": "guppyscreen", "key": null, "value": {}},
+  "server.files.list": [],
+  "printer.gcode.help": {
+    "G28": "Home one or more axes",
+    "M104": "Set extruder temperature",
+    "START_PRINT": "G-Code macro",
+    "LOAD_FILAMENT": "G-Code macro"
+  },
+  "printer.objects.subscribe": {
+    "eventtime": 1000.0,
+    "status": {
+      "webhooks": {"state": "ready", "state_message": "Printer is ready"},
+      "configfile": {
+        "config": {
+          "printer": {"kinematics": "cartesian", "max_velocity": "600", "max_accel": "20000", "square_corner_velocity": "5.0"},
+          "extruder": {"filament_diameter": "1.750", "nozzle_diameter": "0.4"},
+          "firmware_retraction": {"retract_length": "0.8", "retract_speed": "40"},
+          "gcode_macro START_PRINT": {"gcode": "\nG28\n{% set BED = params.BED_TEMP|default(60)|float %}\nM190 S{BED}"},
+          "gcode_macro END_PRINT": {"gcode": "\nTURN_OFF_HEATERS"},
+          "gcode_macro LOAD_FILAMENT": {"gcode": "\nM83\nG1 E50 F300"}
+        },
+        "settings": {
+          "printer": {"kinematics": "cartesian", "max_velocity": 600.0, "max_accel": 20000.0, "minimum_cruise_ratio": 0.5, "square_corner_velocity": 5.0},
+          "extruder": {"filament_diameter": 1.75, "nozzle_diameter": 0.4, "pressure_advance": 0.025, "pressure_advance_smooth_time": 0.04},
+          "firmware_retraction": {"retract_length": 0.8, "retract_speed": 40.0, "unretract_extra_length": 0.0, "unretract_speed": 40.0}
+        },
+        "save_config_pending": false,
+        "save_config_pending_items": {},
+        "warnings": []
+      },
+      "mcu": {"mcu_version": "v0.12.0", "mcu_build_versions": "", "mcu_constants": {}, "last_stats": {}},
+      "mcu eboard": {"mcu_version": "v0.12.0", "mcu_build_versions": "", "mcu_constants": {}, "last_stats": {}},
+      "gcode_move": {
+        "speed_factor": 1.0, "speed": 1500.0, "extrude_factor": 1.0,
+        "absolute_coordinates": true, "absolute_extrude": true,
+        "homing_origin": [0.0, 0.0, 0.0, 0.0], "position": [0.0, 0.0, 0.0, 0.0], "gcode_position": [0.0, 0.0, 0.0, 0.0]
+      },
+      "print_stats": {
+        "filename": "", "total_duration": 0.0, "print_duration": 0.0, "filament_used": 0.0,
+        "state": "standby", "message": "", "info": {"total_layer": null, "current_layer": null}
+      },
+      "virtual_sdcard": {"file_path": null, "progress": 0.0, "is_active": false, "file_position": 0, "file_size": 0},
+      "pause_resume": {"is_paused": false},
+      "display_status": {"progress": 0.0, "message": null},
+      "exclude_object": {"objects": [], "excluded_objects": [], "current_object": null},
+      "heaters": {
+        "available_heaters": ["heater_bed", "extruder"],
+        "available_sensors": ["heater_bed", "extruder"],
+        "available_monitors": []
+      },
+      "heater_bed": {"temperature": 27.8, "target": 0.0, "power": 0.0},
+      "extruder": {
+        "temperature": 31.2, "target": 0.0, "power": 0.0, "can_extrude": false,
+        "pressure_advance": 0.025, "smooth_time": 0.04, "motor_offset": 0.0
+      },
+      "fan": {"speed": 0.0, "rpm": null},
+      "output_pin fan0": {"value": 0.0},
+      "output_pin fan1": {"value": 0.0},
+      "output_pin fan2": {"value": 0.0},
+      "toolhead": {
+        "homed_axes": "", "axis_minimum": [-3.0, -3.0, -3.0, 0.0], "axis_maximum": [220.0, 220.0, 220.0, 0.0],
+        "print_time": 0.0, "stalls": 0, "estimated_print_time": 100.0, "extruder": "extruder",
+        "position": [0.0, 0.0, 0.0, 0.0], "max_velocity": 600.0, "max_accel": 20000.0,
+        "minimum_cruise_ratio": 0.5, "square_corner_velocity": 5.0
+      },
+      "motion_report": {"live_position": [0.0, 0.0, 0.0, 0.0], "live_velocity": 0.0, "live_extruder_velocity": 0.0},
+      "idle_timeout": {"state": "Idle", "printing_time": 0.0},
+      "bed_mesh": {
+        "profile_name": "", "mesh_min": [0.0, 0.0], "mesh_max": [0.0, 0.0],
+        "probed_matrix": [[]], "mesh_matrix": [[]], "profiles": {}
+      },
+      "firmware_retraction": {"retract_length": 0.8, "retract_speed": 40.0, "unretract_extra_length": 0.0, "unretract_speed": 40.0}
+    }
+  }
+}
