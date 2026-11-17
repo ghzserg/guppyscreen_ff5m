@@ -569,9 +569,8 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
     ws.send_jsonrpc("printer.print.resume");
     resume_btn.disable();
   } else if (btn == cancel_btn.get_container()) {
+    // The print status goes when Klipper reports the print cancelled.
     ws.send_jsonrpc("printer.print.cancel");
-    background();
-    reset();
   } else if (btn == retract_btn.get_container()) {
     retract_panel.foreground();
   } else if (btn == mini_print_status.get_container()) {
