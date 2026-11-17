@@ -328,19 +328,31 @@ void PrintPanel::show_file_detail(Tree *f) {
       spdlog::trace("getting metadata for {}", f->name);
       ws.send_jsonrpc("server.files.metadata",
                       json::parse(R"({"filename":")" + f->full_path + R"("})"),
-                      [f, this](json &d) { this->handle_metadata(f, d); });
+                      [path = f->full_path, this](json &d) { this->handle_metadata(path, d); });
     }
   }
 }
 
-void PrintPanel::handle_metadata(Tree *f, json &j) {
+// The reply for the file at `path`. By then the user may have selected
+// another file, or the list may have been rebuilt (Refresh, a file added or
+// removed: root.clear() frees every Tree), so look the file up again: only
+// the selected one is cached and shown, as Print starts cur_file.
+void PrintPanel::handle_metadata(const std::string &path, json &j) {
   spdlog::trace("handling metadata callback");
-  if (f->is_leaf()) {
-    if (j.contains("result")) {
-      std::lock_guard<std::mutex> lock(lv_lock);
-      f->set_metadata(j);
-      file_panel.refresh_view(f->metadata, f->full_path);
-    }
+  std::lock_guard<std::mutex> lock(lv_lock);
+  if (cur_file == NULL || !cur_file->is_leaf() || cur_file->full_path != path) {
+    return;
+  }
+  if (j.contains("result")) {
+    cur_file->set_metadata(j);
+    file_panel.refresh_view(cur_file->metadata, cur_file->full_path);
+  } else {
+    // No metadata (Moonraker: "Metadata not available"): show this file
+    // with its details unknown, not the previous file's. Not cached: the
+    // next tap asks again.
+    spdlog::warn("no metadata for {}: {}", path, j.value("error", json()).dump());
+    json none = {{"result", json::object()}};
+    file_panel.refresh_view(none, path);
   }
 }
 
