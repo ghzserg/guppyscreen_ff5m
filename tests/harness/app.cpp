@@ -24,6 +24,15 @@ std::string fixture(const std::string &name) {
   return std::string(TESTS_DIR) + "/fixtures/" + name;
 }
 
+json zmod_sensors(const std::string &config, const std::string &printer, const std::string &left_out) {
+  json zmod = json::parse(std::ifstream(fixture(config)));
+  json sensors = json::array();
+  for (const json &s : zmod["printers"][printer]["monitored_sensors"]) {
+    if (s["id"] != left_out) sensors.push_back(s);
+  }
+  return {{"printers", {{"FF5M", {{"monitored_sensors", sensors}}}}}};
+}
+
 const std::string &dir() {
   return temp_dir;
 }

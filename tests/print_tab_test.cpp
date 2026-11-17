@@ -10,6 +10,7 @@
 
 #include "guppyscreen.h"
 #include "nav.h"
+#include "sensor_container.h"
 #include "state.h"
 
 #include <cstdlib>
@@ -353,4 +354,104 @@ TEST_CASE("connecting during a print makes the Print tab orange") {
   app::wait_ready(moonraker);
   REQUIRE(app::wait_until(print_screen_shown));
   CHECK(print_tab_orange());
+}
+
+namespace {
+
+lv_area_t parent_area(lv_obj_t *label) {
+  lv_area_t a;
+  lv_obj_get_coords(lv_obj_get_parent(label), &a);
+  return a;
+}
+
+// Home during a print: every sensor and the print status are on screen,
+// above the chart and left of the buttons; the status under the sensors.
+void check_home_fits(FakeMoonraker &moonraker, const json &config_patch,
+                     const std::vector<std::string> &sensors) {
+  app::start(moonraker, config_patch);
+  app::wait_ready(moonraker);
+  push_print(moonraker, {{"filename", "cube.gcode"}, {"state", "printing"}});
+  ui::tap_tab(Nav::HOME);
+  REQUIRE_MESSAGE(app::wait_until([] { return ui::find_label("Status: printing", ui::Match::Contains) != nullptr; }),
+                  ui::dump_screen());
+
+  lv_obj_t *status = ui::find_label("Status: printing", ui::Match::Contains);
+  lv_obj_t *homing = ui::find_label("Homing");
+  lv_obj_t *chart = ui::find_shown(&lv_chart_class);
+  REQUIRE(homing != nullptr);
+  REQUIRE(chart != nullptr);
+  std::vector<lv_obj_t *> labels;
+  for (const auto &name : sensors) {
+    lv_obj_t *l = ui::find_label(name);
+    REQUIRE_MESSAGE(l != nullptr, name << " not shown: " << ui::dump_screen());
+    labels.push_back(l);
+  }
+
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_area_t c, h;
+  lv_obj_get_coords(chart, &c);
+  lv_obj_get_coords(lv_obj_get_parent(homing), &h);
+  lv_area_t s = parent_area(status);
+  CHECK(s.y2 < c.y1);
+  CHECK(s.x2 < h.x1);
+  // The progress: a bar along the bottom, as thick as the tiles' stripes,
+  // instead of a ring.
+  lv_obj_t *box = lv_obj_get_parent(status);
+  lv_obj_t *bar = nullptr;
+  for (uint32_t i = 0; i < lv_obj_get_child_cnt(box); i++) {
+    lv_obj_t *ch = lv_obj_get_child(box, i);
+    CHECK_FALSE(lv_obj_check_type(ch, &lv_arc_class));
+    if (lv_obj_check_type(ch, &lv_bar_class)) bar = ch;
+  }
+  REQUIRE(bar != nullptr);
+  lv_area_t b, inner;
+  lv_obj_get_coords(bar, &b);
+  lv_obj_get_content_coords(box, &inner);
+  CHECK(lv_area_get_height(&b) == SensorContainer::stripe_width());
+  CHECK(b.y2 == inner.y2);
+  CHECK(b.x1 == inner.x1);
+  CHECK(b.x2 == inner.x2);
+  // Four tile columns wide whatever its text: from the first tile's left edge
+  // to where a fourth tile would end.
+  lv_area_t t0 = parent_area(labels[0]), t1 = parent_area(labels[1]);
+  lv_coord_t gap = t1.x1 - t0.x2 - 1;
+  INFO("status " << s.x1 << ".." << s.x2 << ", tile " << t0.x1 << ".." << t0.x2 << ", gap " << gap);
+  CHECK(s.x1 == t0.x1);
+  CHECK(lv_area_get_width(&s) == 4 * lv_area_get_width(&t0) + 3 * gap);
+  for (size_t i = 0; i < labels.size(); i++) {
+    lv_area_t t = parent_area(labels[i]);
+    INFO(sensors[i]);
+    CHECK(t.y2 < c.y1);
+    CHECK(t.x2 < h.x1);
+    CHECK(s.y1 >= t.y2);
+  }
+}
+
+// A zMod guppyconfig's sensors, fans and macros under the test config's
+// printer name.
+json printer_config(const std::string &fixture, const std::string &printer) {
+  json zmod = json::parse(std::ifstream(app::fixture(fixture)));
+  const json &p = zmod["printers"][printer];
+  json patch = {{"monitored_sensors", p["monitored_sensors"]}, {"fans", p["fans"]}};
+  if (p.contains("default_macros")) patch["default_macros"] = p["default_macros"];
+  return {{"printers", {{"FF5M", patch}}}, {"prompt_emergency_stop", false}};
+}
+
+}  // namespace
+
+TEST_CASE("Home fits the AD5M temperatures and print status") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  check_home_fits(moonraker, {{"prompt_emergency_stop", false}}, {"Extruder", "Bed"});
+}
+
+TEST_CASE("Home fits the AD5X temperatures and print status") {
+  FakeMoonraker moonraker(app::fixture("ad5x_basic.json"));
+  check_home_fits(moonraker, printer_config("guppyconfig_ad5x.json", "AD5X"),
+                  {"Extruder", "Bed", "Head", "Weight"});
+}
+
+TEST_CASE("Home fits the C5 Pro temperatures and print status") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  check_home_fits(moonraker, printer_config("guppyconfig_c5pro.json", "C5Pro"),
+                  {"T0", "T1", "T2", "T3", "Bed", "Chamber"});
 }
