@@ -16,6 +16,7 @@
 
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ui {
@@ -42,8 +43,19 @@ lv_obj_t *find_shown(const lv_obj_class_t *cls);
 // the label is not shown.
 lv_obj_t *label_container(const std::string &text);
 
+// label_container(), failing the test if the label isn't shown: a sensor
+// tile around its name.
+lv_obj_t *tile(const std::string &name);
+
+// Screen coordinates of tile(name) and of its icon.
+std::pair<lv_area_t, lv_area_t> tile_and_icon(const std::string &name);
+
+// The first object of class `cls` under `root` (itself included), shown or
+// not, or nullptr. Hold the LVGL lock.
+lv_obj_t *find_in(lv_obj_t *root, const lv_obj_class_t *cls);
+
 // Whether `obj` has a covering background of `palette`'s main colour (the
-// tile the numpad is for).
+// tile the numpad is for, the selected nozzle).
 bool has_bg(lv_obj_t *obj, lv_palette_t palette);
 
 // Enter `value` on the open numpad and press OK. Fails the test if no numpad
@@ -52,6 +64,9 @@ void enter_on_numpad(const std::string &value);
 
 // Button matrices on the screen (shown or not) whose button `idx` reads `text`.
 std::vector<lv_obj_t *> btnmatrices(const std::string &text, uint32_t idx = 0);
+
+// Whether any of `objs` is shown.
+bool any_shown(const std::vector<lv_obj_t *> &objs);
 
 // Would a tap at obj's centre reach it (see "shown" above)?
 bool is_shown(lv_obj_t *obj);
