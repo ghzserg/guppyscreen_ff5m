@@ -215,3 +215,45 @@ TEST_CASE("the C5 Pro nozzles keep the colours of the config") {
   CHECK(stripe("T2") == palette(LV_PALETTE_YELLOW));
   CHECK(stripe("T3") == palette(LV_PALETTE_GREEN));
 }
+
+namespace {
+
+// The tile of the sensor named `name`.
+lv_obj_t *tile_of(const std::string &name) {
+  lv_obj_t *name_label = ui::find_label(name);
+  REQUIRE_MESSAGE(name_label != nullptr, name << " not shown: " << ui::dump_screen());
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  return lv_obj_get_parent(name_label);
+}
+
+bool numpad_open() { return ui::find_shown(&lv_textarea_class) != nullptr; }
+
+}  // namespace
+
+TEST_CASE("Home's tile being set is blue while the numpad is open") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  lv_obj_t *extruder = tile_of("Extruder");
+  lv_obj_t *bed = tile_of("Bed");
+  CHECK_FALSE(ui::has_bg(extruder, LV_PALETTE_BLUE));
+
+  ui::tap_label("Extruder");
+  REQUIRE(numpad_open());
+  CHECK(ui::has_bg(extruder, LV_PALETTE_BLUE));
+  CHECK_FALSE(ui::has_bg(bed, LV_PALETTE_BLUE));
+
+  ui::tap_label("Bed");  // another tile while it is open: the numpad is for that one
+  REQUIRE(numpad_open());
+  CHECK_FALSE(ui::has_bg(extruder, LV_PALETTE_BLUE));
+  CHECK(ui::has_bg(bed, LV_PALETTE_BLUE));
+
+  ui::enter_on_numpad("60");
+  CHECK_FALSE(numpad_open());
+  CHECK_FALSE(ui::has_bg(bed, LV_PALETTE_BLUE));
+
+  ui::tap_label("Bed");
+  ui::enter_on_numpad("");  // OK with nothing entered closes it too
+  CHECK_FALSE(numpad_open());
+  CHECK_FALSE(ui::has_bg(bed, LV_PALETTE_BLUE));
+}
