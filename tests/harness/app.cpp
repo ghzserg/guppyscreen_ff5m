@@ -61,7 +61,7 @@ static json test_config(int moonraker_port) {
   };
 }
 
-void start(FakeMoonraker &moonraker) {
+void start(FakeMoonraker &moonraker, const json &config_patch) {
   if (!temp_dir.empty()) {
     throw std::logic_error("app::start() can be called only once per process");
   }
@@ -77,7 +77,9 @@ void start(FakeMoonraker &moonraker) {
   copy_file(std::string(REPO_DIR) + "/themes/blue.json", temp_dir + "/themes/blue.json");
 
   const std::string config_path = temp_dir + "/guppyconfig.json";
-  std::ofstream(config_path) << test_config(moonraker.port()).dump(2);
+  json config = test_config(moonraker.port());
+  config.merge_patch(config_patch);
+  std::ofstream(config_path) << config.dump(2);
   MESSAGE("app dir: " << temp_dir);
 
   Config::get_instance()->init(config_path, temp_dir + "/thumbnails");

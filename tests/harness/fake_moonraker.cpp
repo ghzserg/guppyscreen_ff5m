@@ -133,9 +133,18 @@ void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::st
   }
 
   if (req.contains("id")) {
-    json resp = {{"jsonrpc", "2.0"}, {"id", req["id"]}, {"result", result}};
+    json resp = {{"jsonrpc", "2.0"}, {"id", req["id"]}};
+    if (result.is_object() && result.contains("__error__")) {
+      resp["error"] = result["__error__"];
+    } else {
+      resp["result"] = result;
+    }
     channel->send(resp.dump());
   }
+}
+
+json FakeMoonraker::error(int code, const std::string &message) {
+  return {{"__error__", {{"code", code}, {"message", message}}}};
 }
 
 void FakeMoonraker::send(const json &j) {

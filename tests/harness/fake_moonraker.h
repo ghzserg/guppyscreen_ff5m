@@ -39,6 +39,10 @@ class FakeMoonraker {
   // The handler runs on the server thread.
   void set_handler(const std::string &method, std::function<json(const json &params)> handler);
 
+  // A handler's answer that makes the reply a JSON-RPC error, as Moonraker's
+  // {"error": {"code": 404, "message": "Metadata not available for <x>"}}.
+  static json error(int code, const std::string &message);
+
   // Send notify_status_update to the connected client, e.g.
   // push_status({{"extruder", {{"temperature", 215.0}}}}).
   void push_status(const json &status);

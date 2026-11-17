@@ -22,8 +22,9 @@ namespace app {
 std::string fixture(const std::string &name);
 
 // Write a test config pointing at `moonraker`, then run GuppyScreen::init().
-// Config, themes and logs go to a fresh temporary directory.
-void start(FakeMoonraker &moonraker);
+// Config, themes and logs go to a fresh temporary directory. `config_patch`
+// is merged into the test config (JSON merge patch).
+void start(FakeMoonraker &moonraker, const json &config_patch = json::object());
 
 // Directory start() created (contains guppyconfig.json, guppyscreen.log, ...).
 const std::string &dir();
