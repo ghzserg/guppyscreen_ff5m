@@ -42,9 +42,9 @@ class PrinterTunePanel {
   BedMeshPanel bedmesh_panel;
   FineTunePanel &finetune_panel;
   LimitsPanel limits_panel;
-  RetractPanel retract_panel;
-  ProPanel pro_panel;
-  PidPanel pid_panel;
+  RetractPanel &retract_panel;  // owned by the print status panel
+  ProPanel &pro_panel;  // owned by the print status panel
+  PidPanel &pid_panel;  // owned by the print status panel
   InputShaperPanel inputshaper_panel;
   BeltsCalibrationPanel belts_calibration_panel;
 #ifndef GUPPY_FF5M
