@@ -137,6 +137,7 @@ SensorContainer::SensorContainer(KWebSocketClient &c,
 }
 
 SensorContainer::~SensorContainer() {
+  numpad.forget(this);
   if (sensor_cont != NULL) {
     spdlog::debug("deleting sensor {}", id);
     lv_obj_del(sensor_cont);
@@ -193,6 +194,7 @@ void SensorContainer::handle_edit(lv_event_t *e) {
       }
     });
     numpad.foreground_reset();
+    numpad.set_close_callback(this, nullptr);  // for forget() on delete
   }
 }
 
@@ -203,5 +205,6 @@ void SensorContainer::handle_edit2(lv_event_t *e) {
         update_target(v);
     });
     numpad.foreground_reset();
+    numpad.set_close_callback(this, nullptr);  // for forget() on delete
   }
 }
