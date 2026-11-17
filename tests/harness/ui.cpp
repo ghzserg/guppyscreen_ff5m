@@ -263,6 +263,14 @@ std::pair<lv_area_t, lv_area_t> tile_and_icon(const std::string &name) {
   return {a, i};
 }
 
+lv_area_t coords(lv_obj_t *obj) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_update_layout(lv_scr_act());
+  lv_area_t a;
+  lv_obj_get_coords(obj, &a);
+  return a;
+}
+
 lv_obj_t *find_in(lv_obj_t *root, const lv_obj_class_t *cls) {
   lv_obj_t *found = nullptr;
   walk(root, [&](lv_obj_t *o) {
