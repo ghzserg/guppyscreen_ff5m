@@ -455,3 +455,245 @@ TEST_CASE("Home fits the C5 Pro temperatures and print status") {
   check_home_fits(moonraker, printer_config("guppyconfig_c5pro.json", "C5Pro"),
                   {"T0", "T1", "T2", "T3", "Bed", "Chamber"});
 }
+
+// While printing, the Print tab shows the print screen; a button at the left
+// of its row opens the file list over it, to look at the models. The Print
+// tab goes back to the print screen.
+TEST_CASE("the print screen opens the file list from a button at its left") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  FakePrinter printer(moonraker, test_files(), fast(60));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  start_print(moonraker);
+  REQUIRE(app::wait_until(print_screen_shown));
+
+  lv_obj_t *files = ui::label_container("Files");
+  lv_obj_t *fine_tune = ui::label_container("Fine Tune");
+  REQUIRE_MESSAGE(files != nullptr, ui::dump_screen());
+  REQUIRE(fine_tune != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_obj_update_layout(lv_scr_act());
+    lv_area_t f, t;
+    lv_obj_get_coords(files, &f);
+    lv_obj_get_coords(fine_tune, &t);
+    INFO("Files " << f.x1 << ".." << f.x2 << ", Fine Tune " << t.x1 << ".." << t.x2);
+    CHECK(f.x2 < t.x1);  // the first of the row
+    CHECK(f.y1 == t.y1);
+  }
+
+  ui::tap_label("Files");
+  CHECK_MESSAGE(app::wait_until(file_list_shown), ui::dump_screen());
+  CHECK(active_tab() == Nav::PRINT);
+  ui::tap_tab(Nav::PRINT);
+  CHECK_MESSAGE(app::wait_until(print_screen_shown), ui::dump_screen());
+  CHECK(!file_list_shown());
+}
+
+namespace {
+
+// Whether `font` has a glyph for every character of the UTF-8 `text`.
+// The first letter of `text` that `font` doesn't draw itself (its fallback
+// would, smaller), or 0.
+uint32_t missing_glyph(const lv_font_t *font, const std::string &text) {
+  uint32_t i = 0;
+  while (i < text.size()) {
+    uint32_t letter = _lv_txt_encoded_next(text.c_str(), &i);
+    lv_font_glyph_dsc_t dsc;
+    if (!lv_font_get_glyph_dsc(font, &dsc, letter, 0) || dsc.resolved_font != font) return letter;
+  }
+  return 0;
+}
+
+// The print screen's value labels (right of the details' icons). Fits: the
+// label right of the icon and inside its box; a text longer than the label
+// scrolls.
+std::vector<lv_obj_t *> detail_values() {
+  std::vector<lv_obj_t *> found;
+  for (const char *text : {"T0: ", "мм/с", "мм3/с", " мм", " / ", "%, "}) {  // "%, ": the fans, not the bar
+    lv_obj_t *l = ui::find_label(text, ui::Match::Contains);
+    if (l != nullptr) found.push_back(l);
+  }
+  return found;
+}
+
+}  // namespace
+
+TEST_CASE("the print screen's values are as big as the tiles' temperatures") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_plain(moonraker);
+  moonraker.push_status({{"extruder", {{"temperature", 215.0}, {"target", 220.0}}}});
+  app::settle(moonraker);
+
+  auto values = detail_values();
+  CHECK(values.size() >= 5);
+  for (lv_obj_t *l : values) {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    std::string text = lv_label_get_text(l);
+    INFO(text);
+    CHECK(lv_obj_get_style_text_font(l, 0) == SensorContainer::temperature_font());
+    CHECK(missing_glyph(lv_obj_get_style_text_font(l, 0), text) == 0);
+  }
+}
+
+// Every language's units and time (d h min s, Turkish g s d sn) in the font.
+TEST_CASE("the tiles' temperature font has the print screen's units in every language") {
+  for (const char *text : {"T0: 215 / 220", "100%, 100%, 100%", "0.000 mm", "12.3 mm3/s", "1.25 m", "...",
+                           "1d 2h 3min 4s", "1g 2s 3d 4sn", "мм/с мм3/с 1д 2ч 3м 4с"}) {
+    INFO(std::string(text));
+    CHECK(missing_glyph(SensorContainer::temperature_font(), text) == 0);
+  }
+}
+
+TEST_CASE("the print screen's values fit right of their icons") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_plain(moonraker);
+  moonraker.push_status({{"extruder", {{"temperature", 215.0}, {"target", 220.0}}},
+                         {"output_pin fan0", {{"value", 1.0}}}, {"output_pin fan1", {{"value", 1.0}}},
+                         {"output_pin fan2", {{"value", 1.0}}}});
+  app::settle(moonraker);
+
+  for (lv_obj_t *l : detail_values()) {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_obj_update_layout(lv_scr_act());
+    lv_obj_t *box = lv_obj_get_parent(l);
+    lv_obj_t *icon = lv_obj_get_child(box, 0);
+    lv_area_t a, i, b;
+    lv_obj_get_coords(l, &a);
+    lv_obj_get_coords(icon, &i);
+    lv_obj_get_content_coords(box, &b);
+    // The text's own width: the label may be wider than it.
+    lv_point_t size;
+    const char *text = lv_label_get_text(l);
+    lv_txt_get_size(&size, text, lv_obj_get_style_text_font(l, 0), 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+    INFO(text << ": icon " << i.x1 << ".." << i.x2 << ", label " << a.x1 << ".." << a.x2 << ", text width "
+         << size.x << ", box " << b.x1 << ".." << b.x2);
+    CHECK(a.x1 > i.x2);
+    CHECK(a.x2 <= b.x2);
+    if (size.x > lv_area_get_width(&a)) {
+      CHECK(lv_label_get_long_mode(l) == LV_LABEL_LONG_SCROLL_CIRCULAR);  // too long: it scrolls
+    }
+  }
+}
+
+// FakePrinter's thumbnail is 300 px, drawn at 192: laid out at 192 too, the
+// file name and the thumbnail fit between the top of the screen and the
+// progress bar.
+TEST_CASE("the print screen's thumbnail column fits above the progress bar") {
+  const char *tmp = getenv("TMPDIR");
+  std::string gcodes = std::string(tmp && *tmp ? tmp : "/tmp") + "/guppy-gcodes-XXXXXX";
+  REQUIRE(mkdtemp(gcodes.data()) != NULL);
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  FakePrinter::Options o = fast(60);
+  o.gcodes_dir = gcodes;
+  FakePrinter printer(moonraker, test_files(), o);
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  start_print(moonraker);
+  REQUIRE(app::wait_until(print_screen_shown));
+  app::settle(moonraker);
+
+  // Not find_label(): the bug put the name off the screen.
+  lv_obj_t *name = nullptr;
+  lv_obj_t *files = ui::label_container("Files");
+  REQUIRE(files != nullptr);
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_update_layout(lv_scr_act());
+  ui::walk(Nav::get().root(Nav::PRINT), [&](lv_obj_t *o) {
+    if (lv_obj_check_type(o, &lv_label_class) && std::string(lv_label_get_text(o)) == "cube.gcode") name = o;
+  });
+  lv_obj_t *bar = ui::find_in(Nav::get().root(Nav::PRINT), &lv_bar_class);
+  REQUIRE(name != nullptr);
+  REQUIRE(bar != nullptr);
+  lv_obj_t *column = lv_obj_get_parent(name);
+  lv_area_t n, b, c, f;
+  lv_obj_get_coords(name, &n);
+  lv_obj_get_coords(bar, &b);
+  lv_obj_get_coords(column, &c);
+  lv_obj_get_coords(files, &f);
+  INFO("name y " << n.y1 << "; bar " << b.x1 << "," << b.y1 << ".." << b.x2 << "," << b.y2 << "; column x " << c.x1
+       << ".." << c.x2 << "; Files y " << f.y1);
+  CHECK(n.y1 >= 0);
+  CHECK(c.y2 < b.y1);
+  CHECK(b.y2 < f.y1);
+}
+
+// The progress bar: a full row between the thumbnail with the details and the
+// buttons, the ETA at its left.
+TEST_CASE("the print screen's progress bar spans the screen with the ETA at its left") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  FakePrinter printer(moonraker, test_files(), fast(60));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  start_print(moonraker);
+  REQUIRE(app::wait_until(print_screen_shown));
+  REQUIRE_MESSAGE(app::wait_until([] {
+    lv_obj_t *l = ui::find_label("ETA: ", ui::Match::Contains);
+    if (l == nullptr) return false;
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return std::string(lv_label_get_text(l)).find_first_of("0123456789") != std::string::npos;
+  }), ui::dump_screen());
+
+  lv_obj_t *eta = ui::find_label("ETA: ", ui::Match::Contains);
+  lv_obj_t *files = ui::label_container("Files");
+  lv_obj_t *nozzle = ui::find_label("T0: ", ui::Match::Contains);  // the details' first value
+  REQUIRE(files != nullptr);
+  REQUIRE(nozzle != nullptr);
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_update_layout(lv_scr_act());
+  lv_obj_t *bar = ui::find_in(Nav::get().root(Nav::PRINT), &lv_bar_class);
+  REQUIRE(bar != nullptr);
+  lv_obj_t *details = lv_obj_get_parent(lv_obj_get_parent(nozzle));  // label < box < details grid
+  lv_obj_t *screen = lv_obj_get_parent(details);
+  lv_area_t b, d, s, f, e;
+  lv_obj_get_coords(bar, &b);
+  lv_obj_get_coords(details, &d);
+  lv_obj_get_coords(screen, &s);
+  lv_obj_get_coords(files, &f);
+  lv_obj_get_coords(eta, &e);
+  INFO("bar " << b.x1 << "," << b.y1 << ".." << b.x2 << "," << b.y2 << "; details " << d.x1 << ".." << d.x2 << ","
+              << d.y2 << "; screen x " << s.x1 << ".." << s.x2 << "; Files y " << f.y1 << "; ETA x " << e.x1 << ".."
+              << e.x2);
+  CHECK(b.x1 == s.x1 + lv_obj_get_style_pad_left(screen, 0));
+  CHECK(b.x2 == d.x2);
+  CHECK(b.y1 > d.y2);
+  CHECK(b.y2 < f.y1);
+  CHECK(e.x1 > b.x1);
+  CHECK(e.x2 < (b.x1 + b.x2) / 2);  // the left half
+  CHECK(e.y1 >= b.y1);
+  CHECK(e.y2 <= b.y2);
+  // 40 px tall, its texts in the details' font.
+  CHECK(lv_obj_get_height(bar) == 40);
+  lv_obj_t *row = lv_obj_get_parent(bar);
+  for (uint32_t i = 0; i < lv_obj_get_child_cnt(row); i++) {
+    lv_obj_t *label = lv_obj_get_child(row, i);
+    if (lv_obj_check_type(label, &lv_label_class)) {
+      CHECK(lv_obj_get_style_text_font(label, 0) == SensorContainer::temperature_font());
+    }
+  }
+}
+
+// The progress bar's ETA is in the details' font, which has only the glyphs
+// listed in assets/fonts/build.sh: every translation of "ETA: {}" must be
+// among them (CJK aside: no font of ours has those).
+TEST_CASE("the details' font has the letters of every translation of the ETA") {
+  std::string locale = app::fixture("../../src/locale");
+  const lv_font_t *font = SensorContainer::temperature_font();
+  for (const char *lang : {"ru", "en", "de", "it", "fr", "es", "pt", "cs", "tr"}) {
+    std::ifstream po(locale + "/" + lang + "/LC_MESSAGES/guppyscreen.po");
+    REQUIRE(po);
+    std::string line, text;
+    while (std::getline(po, line)) {
+      if (line == "msgid \"ETA: {}\"") {
+        std::getline(po, line);
+        text = line.substr(8, line.size() - 9);  // msgstr "..."
+      }
+    }
+    REQUIRE_MESSAGE(!text.empty(), std::string(lang) << ": no one-line msgstr for \"ETA: {}\"");
+    size_t time = text.find("{}");
+    REQUIRE_MESSAGE(time != std::string::npos, std::string(lang) << ": no {} for the time in \"" << text << "\"");
+    text.erase(time, 2);
+    uint32_t missing = missing_glyph(font, text);
+    CHECK_MESSAGE(missing == 0, std::string(lang) << ": U+" << std::hex << missing);
+  }
+}
