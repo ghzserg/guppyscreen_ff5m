@@ -61,6 +61,7 @@ class KWebSocketClient : public hv::WebSocketClient {
   int send_request(const std::string &method, const json *params,
                    std::function<void(json&)> cb = {}, bool keep_macros = false);
   std::map<uint64_t, PendingReply> pending;
+  WebSocketChannelPtr active_channel;
   std::mutex pending_lock;
   std::vector<NotifyConsumer*> notify_consumers;
   // std::vector<std::function<void(json&)>> gcode_resp_cbs;

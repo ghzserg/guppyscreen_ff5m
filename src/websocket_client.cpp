@@ -26,6 +26,7 @@ KWebSocketClient::KWebSocketClient(EventLoopPtr loop)
 }
 
 KWebSocketClient::~KWebSocketClient() {
+  stop();
 }
 
 // The configfile sections the app reads; everything else in configfile's
@@ -98,6 +99,10 @@ int KWebSocketClient::connect(const char* url,
   spdlog::debug("websocket connecting");
   // set callbacks
   onopen = [this, connected]() {
+    {
+      std::lock_guard<std::mutex> lock(pending_lock);
+      active_channel = channel;
+    }
     const HttpResponsePtr& resp = getHttpResponse();
     spdlog::debug("onopen {}", resp->body.c_str());
     connected();
@@ -164,8 +169,16 @@ int KWebSocketClient::connect(const char* url,
     }
   };
 
-  onclose = [disconnected]() {
+  onclose = [this, disconnected]() {
     spdlog::debug("onclose");
+    // libhv запускает переподключение после возврата из onclose.
+    decltype(pending) abandoned;
+    {
+      std::lock_guard<std::mutex> lock(pending_lock);
+      active_channel.reset();
+      abandoned.swap(pending);
+    }
+    abandoned.clear();
     disconnected();
   };
 
@@ -228,11 +241,14 @@ int KWebSocketClient::send_request(const std::string &method, const json *params
   if (params) rpc["params"] = *params;
   const auto message = rpc.dump();
   spdlog::debug("send_jsonrpc: {}", message);
-  if (cb) {
+  WebSocketChannelPtr destination;
+  {
     std::lock_guard<std::mutex> lock(pending_lock);
-    pending.emplace(request_id, PendingReply{std::move(cb), keep_macros});
+    destination = active_channel;
+    if (!destination) return -1;
+    if (cb) pending.emplace(request_id, PendingReply{std::move(cb), keep_macros});
   }
-  const int result = send(message);
+  const int result = destination->send(message);
   if (result < 0) {
     std::lock_guard<std::mutex> lock(pending_lock);
     pending.erase(request_id);

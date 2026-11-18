@@ -132,7 +132,7 @@ void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::st
     }
   }
 
-  if (req.contains("id")) {
+  if (req.contains("id") && !result.is_discarded()) {
     json resp = {{"jsonrpc", "2.0"}, {"id", req["id"]}};
     if (result.is_object() && result.contains("__error__")) {
       resp["error"] = result["__error__"];
