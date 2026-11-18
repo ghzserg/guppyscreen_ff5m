@@ -155,23 +155,19 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
 
     ws.gcode_script(cmd);
 
-    if (!history.empty()) {
-      const auto &front = history.front();
-
-      if (front != std::string(cmd)) {
-        if (history.size() >= 20) {
-          history.pop_back();
-        }
-        history.push_front(cmd);
-
-        json h = {
-          {"namespace", "fluidd"}, // leverage history from fluidd
-          {"key", "console.commandHistory"},
-          {"value", history}
-        };
-
-        ws.send_jsonrpc("server.database.post_item", h);
+    if (history.empty() || history.front() != cmd) {
+      if (history.size() >= 20) {
+        history.pop_back();
       }
+      history.push_front(cmd);
+
+      json h = {
+        {"namespace", "fluidd"}, // leverage history from fluidd
+        {"key", "console.commandHistory"},
+        {"value", history}
+      };
+
+      ws.send_jsonrpc("server.database.post_item", h);
     }
 
     lv_textarea_set_text(input, "");

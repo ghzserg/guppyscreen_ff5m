@@ -50,6 +50,7 @@ void tap_tab(uint32_t idx) {
 }
 
 constexpr uint32_t TUNE_TAB = 1;
+constexpr uint32_t CONSOLE_TAB = 4;
 
 // The print screen's nozzle label ("T<n>: ..."), shown or not.
 std::string nozzle_label() {
@@ -195,6 +196,56 @@ TEST_CASE("print metadata leaves Klipper's print duration intact") {
   app::settle(moonraker);
   const auto duration = State::get_instance()->get_data_copy("/printer_state/print_stats/print_duration"_json_pointer);
   CHECK(duration == 30.0);
+}
+
+TEST_CASE("an empty console history saves the first command across reconnect") {
+  json stored_history = json::array();
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_handler("server.database.get_item", [&](const json &params) {
+    return json{{"value", params.value("namespace", "") == "fluidd"
+                           ? json{{"commandHistory", stored_history}} : json::object()}};
+  });
+  moonraker.set_handler("server.database.post_item", [&](const json &params) {
+    if (params.value("namespace", "") == "fluidd"
+        && params.value("key", "") == "console.commandHistory") {
+      stored_history = params.at("value");
+    }
+    return params;
+  });
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  tap_tab(CONSOLE_TAB);
+
+  const char *command = "M105";
+  const auto expected = json::array({command});
+  auto *input = ui::find_shown(&lv_textarea_class);
+  REQUIRE(input != nullptr);
+  for (size_t n = 1; n <= 2; ++n) {
+    {
+      std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+      lv_textarea_set_text(input, command);
+    }
+    ui::tap_label(LV_SYMBOL_NEW_LINE);
+    REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() == n; }));
+  }
+  app::settle(moonraker);
+  const auto writes = moonraker.requests("server.database.post_item");
+  CHECK(writes.size() == 1);
+  if (!writes.empty()) CHECK(writes.front().at("value") == expected);
+
+  moonraker.forget_requests();
+  moonraker.drop_client();
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.objects.subscribe") > 0; }, 10000));
+  app::wait_ready(moonraker);
+  tap_tab(CONSOLE_TAB);
+  const auto restored = State::get_instance()->get_data_copy("/console/commandHistory"_json_pointer);
+  CHECK(restored == expected);
+  auto *table = ui::find_shown(&lv_table_class);
+  REQUIRE(table != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(std::string(lv_table_get_cell_value(table, 0, 0)) == command);
+  }
 }
 
 TEST_CASE("an expired print estimate clears all displayed ETAs") {
