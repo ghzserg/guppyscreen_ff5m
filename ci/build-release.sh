@@ -58,7 +58,6 @@ make "${make_args[@]}" libspdlog.a
 make -j"$(nproc)" "${make_args[@]}"
 
 "${CROSS_COMPILE}strip" build/bin/guppyscreen
-file build/bin/guppyscreen
 mkdir -p releases/locale
 install -m 0755 build/bin/guppyscreen releases/guppyscreen
 for po in src/locale/*/LC_MESSAGES/guppyscreen.po; do
