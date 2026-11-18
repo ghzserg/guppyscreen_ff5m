@@ -111,33 +111,20 @@ int KWebSocketClient::connect(const char* url,
     json j = parse_message(msg);
 
     if (j.contains("id") && j["id"].is_number_unsigned()) {
-      // A reply that should keep the macros: parse it again with them. The
-      // id can come after the result in the text, so the first pass can't
-      // know. Only the Macros tab's query does this, when the list is built.
-      bool again;
+      PendingReply reply{};
       {
-        std::lock_guard<std::mutex> lock(keep_macros_lock);
-        again = keep_macros_ids.erase(j["id"].template get<uint32_t>()) > 0;
+        std::lock_guard<std::mutex> lock(pending_lock);
+        auto entry = pending.find(j["id"].get<uint64_t>());
+        if (entry != pending.end()) {
+          reply = std::move(entry->second);
+          pending.erase(entry);
+        }
       }
-      if (again) {
+      if (reply.keep_macros) {
         j = json();
         j = parse_message(msg, true);
       }
-    }
-
-    if (j.contains("id")) {
-      // XXX: get rid of consumers and use function ptrs for callback
-      const auto &entry = consumers.find(j["id"]);
-      if (entry != consumers.end()) {
-        entry->second->consume(j);
-        consumers.erase(entry);
-      }
-
-      const auto &cb_entry = callbacks.find(j["id"]);
-      if (cb_entry != callbacks.end()) {
-        cb_entry->second(j);
-        callbacks.erase(cb_entry);
-      }
+      if (reply.callback) reply.callback(j);
     }
 
     if (j.contains("method")) {
@@ -200,45 +187,15 @@ int KWebSocketClient::send_jsonrpc(const std::string &method,
                                    const json &params,
                                    std::function<void(json&)> cb,
                                    bool keep_macros) {
-  const auto &entry = callbacks.find(id);
-  if (entry == callbacks.end()) {
-    // spdlog::debug("registering consume %d, %x\n", id, consumer);
-    callbacks.insert({id, cb});
-    if (keep_macros) {
-      std::lock_guard<std::mutex> lock(keep_macros_lock);
-      keep_macros_ids.insert(id);
-    }
-    // XXX: check success, remove consumer if send is unsuccessfull
-    return send_jsonrpc(method, params);
-  } else {
-    // spdlog::debug("WARN: id %d is already register with a consumer\n", id);
-  }
-
-  return 0;
+  return send_request(method, &params, std::move(cb), keep_macros);
 }
 
-int KWebSocketClient::send_jsonrpc(const std::string &method,
-                                   std::function<void(json&)> cb) {
-  const auto &entry = callbacks.find(id);
-  if (entry == callbacks.end()) {
-    // spdlog::debug("registering consume %d, %x\n", id, consumer);
-    callbacks.insert({id, cb});
-    // XXX: check success, remove consumer if send is unsuccessfull
-    return send_jsonrpc(method);
-  } else {
-    // spdlog::debug("WARN: id %d is already register with a consumer\n", id);
-  }
-
-  return 0;
+int KWebSocketClient::send_jsonrpc(const std::string &method, std::function<void(json&)> cb) {
+  return send_request(method, nullptr, std::move(cb));
 }
 
 int KWebSocketClient::send_jsonrpc(const std::string &method, const json &params, NotifyConsumer *consumer) {
-  const auto &entry = consumers.find(id);
-  if (entry == consumers.end()) {
-    consumers.insert({id, consumer});
-    return send_jsonrpc(method, params);
-  }
-  return 0;
+  return send_request(method, &params, [consumer](json &reply) { consumer->consume(reply); });
 }
 
 void KWebSocketClient::register_notify_update(NotifyConsumer *consumer) {
@@ -257,24 +214,30 @@ void KWebSocketClient::unregister_notify_update(NotifyConsumer *consumer) {
 
 int KWebSocketClient::send_jsonrpc(const std::string &method,
                                    const json &params) {
-  json rpc;
-  rpc["jsonrpc"] = "2.0";
-  rpc["method"] = method;
-  rpc["params"] = params;
-  rpc["id"] = id++;
-
-  spdlog::debug("send_jsonrpc: {}", rpc.dump());
-  return send(rpc.dump());
+  return send_request(method, &params);
 }
 
 int KWebSocketClient::send_jsonrpc(const std::string &method) {
-  json rpc;
-  rpc["jsonrpc"] = "2.0";
-  rpc["method"] = method;
-  rpc["id"] = id++;
+  return send_request(method, nullptr);
+}
 
-  spdlog::debug("send_jsonrpc: {}", rpc.dump());
-  return send(rpc.dump());
+int KWebSocketClient::send_request(const std::string &method, const json *params,
+                                   std::function<void(json&)> cb, bool keep_macros) {
+  const uint64_t request_id = id++;
+  json rpc = {{"jsonrpc", "2.0"}, {"method", method}, {"id", request_id}};
+  if (params) rpc["params"] = *params;
+  const auto message = rpc.dump();
+  spdlog::debug("send_jsonrpc: {}", message);
+  if (cb) {
+    std::lock_guard<std::mutex> lock(pending_lock);
+    pending.emplace(request_id, PendingReply{std::move(cb), keep_macros});
+  }
+  const int result = send(message);
+  if (result < 0) {
+    std::lock_guard<std::mutex> lock(pending_lock);
+    pending.erase(request_id);
+  }
+  return result;
 }
 
 int KWebSocketClient::gcode_script(const std::string &gcode) {
