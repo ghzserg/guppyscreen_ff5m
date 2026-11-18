@@ -4,6 +4,7 @@
 #include "config.h"
 
 #include <algorithm>
+#include <cmath>
 
 LV_IMG_DECLARE(home_z);
 LV_IMG_DECLARE(z_closer);
@@ -16,6 +17,15 @@ LV_IMG_DECLARE(speed_down_img);
 LV_IMG_DECLARE(flow_up_img);
 LV_IMG_DECLARE(flow_down_img);
 LV_IMG_DECLARE(back);
+
+namespace {
+
+// Klipper's factors as percents: 1.15 * 100 is 114.999..., rounded to 115.
+int percent(double factor) {
+  return static_cast<int>(std::lround(factor * 100));
+}
+
+}  // namespace
 
 FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   : NotifyConsumer(l)
@@ -116,14 +126,14 @@ void FineTunePanel::foreground() {
                 "/printer_state/gcode_move/speed_factor"_json_pointer);
   if (!v.is_null()) {
     speed_factor.update_label(fmt::format("{}%",
-           static_cast<int>(v.template get<double>() * 100)).c_str());
+           percent(v.template get<double>())).c_str());
   }
 
   v = State::get_instance()->get_data(
                 "/printer_state/gcode_move/extrude_factor"_json_pointer);
   if (!v.is_null()) {
     flow_factor.update_label(fmt::format("{}%",
-           static_cast<int>(v.template get<double>() * 100)).c_str());
+           percent(v.template get<double>())).c_str());
   }
 
   //Set the Z axis buttons
@@ -157,13 +167,13 @@ void FineTunePanel::consume(json &j) {
   v = j["/params/0/gcode_move/speed_factor"_json_pointer];
   if (!v.is_null()) {
     speed_factor.update_label(fmt::format("{}%",
-           static_cast<int>(v.template get<double>() * 100)).c_str());
+           percent(v.template get<double>())).c_str());
   }
 
   v = j["/params/0/gcode_move/extrude_factor"_json_pointer];
   if (!v.is_null()) {
     flow_factor.update_label(fmt::format("{}%",
-           static_cast<int>(v.template get<double>() * 100)).c_str());
+           percent(v.template get<double>())).c_str());
   }
 }
 
@@ -250,7 +260,7 @@ void FineTunePanel::handle_speed(lv_event_t *e) {
                                                       multipler_selector.get_selected_idx());
 
         int32_t direction = btn == speed_up_btn.get_container() ? std::stoi(step) : -std::stoi(step);
-        int32_t new_speed = static_cast<int32_t>(spd_factor.template get<double>() * 100 + direction);
+        int32_t new_speed = percent(spd_factor.template get<double>()) + direction;
         new_speed = std::max(new_speed, 1);
         spdlog::trace("speed step {}, {}", direction, new_speed);
         ws.gcode_script(fmt::format("M220 S{}", new_speed));
@@ -274,7 +284,7 @@ void FineTunePanel::handle_flow(lv_event_t *e) {
 
         int32_t direction = btn == flow_up_btn.get_container() ? std::stoi(step) : -std::stoi(step);
 
-        int32_t new_flow = static_cast<int32_t>(extrude_factor.template get<double>() * 100 + direction);
+        int32_t new_flow = percent(extrude_factor.template get<double>()) + direction;
         new_flow = std::max(new_flow, 1);
         spdlog::trace("flow step {}, {}", direction, new_flow);
         ws.gcode_script(fmt::format("M221 S{}", new_flow));

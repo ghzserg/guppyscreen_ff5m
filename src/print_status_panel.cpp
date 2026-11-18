@@ -424,6 +424,12 @@ void PrintStatusPanel::consume(json &j) {
   int effective_id = (active_tool_id >= 0) ? active_tool_id : 0;
   std::string tool_prefix = "T" + std::to_string(effective_id);
   std::string ext_name = "extruder" + (effective_id > 0 ? std::to_string(effective_id) : "");
+  // The AD5X: one nozzle, T0-T3 are its filament channels. Look at the
+  // temperature, not the object: a lookup of /params/0/extruder<N>/...
+  // with operator[] adds an empty extruder<N> to State.
+  if (effective_id > 0 && State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/temperature")).is_null()) {
+    ext_name = "extruder";
+  }
 
   auto v_target = j[json::json_pointer("/params/0/" + ext_name + "/target")];
   if (!v_target.is_null()) {
@@ -563,9 +569,8 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
     ws.send_jsonrpc("printer.print.resume");
     resume_btn.disable();
   } else if (btn == cancel_btn.get_container()) {
+    // The print status goes when Klipper reports the print cancelled.
     ws.send_jsonrpc("printer.print.cancel");
-    background();
-    reset();
   } else if (btn == retract_btn.get_container()) {
     retract_panel.foreground();
   } else if (btn == mini_print_status.get_container()) {

@@ -12,6 +12,9 @@
 #include "png_writer.h"
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <thread>
 #include <cstdio>
 #include <functional>
 #include <cstring>
@@ -94,12 +97,8 @@ void tap_file_row(const std::string &name) {
   ui::tap_at(p.x, p.y);
 }
 
-}  // namespace
-
-TEST_CASE("browsing files shows thumbnails without keeping old ones decoded") {
-  std::string gcodes = make_gcodes_dir();
-
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+// Serves part0..part<N_FILES-1>.gcode, each with one THUMB-sized thumbnail.
+void serve_files(FakeMoonraker &moonraker, const std::string &gcodes) {
   moonraker.set_result("server.files.roots", json::array({
     {{"name", "config"}, {"path", "/opt/config"}, {"permissions", "rw"}},
     {{"name", "gcodes"}, {"path", gcodes}, {"permissions", "rw"}},
@@ -117,6 +116,30 @@ TEST_CASE("browsing files shows thumbnails without keeping old ones decoded") {
                 {"thumbnails", json::array({{{"width", THUMB}, {"height", THUMB}, {"size", 1000},
                                              {"relative_path", ".thumbs/" + stem + ".png"}}})}};
   });
+}
+
+// Zoom of every image showing a .png file (file list, print status, mini status).
+std::vector<uint16_t> png_zooms() {
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  std::vector<uint16_t> zooms;
+  std::function<void(lv_obj_t *)> walk = [&](lv_obj_t *o) {
+    if (lv_obj_check_type(o, &lv_img_class) && lv_img_src_get_type(lv_img_get_src(o)) == LV_IMG_SRC_FILE
+        && strstr((const char *)lv_img_get_src(o), ".png")) {
+      zooms.push_back(lv_img_get_zoom(o));
+    }
+    for (uint32_t i = 0; i < lv_obj_get_child_cnt(o); i++) walk(lv_obj_get_child(o, i));
+  };
+  walk(lv_scr_act());
+  return zooms;
+}
+
+}  // namespace
+
+TEST_CASE("browsing files shows thumbnails without keeping old ones decoded") {
+  std::string gcodes = make_gcodes_dir();
+
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  serve_files(moonraker, gcodes);
 
   app::start(moonraker);
   app::wait_ready(moonraker);
@@ -159,4 +182,155 @@ TEST_CASE("browsing files shows thumbnails without keeping old ones decoded") {
 #endif
   }
   CHECK(app::wait_until([] { return ui::find_label("Print") != nullptr; }));
+}
+
+// KUtils::get_thumbnail returned width 0 when the best thumbnail was the
+// first listed (e.g. the only one), and the print status panel divided by it.
+TEST_CASE("a print whose file has a single thumbnail shows it scaled") {
+  std::string gcodes = make_gcodes_dir();
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  serve_files(moonraker, gcodes);
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  moonraker.push_status({{"print_stats", {{"filename", "part0.gcode"}, {"state", "printing"}}}});
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") > 0; }));
+  app::settle(moonraker);
+
+  // Print status panel: 192 px wide; mini status on Home: 5% of the screen.
+  auto zooms = png_zooms();
+  INFO("zooms: " << zooms.size());
+  CHECK(std::find(zooms.begin(), zooms.end(), 192 * 256 / THUMB) != zooms.end());
+  CHECK(std::find(zooms.begin(), zooms.end(), (uint16_t)(0.05 * 800 / THUMB * 256)) != zooms.end());
+}
+
+TEST_CASE("a print whose thumbnail metadata says width 0 shows no thumbnail") {
+  std::string gcodes = make_gcodes_dir();
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  serve_files(moonraker, gcodes);
+  moonraker.set_handler("server.files.metadata", [](const json &params) {
+    return json{{"filename", params.value("filename", "")}, {"size", 100000}, {"estimated_time", 600},
+                {"thumbnails", json::array({{{"width", 0}, {"height", 0}, {"size", 1000},
+                                             {"relative_path", ".thumbs/part0.png"}}})}};
+  });
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  moonraker.push_status({{"print_stats", {{"filename", "part0.gcode"}, {"state", "printing"}}}});
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") > 0; }));
+  app::settle(moonraker);
+  CHECK(png_zooms().empty());
+}
+
+TEST_CASE("a thumbnail with width 0 in the metadata doesn't hide the others") {
+  std::string gcodes = make_gcodes_dir();
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  serve_files(moonraker, gcodes);
+  // Width 0 is closer to the wanted 300 than 700 is.
+  moonraker.set_handler("server.files.metadata", [](const json &params) {
+    return json{{"filename", params.value("filename", "")}, {"size", 100000}, {"estimated_time", 600},
+                {"thumbnails", json::array({
+                  {{"width", 0}, {"height", 0}, {"size", 1000}, {"relative_path", ".thumbs/part0.png"}},
+                  {{"width", 700}, {"height", 700}, {"size", 1000}, {"relative_path", ".thumbs/part0.png"}},
+                })}};
+  });
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  moonraker.push_status({{"print_stats", {{"filename", "part0.gcode"}, {"state", "printing"}}}});
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") > 0; }));
+  app::settle(moonraker);
+  auto zooms = png_zooms();
+  CHECK(std::find(zooms.begin(), zooms.end(), 192 * 256 / 700) != zooms.end());
+}
+
+// get_thumbnail threw on a thumbnail without a width or a relative path
+// (nlohmann's get<std::string> on null), out of the websocket thread.
+TEST_CASE("thumbnails without a width or a file path are skipped") {
+  std::string gcodes = make_gcodes_dir();
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  serve_files(moonraker, gcodes);
+  moonraker.set_handler("server.files.metadata", [](const json &params) {
+    return json{{"filename", params.value("filename", "")}, {"size", 100000}, {"estimated_time", 600},
+                {"thumbnails", json::array({
+                  {{"height", 300}, {"size", 1000}, {"relative_path", ".thumbs/part0.png"}},
+                  {{"width", nullptr}, {"height", 300}, {"size", 1000}, {"relative_path", ".thumbs/part0.png"}},
+                  {{"width", 300}, {"height", 300}, {"size", 1000}},
+                  {{"width", 300}, {"height", 300}, {"size", 1000}, {"relative_path", ""}},
+                  {{"width", 300}, {"height", 300}, {"size", 1000}, {"relative_path", ".thumbs/"}},
+                  {{"width", 700}, {"height", 700}, {"size", 1000}, {"relative_path", ".thumbs/part0.png"}},
+                })}};
+  });
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  moonraker.push_status({{"print_stats", {{"filename", "part0.gcode"}, {"state", "printing"}}}});
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") > 0; }));
+  app::settle(moonraker);
+  auto zooms = png_zooms();
+  CHECK(std::find(zooms.begin(), zooms.end(), 192 * 256 / 700) != zooms.end());
+}
+
+// Moonraker has no metadata for some files ("Metadata not available"). The
+// file panel kept showing the file selected before, while Print would start
+// the tapped one.
+TEST_CASE("selecting a file without metadata shows that file and not the one before") {
+  std::string gcodes = make_gcodes_dir();
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  serve_files(moonraker, gcodes);
+  moonraker.set_handler("server.files.metadata", [](const json &params) {
+    std::string fname = params.value("filename", "");
+    if (fname == "part1.gcode") return FakeMoonraker::error(404, "Metadata not available for <part1.gcode>");
+    std::string stem = fname.substr(0, fname.find('.'));
+    return json{{"filename", fname}, {"size", 100000}, {"modified", 1000}, {"estimated_time", 600},
+                {"filament_weight_total", 5.0},
+                {"thumbnails", json::array({{{"width", THUMB}, {"height", THUMB}, {"size", 1000},
+                                             {"relative_path", ".thumbs/" + stem + ".png"}}})}};
+  });
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Print");
+  tap_file_row("part0.gcode");
+  REQUIRE(app::wait_until([&] { return shown_thumbnail() == "A:" + gcodes + "/.thumbs/part0.png"; }));
+  REQUIRE(ui::find_label("part0.gcode") != nullptr);
+
+  tap_file_row("part1.gcode");
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("part1.gcode") != nullptr && ui::find_label("part0.gcode") == nullptr; }),
+                ui::dump_screen());
+  CHECK(shown_thumbnail().empty());
+  CHECK(ui::find_label("Size: (Unknown) MB", ui::Match::Contains) != nullptr);
+}
+
+// A metadata reply that comes after the user selected another file must
+// not replace it: Print starts the selected one.
+TEST_CASE("a late metadata reply does not replace the file selected since") {
+  std::string gcodes = make_gcodes_dir();
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  serve_files(moonraker, gcodes);
+  std::atomic<bool> slow_part0{false};
+  moonraker.set_handler("server.files.metadata", [&slow_part0](const json &params) {
+    std::string fname = params.value("filename", "");
+    if (fname == "part0.gcode" && slow_part0) std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::string stem = fname.substr(0, fname.find('.'));
+    return json{{"filename", fname}, {"size", 100000}, {"modified", 1000}, {"estimated_time", 600},
+                {"thumbnails", json::array({{{"width", THUMB}, {"height", THUMB}, {"size", 1000},
+                                             {"relative_path", ".thumbs/" + stem + ".png"}}})}};
+  });
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Print");
+  tap_file_row("part1.gcode");  // its metadata is cached from now on
+  REQUIRE(app::wait_until([] { return ui::find_label("part1.gcode") != nullptr; }));
+  slow_part0 = true;
+  tap_file_row("part0.gcode");  // its reply comes in a second
+  app::pump(100);
+  tap_file_row("part1.gcode");  // shown at once from the cache
+  REQUIRE(ui::find_label("part1.gcode") != nullptr);
+
+  app::pump(1500);  // part0's reply has come
+  CHECK_MESSAGE(ui::find_label("part1.gcode") != nullptr, ui::dump_screen());
+  CHECK(ui::find_label("part0.gcode") == nullptr);
+  CHECK(shown_thumbnail() == "A:" + gcodes + "/.thumbs/part1.png");
 }
