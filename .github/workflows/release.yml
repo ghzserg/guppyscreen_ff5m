@@ -50,7 +50,7 @@ jobs:
           echo "${SDK_SHA256}  $RUNNER_TEMP/guppy-sdk.tar.gz" | sha256sum --check --status
 
       - name: Install gettext
-        run: sudo apt-get update && sudo apt-get install -y gettext
+        run: sudo apt-get update && sudo apt-get install -y gettext zip
 
       - name: Build and package
         env:
@@ -66,7 +66,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: guppyscreen-${{ matrix.model }}
-          path: guppyscreen-${{ matrix.model }}.tar.gz
+          path: guppyscreen-${{ matrix.model }}.zip
           if-no-files-found: error
 
   release:
@@ -83,6 +83,6 @@ jobs:
           merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.tar.gz
+          files: dist/*.zip
           fail_on_unmatched_files: true
           generate_release_notes: true

@@ -68,4 +68,22 @@ for po in src/locale/*/LC_MESSAGES/guppyscreen.po; do
   mkdir -p "$dest"
   msgfmt -o "$dest/guppyscreen.mo" "$po"
 done
-tar -czf "guppyscreen-${model}.tar.gz" -C releases guppyscreen locale
+python3 - "$model" <<'PYJSON'
+import json
+import os
+import pathlib
+import sys
+
+model = sys.argv[1]
+info = {
+    "project_name": "guppyscreen_ff5m",
+    "project_owner": "ghzserg",
+    "version": os.environ["GUPPYSCREEN_VERSION"],
+    "asset_name": f"guppyscreen-{model}.zip",
+}
+pathlib.Path("releases/release_info.json").write_text(
+    json.dumps(info, ensure_ascii=False) + "\n", encoding="utf-8"
+)
+PYJSON
+
+(cd releases && zip -q -r "../guppyscreen-${model}.zip" guppyscreen locale release_info.json)
