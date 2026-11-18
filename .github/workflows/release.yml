@@ -13,6 +13,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    container: debian:13
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -24,6 +28,13 @@ jobs:
             sdk: arm-zmod-ad5m.tar.gz
             sha256: 346a0e1cab48a1ba0c2b933a7f1f05a3a0b061b602097037a91f9f58637d1dd4
     steps:
+      - name: Install Debian 13 build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates curl git make cmake gcc g++ binutils pkg-config \
+            file zip unzip gettext tar gzip xz-utils patch python3
+
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -48,9 +59,6 @@ jobs:
           SDK_SHA256: ${{ matrix.sha256 }}
         run: |
           echo "${SDK_SHA256}  $RUNNER_TEMP/guppy-sdk.tar.gz" | sha256sum --check --status
-
-      - name: Install gettext
-        run: sudo apt-get update && sudo apt-get install -y gettext zip
 
       - name: Build and package
         env:
