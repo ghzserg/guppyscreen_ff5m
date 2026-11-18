@@ -192,6 +192,7 @@ void PrintPanel::subscribe() {
   ws.send_jsonrpc("server.files.list", R"({"root":"gcodes"})"_json, [this](json &d) {
     std::lock_guard<std::mutex> lock(lv_lock);
     std::string cur_path = cur_dir->full_path;
+    ++metadata_request_id;
     root.clear();
     cur_file = NULL;
     cur_dir = NULL;
@@ -257,8 +258,9 @@ void PrintPanel::handle_callback(lv_event_t *e) {
       }
     }
     else {
-      if (cur_file != cur_dir->get_child(filename)) {
-        cur_file = cur_dir->get_child(filename);
+      Tree *selected = cur_dir->get_child(filename);
+      if (selected != NULL && (cur_file != selected || !selected->contains_metadata())) {
+        cur_file = selected;
         show_file_detail(cur_file);
       }
     }
@@ -266,6 +268,8 @@ void PrintPanel::handle_callback(lv_event_t *e) {
 }
 
 void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
+  ++metadata_request_id;
+  cur_file = NULL;
   uint32_t index = 0;
   lv_table_set_cell_value_fmt(file_table, index++, 0, LV_SYMBOL_DIRECTORY "  %s", "..");
 
@@ -317,18 +321,24 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
       break;
     }
   }
-
+  if (cur_file == NULL) {
+    json none = {{"result", json::object()}};
+    file_panel.refresh_view(none, "");
+  }
 }
 
 void PrintPanel::show_file_detail(Tree *f) {
   if (f->is_leaf()) {
+    const uint32_t request_id = ++metadata_request_id;
     if (f->contains_metadata()) {
       file_panel.refresh_view(f->metadata, f->full_path);
     } else {
+      json none = {{"result", json::object()}};
+      file_panel.refresh_view(none, f->full_path);
       spdlog::trace("getting metadata for {}", f->name);
       ws.send_jsonrpc("server.files.metadata",
                       json::parse(R"({"filename":")" + f->full_path + R"("})"),
-                      [path = f->full_path, this](json &d) { this->handle_metadata(path, d); });
+                      [path = f->full_path, request_id, this](json &d) { this->handle_metadata(path, request_id, d); });
     }
   }
 }
@@ -337,10 +347,10 @@ void PrintPanel::show_file_detail(Tree *f) {
 // another file, or the list may have been rebuilt (Refresh, a file added or
 // removed: root.clear() frees every Tree), so look the file up again: only
 // the selected one is cached and shown, as Print starts cur_file.
-void PrintPanel::handle_metadata(const std::string &path, json &j) {
+void PrintPanel::handle_metadata(const std::string &path, uint32_t request_id, json &j) {
   spdlog::trace("handling metadata callback");
   std::lock_guard<std::mutex> lock(lv_lock);
-  if (cur_file == NULL || !cur_file->is_leaf() || cur_file->full_path != path) {
+  if (request_id != metadata_request_id || cur_file == NULL || !cur_file->is_leaf() || cur_file->full_path != path) {
     return;
   }
   if (j.contains("result")) {
@@ -348,8 +358,7 @@ void PrintPanel::handle_metadata(const std::string &path, json &j) {
     file_panel.refresh_view(cur_file->metadata, cur_file->full_path);
   } else {
     // No metadata (Moonraker: "Metadata not available"): show this file
-    // with its details unknown, not the previous file's. Not cached: the
-    // next tap asks again.
+    // with its details unknown, not the previous file's. A new tap retries.
     spdlog::warn("no metadata for {}: {}", path, j.value("error", json()).dump());
     json none = {{"result", json::object()}};
     file_panel.refresh_view(none, path);

@@ -116,6 +116,7 @@ void Numpad::fire_close() {
 }
 
 void Numpad::hide() {
+  ready_cb = [](double) {};
   lv_obj_add_flag(edit_cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_background(edit_cont);
   fire_close();
