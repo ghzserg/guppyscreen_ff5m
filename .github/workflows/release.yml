@@ -1,0 +1,88 @@
+name: GuppyScreen builds
+
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - model: ad5x
+            sdk: mipsel-zmod-ad5x.tar.gz
+            sha256: e492d11f9e8a87c60b01f1221294d9ab72ec47e9c1f970be936e48d18c36156e
+          - model: ad5m
+            sdk: arm-zmod-ad5m.tar.gz
+            sha256: 346a0e1cab48a1ba0c2b933a7f1f05a3a0b061b602097037a91f9f58637d1dd4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/cache@v4
+        id: sdk-cache
+        with:
+          path: ${{ runner.temp }}/guppy-sdk.tar.gz
+          key: guppy-sdk-${{ matrix.model }}-${{ matrix.sha256 }}
+
+      - name: Download Buildroot SDK
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        env:
+          SDK_NAME: ${{ matrix.sdk }}
+        run: |
+          curl --fail --location --retry 3 --retry-delay 5 \
+            "https://github.com/ghzserg/FF/releases/download/R/${SDK_NAME}" \
+            --output "$RUNNER_TEMP/guppy-sdk.tar.gz"
+
+      - name: Verify SDK
+        env:
+          SDK_SHA256: ${{ matrix.sha256 }}
+        run: |
+          echo "${SDK_SHA256}  $RUNNER_TEMP/guppy-sdk.tar.gz" | sha256sum --check --status
+
+      - name: Install gettext
+        run: sudo apt-get update && sudo apt-get install -y gettext
+
+      - name: Build and package
+        env:
+          MODEL: ${{ matrix.model }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            export GUPPYSCREEN_VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            export GUPPYSCREEN_VERSION="dev-${GITHUB_SHA:0:8}"
+          fi
+          bash ci/build-release.sh "$MODEL" "$RUNNER_TEMP/guppy-sdk.tar.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guppyscreen-${{ matrix.model }}
+          path: guppyscreen-${{ matrix.model }}.tar.gz
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: guppyscreen-*
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz
+          fail_on_unmatched_files: true
+          generate_release_notes: true

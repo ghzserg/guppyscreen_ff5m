@@ -24,17 +24,22 @@ WARNINGS		:= -Wall -Wextra -Wno-unused-function -Wno-error=strict-prototypes -Wp
 					-Wunreachable-code -Wno-switch-default -Wreturn-type -Wmultichar -Wformat-security -Wno-sign-compare
 CFLAGS 			?= -O3 -g0 -MD -MP -I$(LVGL_DIR)/ $(WARNINGS)
 ifndef FF5M
-LDFLAGS 		?= -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread -lstdc++fs -l:libspdlog.a 
+LDFLAGS 		?=
 else
 CFLAGS 			?= -O3 -g0 -MD -MP -I$(LVGL_DIR)/ $(WARNINGS) --sysroot=$(SYSROOT)
+LDFLAGS 		?= --sysroot=$(SYSROOT)
+endif
 FF5M_CMAKE_FLAGS ?= -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX)
-LDFLAGS 		?= --sysroot=$(SYSROOT) -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread  -lstdc++fs -l:libspdlog.a -lts
+override CFLAGS += -O3 -g0 -MD -MP
+override LDFLAGS += -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread -lstdc++fs -l:libspdlog.a
+ifneq ($(strip $(FF5M)$(GUPPY_FF5M_SCREEN)),)
+override LDFLAGS += -lts
 endif
 # Let the linker drop functions and data nothing references (unused icons,
 # LVGL parts, inline code). Nearly the whole binary stays resident on the
 # printer, so this is RAM, too.
-CFLAGS 			+= -ffunction-sections -fdata-sections
-LDFLAGS 		+= -Wl,--gc-sections
+override CFLAGS += -ffunction-sections -fdata-sections
+override LDFLAGS += -Wl,--gc-sections
 
 BIN 			= guppyscreen
 BUILD_DIR 		= ./build
@@ -67,6 +72,11 @@ endif
 ifdef FF5M
 ASSET_DIR		= material
 DEFINES 		+= -D GUPPY_FF5M
+endif
+
+ifdef GUPPY_FF5M_SCREEN
+ASSET_DIR		= material
+DEFINES 		+= -D GUPPY_FF5M -D GUPPY_SMALL_SCREEN
 endif
 
 
@@ -113,7 +123,7 @@ LDLIBS += -lSDL2
 endif
 
 COMPILE_CC				= $(CC) $(CFLAGS) $(INC) $(DEFINES)
-COMPILE_CXX				= $(CC) $(CFLAGS) $(INC) $(DEFINES)
+COMPILE_CXX				= $(CXX) $(CFLAGS) $(INC) $(DEFINES)
 
 ## MAINOBJ -> OBJFILES
 
