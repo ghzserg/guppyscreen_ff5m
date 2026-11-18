@@ -39,6 +39,9 @@ class FakeMoonraker {
   // The handler runs on the server thread.
   void set_handler(const std::string &method, std::function<json(const json &params)> handler);
 
+  void hold_next_reply(const std::string &method);
+  void release_reply();
+
   // A handler's answer that makes the reply a JSON-RPC error, as Moonraker's
   // {"error": {"code": 404, "message": "Metadata not available for <x>"}}.
   static json error(int code, const std::string &message);
@@ -77,6 +80,8 @@ class FakeMoonraker {
 
   mutable std::mutex mutex_;
   WebSocketChannelPtr client_;
+  std::string held_method_;
+  std::function<void()> held_reply_;
   std::vector<std::pair<std::string, json>> requests_;
   size_t requests_total_ = 0;
   std::vector<std::string> gcodes_;

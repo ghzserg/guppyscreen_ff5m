@@ -112,11 +112,12 @@ void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::st
   std::string method = req.value("method", "");
   json params = req.contains("params") ? req["params"] : json::object();
 
-  json result;
+  std::string message;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     requests_.emplace_back(method, params);
     requests_total_++;
+    json result;
     if (method == "printer.gcode.script") {
       gcodes_.push_back(params.value("script", ""));
       result = "ok";
@@ -130,17 +131,40 @@ void FakeMoonraker::on_message(const WebSocketChannelPtr &channel, const std::st
       unhandled_.push_back(method);
       result = json::object();
     }
-  }
-
-  if (req.contains("id") && !result.is_discarded()) {
+    if (!req.contains("id") || result.is_discarded()) {
+      return;
+    }
     json resp = {{"jsonrpc", "2.0"}, {"id", req["id"]}};
     if (result.is_object() && result.contains("__error__")) {
       resp["error"] = result["__error__"];
     } else {
       resp["result"] = result;
     }
-    channel->send(resp.dump());
+    message = resp.dump();
+    if (!held_method_.empty() && method == held_method_) {
+      held_method_.clear();
+      held_reply_ = [channel, message = std::move(message)] { channel->send(message); };
+      return;
+    }
   }
+  channel->send(message);
+}
+
+void FakeMoonraker::hold_next_reply(const std::string &method) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  held_method_ = method;
+}
+
+void FakeMoonraker::release_reply() {
+  std::function<void()> reply;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    reply = std::move(held_reply_);
+  }
+  if (!reply) {
+    throw std::runtime_error("FakeMoonraker: no held reply");
+  }
+  reply();
 }
 
 json FakeMoonraker::error(int code, const std::string &message) {

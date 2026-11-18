@@ -213,8 +213,11 @@ void PrintStatusPanel::background() {
 }
 
 void PrintStatusPanel::reset() {
+  ++metadata_generation;
+  current_file = nullptr;
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
   lv_label_set_text(progress_label, "0%");
+  lv_label_set_text(progress_end, "00:00");
   print_speed.update_label(("0 "+ std::string(_("мм")) +"/"+ _("с")).c_str());
   flow_rate.update_label(("0.0 "+ std::string(_("мм")) +"3/"+ _("с")).c_str());
   elapsed.update_label(("0 "+ std::string(_("с"))).c_str());
@@ -297,7 +300,9 @@ void PrintStatusPanel::populate() {
       lv_label_set_text(filename_label, fname.c_str());
       json fname_input = {{"filename", fname }};
       ws.send_jsonrpc("server.files.metadata", fname_input,
-                      [fname, this](json &d) { this->handle_metadata(fname, d); });
+                      [fname, generation = metadata_generation, this](json &d) {
+                        handle_metadata(fname, generation, d);
+                      });
 
       mini_print_status.show();
       exclude_panel.init();
@@ -324,10 +329,14 @@ void PrintStatusPanel::populate() {
   }
 }
 
-void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
+void PrintStatusPanel::handle_metadata(const std::string &gcode_file, uint32_t generation, json &j) {
+  std::unique_lock<std::mutex> lock(lv_lock);
+  if (generation != metadata_generation) {
+    return;
+  }
+
   auto eta = j["/result/estimated_time"_json_pointer];
   if (!eta.is_null()) {
-    std::lock_guard<std::mutex> lock(lv_lock);
     estimated_time_s = static_cast<uint32_t>(eta.template get<float>());
     spdlog::trace("updated eta {}", estimated_time_s);
 
@@ -350,11 +359,16 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
   current_file = j["/result"_json_pointer];
 
   auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  // Миниатюра может скачиваться по HTTP. Проверяем задание ещё раз после загрузки.
+  lock.unlock();
   auto thumb_detail = KUtils::get_thumbnail(gcode_file, j, width_scale);
   std::string fullpath = thumb_detail.first;
   if (fullpath.length() > 0) {
     spdlog::trace("thumb path: {}", fullpath);
-    std::lock_guard<std::mutex> lock(lv_lock);
+    lock.lock();
+    if (generation != metadata_generation) {
+      return;
+    }
     const std::string img_path = "A:" + fullpath;
 
     //auto screen_width = lv_disp_get_physical_hor_res(NULL);

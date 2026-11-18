@@ -10,6 +10,7 @@
 
 #include "guppyscreen.h"
 #include "png_writer.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <atomic>
@@ -202,6 +203,63 @@ TEST_CASE("a print whose file has a single thumbnail shows it scaled") {
   INFO("zooms: " << zooms.size());
   CHECK(std::find(zooms.begin(), zooms.end(), 192 * 256 / THUMB) != zooms.end());
   CHECK(std::find(zooms.begin(), zooms.end(), (uint16_t)(0.05 * 800 / THUMB * 256)) != zooms.end());
+}
+
+TEST_CASE("late print metadata cannot overwrite the next print") {
+  const std::string gcodes = make_gcodes_dir();
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  serve_files(moonraker, gcodes);
+  moonraker.set_result("server.files.list", json::array());
+  moonraker.set_handler("server.files.metadata", [](const json &params) {
+    const auto filename = params.at("filename").get<std::string>();
+    const auto stem = filename.substr(0, filename.find('.'));
+    const bool first_file = stem == "part0";
+    return json{{"estimated_time", first_file ? 120 : 600}, {"layer_count", first_file ? 12 : 60},
+                {"thumbnails", json::array({{{"width", THUMB},
+                                             {"relative_path", ".thumbs/" + stem + ".png"}}})}};
+  });
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  auto start_print = [&](const char *filename) {
+    moonraker.push_status({{"print_stats", {{"filename", filename}, {"state", "printing"},
+                                             {"print_duration", 30}, {"info", {{"current_layer", 1}}}}}});
+    REQUIRE_MESSAGE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }), ui::dump_screen());
+  };
+  auto cancel_print = [&] {
+    moonraker.push_status({{"print_stats", {{"state", "cancelled"}}}});
+    REQUIRE(app::wait_until([] { return ui::find_label("Pause") == nullptr; }));
+  };
+  const std::string first_thumb = "A:" + gcodes + "/.thumbs/part0.png";
+  const std::string next_thumb = "A:" + gcodes + "/.thumbs/part1.png";
+
+  start_print("part0.gcode");
+  REQUIRE(app::wait_until([&] { return shown_thumbnail() == first_thumb; }));
+  cancel_print();
+
+  moonraker.hold_next_reply("server.files.metadata");
+  start_print("part1.gcode");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") == 2; }));
+  CHECK_MESSAGE(ui::find_label("1 / 0") != nullptr, ui::dump_screen());
+  moonraker.release_reply();
+  REQUIRE(app::wait_until([&] { return shown_thumbnail() == next_thumb; }));
+  cancel_print();
+
+  moonraker.hold_next_reply("server.files.metadata");
+  start_print("part0.gcode");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") == 3; }));
+  cancel_print();
+  start_print("part1.gcode");
+  REQUIRE(app::wait_until([&] { return shown_thumbnail() == next_thumb; }));
+  moonraker.release_reply();
+  moonraker.push_status({{"print_stats", {{"info", {{"current_layer", 2}}}}}});
+  REQUIRE(app::wait_until([] {
+    return ui::find_label("2 / 60") != nullptr || ui::find_label("2 / 12") != nullptr;
+  }));
+
+  CHECK(shown_thumbnail() == next_thumb);
+  CHECK_MESSAGE(ui::find_label("2 / 60") != nullptr, ui::dump_screen());
+  CHECK_MESSAGE(ui::find_label(KUtils::eta_string(570)) != nullptr, ui::dump_screen());
 }
 
 TEST_CASE("a print whose thumbnail metadata says width 0 shows no thumbnail") {

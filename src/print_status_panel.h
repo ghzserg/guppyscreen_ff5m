@@ -31,7 +31,6 @@ class PrintStatusPanel : public NotifyConsumer {
   void foreground();
   void background();
 
-  void handle_metadata(const std::string &gcode_file, json &j);
   void handle_callback(lv_event_t *event);
 
   static void _handle_callback(lv_event_t *event) {
@@ -54,6 +53,7 @@ class PrintStatusPanel : public NotifyConsumer {
   PidPanel &get_pid_panel();
 
  private:
+  void handle_metadata(const std::string &gcode_file, uint32_t generation, json &j);
   void update_pause_buttons(const json &state);
   KWebSocketClient &ws;
   MainPanel &main_panel_ref;
@@ -106,6 +106,7 @@ class PrintStatusPanel : public NotifyConsumer {
   int extruder_target;
   int heater_bed_target;
   json current_file;
+  uint32_t metadata_generation = 0;
 
   std::map<std::string, int> fan_speeds;
 };
