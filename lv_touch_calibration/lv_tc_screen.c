@@ -228,7 +228,11 @@ static void lv_tc_screen_step(lv_obj_t* screenObj, uint8_t step, lv_point_t tchP
         return;
     }
 
-    lv_tc_screen_set_indicator_pos(screenObj, tCScreenObj->scrPoints[step - 1], step > STEP_INIT);
+    if(step == STEP_INIT) {
+        lv_obj_add_flag(tCScreenObj->indicatorObj, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_tc_screen_set_indicator_pos(screenObj, tCScreenObj->scrPoints[step - 1], true);
+    }
 }
 
 static void lv_tc_screen_set_indicator_pos(lv_obj_t* screenObj, lv_point_t point, bool visible) {
@@ -297,15 +301,13 @@ static void lv_tc_screen_recalibrate_timer(lv_timer_t *timer) {
 
     if(timer->repeat_count == 0) {
         //Restart when timed out
-        lv_tc_screen_start(tCScreenObj);
+        lv_tc_screen_start(&tCScreenObj->screenObj);
         return;
     }
     lv_label_set_text_fmt(lv_obj_get_child(tCScreenObj->recalibrateBtnObj, 0), LV_TC_RECALIBRATE_TXT LV_TC_RECALIBRATE_TIMEOUT_FORMAT, (int)timer->repeat_count);
 }
 
 static void lv_tc_screen_start_delay_timer(lv_timer_t *timer) {
-    lv_tc_screen_t *tCScreenObj = (lv_tc_screen_t*)timer->user_data;
-
     lv_point_t point = {0, 0};
-    lv_tc_screen_step(tCScreenObj, STEP_FIRST, point);
+    lv_tc_screen_step(timer->user_data, STEP_FIRST, point);
 }

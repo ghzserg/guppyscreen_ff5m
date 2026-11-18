@@ -11,9 +11,6 @@ LV_IMG_DECLARE(info_img);
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(back);
 
-#define SORTED_BY_NAME 1 << 0
-#define SORTED_BY_MODIFIED  1 << 1
-
 PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatusPanel &ps)
   : NotifyConsumer(lock)
   , ws(websocket)
@@ -40,7 +37,6 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , cur_file(NULL)
   , file_panel(file_view, websocket)
   , print_status(ps)
-  , sorted_by(SORTED_BY_MODIFIED)
 {
   spdlog::trace("building print panel");
   lv_obj_move_background(files_cont);
@@ -161,11 +157,6 @@ PrintPanel::~PrintPanel() {
 #endif
 }
 
-void PrintPanel::populate_files(json &j) {
-  sorted_by = SORTED_BY_MODIFIED;
-  show_dir(cur_dir, SORTED_BY_MODIFIED);
-}
-
 void PrintPanel::consume(json &j) {
   if (j.contains("method") && j["method"] == "notify_filelist_changed") {
     auto action = j["/params/0/action"_json_pointer];
@@ -190,22 +181,23 @@ void PrintPanel::consume(json &j) {
 
 void PrintPanel::subscribe() {
   ws.send_jsonrpc("server.files.list", R"({"root":"gcodes"})"_json, [this](json &d) {
+    const auto files = d.find("result");
+    if (files == d.end() || !files->is_array()) {
+      spdlog::warn("file list unavailable: {}", d.dump());
+      return;
+    }
+
     std::lock_guard<std::mutex> lock(lv_lock);
     std::string cur_path = cur_dir->full_path;
     ++metadata_request_id;
-    root.clear();
     cur_file = NULL;
-    cur_dir = NULL;
+    root.clear();
 
-    if (d.contains("result")) {
-      for (auto f : d["result"]) {
-        root.add_path(KUtils::split(f["path"], '/'), f["path"], f["modified"].template get<uint32_t>());
-      }
+    for (const auto &f : *files) {
+      root.add_path(KUtils::split(f.at("path"), '/'), f.at("path"), f.at("modified").template get<uint32_t>());
     }
-    Tree *dir = root.find_path(KUtils::split(cur_path, '/'));
-    // need to simply this using the directory endpoint
-    cur_dir = dir;
-    this->populate_files(d);
+    cur_dir = root.find_path(KUtils::split(cur_path, '/'));
+    show_dir(cur_dir);
   });
 }
 
@@ -247,13 +239,13 @@ void PrintPanel::handle_callback(lv_event_t *e) {
       if ((strcmp(filename, "..") == 0)) {
         if (cur_dir->parent != cur_dir) {
           cur_dir = cur_dir->parent;
-          show_dir(cur_dir, sorted_by);
+          show_dir(cur_dir);
         }
       } else {
         Tree *dir = cur_dir->get_child(filename);
         if (dir != NULL) {
           cur_dir = dir;
-          show_dir(cur_dir, sorted_by);
+          show_dir(cur_dir);
         }
       }
     }
@@ -267,15 +259,15 @@ void PrintPanel::handle_callback(lv_event_t *e) {
   }
 }
 
-void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
+void PrintPanel::show_dir(Tree *dir) {
   ++metadata_request_id;
   cur_file = NULL;
   uint32_t index = 0;
   lv_table_set_cell_value_fmt(file_table, index++, 0, LV_SYMBOL_DIRECTORY "  %s", "..");
 
-  bool reversed = sorted_by & sort_type;
+  bool reversed = reverse_sort;
   std::vector<Tree> sorted_files;
-  if (sort_type == SORTED_BY_MODIFIED) {
+  if (sorted_by == SortByModified) {
     KUtils::sort_map_values<std::string, Tree>(dir->children, sorted_files, [reversed](Tree &x, Tree &y) {
         if (x.is_leaf() && !y.is_leaf()) {
           return false;
@@ -283,7 +275,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
           return true;
         }
 
-        return reversed ? x.date_modified > y.date_modified : y.date_modified > x.date_modified;
+        return reversed ? x.date_modified < y.date_modified : x.date_modified > y.date_modified;
       });
   } else {
     KUtils::sort_map_values<std::string, Tree>(dir->children, sorted_files, [reversed](Tree &x, Tree &y) {
@@ -293,11 +285,10 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
           return true;
         }
 
-        return reversed ? x.name > y.name : y.name > x.name;
+        return reversed ? x.name > y.name : x.name < y.name;
       });
   }
 
-  sorted_by = (sorted_by ^ sort_type) & sort_type;
   for (const auto &c : sorted_files) {
     if (c.is_leaf()) {
       lv_table_set_cell_value_fmt(file_table, index, 0, LV_SYMBOL_FILE "  %s", c.name.c_str());
@@ -337,7 +328,7 @@ void PrintPanel::show_file_detail(Tree *f) {
       file_panel.refresh_view(none, f->full_path);
       spdlog::trace("getting metadata for {}", f->name);
       ws.send_jsonrpc("server.files.metadata",
-                      json::parse(R"({"filename":")" + f->full_path + R"("})"),
+                      {{"filename", f->full_path}},
                       [path = f->full_path, request_id, this](json &d) { this->handle_metadata(path, request_id, d); });
     }
   }
@@ -441,11 +432,11 @@ void PrintPanel::handle_btns(lv_event_t *event) {
     if (btn == refresh_btn) {
       subscribe();
 
-    } else if (btn == modified_sort_btn) {
-      show_dir(cur_dir, SORTED_BY_MODIFIED);
-
-    } else if (btn == az_sort_btn) {
-      show_dir(cur_dir, SORTED_BY_NAME);
+    } else if (btn == modified_sort_btn || btn == az_sort_btn) {
+      const Sort sort_type = btn == modified_sort_btn ? SortByModified : SortByName;
+      reverse_sort = sorted_by == sort_type && !reverse_sort;
+      sorted_by = sort_type;
+      show_dir(cur_dir);
     }
   }
 }

@@ -333,19 +333,19 @@ void PrintStatusPanel::populate() {
 void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
   auto eta = j["/result/estimated_time"_json_pointer];
   if (!eta.is_null()) {
+    std::lock_guard<std::mutex> lock(lv_lock);
     estimated_time_s = static_cast<uint32_t>(eta.template get<float>());
     spdlog::trace("updated eta {}", estimated_time_s);
 
-    json &v = State::get_instance()->get_data("/printer_state/print_stats/print_duration"_json_pointer);
+    auto v = State::get_instance()->get_data_copy("/printer_state/print_stats/print_duration"_json_pointer);
     if (!v.is_null()) {
       uint32_t passed = static_cast<uint32_t>(v.template get<float>());
       spdlog::trace("updated time progress in handle metadata, passed {}", passed);
 
-      std::lock_guard<std::mutex> lock(lv_lock);
       update_time_progress(passed);
     }
 
-    v = State::get_instance()->get_data("/printer_state/print_stats/filament_used"_json_pointer);
+    v = State::get_instance()->get_data_copy("/printer_state/print_stats/filament_used"_json_pointer);
     if (!v.is_null()) {
       float passed = v.template get<float>()/1000;
       spdlog::trace("updated filament progress in handle metadata, passed {:.1f}", passed);

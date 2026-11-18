@@ -334,3 +334,66 @@ TEST_CASE("a late metadata reply does not replace the file selected since") {
   CHECK(ui::find_label("part0.gcode") == nullptr);
   CHECK(shown_thumbnail() == "A:" + gcodes + "/.thumbs/part1.png");
 }
+
+TEST_CASE("file browser requests metadata for filenames with quotes and backslashes") {
+  const std::string filename = R"(part "A"\B.gcode)";
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_result("server.files.list", json::array({{{"path", filename}, {"modified", 1000}}}));
+  moonraker.set_result("server.files.metadata", {{"size", 2097152}});
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Print");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") > 0; }));
+  CHECK(moonraker.requests("server.files.metadata").back().at("filename") == filename);
+  CHECK(app::wait_until([] { return ui::find_label("Size: 2 MB", ui::Match::Contains) != nullptr; }));
+}
+
+TEST_CASE("file browser keeps the file list when refresh fails") {
+  const std::string filename = "existing.gcode";
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_result("server.files.list", json::array({{{"path", filename}, {"modified", 1000}}}));
+  moonraker.set_result("server.files.metadata", {{"size", 2097152}});
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Print");
+  REQUIRE(ui::find_label(filename) != nullptr);
+  const int requests = moonraker.request_count("server.files.list");
+  moonraker.set_handler("server.files.list", [](const json &) {
+    return FakeMoonraker::error(500, "File list unavailable");
+  });
+  ui::tap_label("Refresh", ui::Match::Contains);
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.list") > requests; }));
+  app::settle(moonraker);
+  CHECK(ui::find_label(filename) != nullptr);
+  CHECK(ui::find_label("Size: 2 MB", ui::Match::Contains) != nullptr);
+}
+
+TEST_CASE("file browser preserves the chosen sort in folders and after refresh") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_result("server.files.list", json::array({
+    {{"path", "folder/alpha.gcode"}, {"modified", 2000}},
+    {{"path", "folder/zulu.gcode"}, {"modified", 1000}},
+  }));
+  moonraker.set_result("server.files.metadata", json::object());
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Print");
+  ui::tap_label("A-Z", ui::Match::Contains);
+  tap_file_row("folder");
+  REQUIRE(ui::find_label("alpha.gcode") != nullptr);
+  ui::tap_label("A-Z", ui::Match::Contains);
+  REQUIRE(ui::find_label("zulu.gcode") != nullptr);
+
+  const int requests = moonraker.request_count("server.files.list");
+  ui::tap_label("Refresh", ui::Match::Contains);
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.list") > requests; }));
+  app::settle(moonraker);
+  CHECK(ui::find_label("zulu.gcode") != nullptr);
+
+  tap_file_row("..");
+  tap_file_row("folder");
+  CHECK(ui::find_label("zulu.gcode") != nullptr);
+}

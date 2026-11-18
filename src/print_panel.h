@@ -15,7 +15,6 @@ class PrintPanel : public NotifyConsumer {
   ~PrintPanel();
 
   void consume(json &data);
-  void populate_files(json &data);
   void subscribe();
   void foreground();
   void handle_callback(lv_event_t *event);
@@ -52,7 +51,7 @@ class PrintPanel : public NotifyConsumer {
 
 
  private:
-  void show_dir(Tree *dir, uint32_t sort_type);
+  void show_dir(Tree *dir);
   void show_file_detail(Tree *f);
 
   KWebSocketClient &ws;
@@ -83,7 +82,9 @@ class PrintPanel : public NotifyConsumer {
   Tree *cur_file;
   FilePanel file_panel;
   PrintStatusPanel &print_status;
-  uint32_t sorted_by;
+  enum Sort { SortByName, SortByModified };
+  Sort sorted_by = SortByModified;
+  bool reverse_sort = false;
   uint32_t metadata_request_id = 0;
 };
 

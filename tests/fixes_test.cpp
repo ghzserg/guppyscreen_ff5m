@@ -10,6 +10,8 @@
 #include "ui.h"
 
 #include "guppyscreen.h"
+#include "lv_tc_screen.h"
+#include "state.h"
 
 #include <algorithm>
 #include <cstring>
@@ -177,4 +179,43 @@ TEST_CASE("the numpad closes when its sensor is rebuilt by a reconnect") {
   REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.objects.subscribe") > 0; }, 10000));
   app::settle(moonraker);
   CHECK(ui::find_shown(&lv_textarea_class) == nullptr);
+}
+
+TEST_CASE("print metadata leaves Klipper's print duration intact") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_result("server.files.metadata", {{"estimated_time", 600}});
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  moonraker.push_status({{"print_stats", {
+    {"filename", "part.gcode"}, {"state", "printing"}, {"print_duration", 30.0}, {"filament_used", 80.0},
+  }}});
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") > 0; }));
+  app::settle(moonraker);
+  const auto duration = State::get_instance()->get_data_copy("/printer_state/print_stats/print_duration"_json_pointer);
+  CHECK(duration == 30.0);
+}
+
+TEST_CASE("touch calibration shows the first point after the startup delay") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  auto &lv_lock = GuppyScreen::get()->get_lock();
+  lv_tc_screen_t *screen;
+  {
+    std::lock_guard<std::mutex> lock(lv_lock);
+    screen = reinterpret_cast<lv_tc_screen_t *>(lv_tc_screen_create());
+    lv_tc_screen_start(&screen->screenObj);
+    CHECK(lv_obj_has_flag(screen->indicatorObj, LV_OBJ_FLAG_HIDDEN));
+  }
+  REQUIRE(app::wait_until([&] {
+    std::lock_guard<std::mutex> lock(lv_lock);
+    return !lv_obj_has_flag(screen->indicatorObj, LV_OBJ_FLAG_HIDDEN);
+  }));
+  {
+    std::lock_guard<std::mutex> lock(lv_lock);
+    CHECK(screen->currentStep == 1);
+    lv_obj_del(&screen->screenObj);
+  }
 }
