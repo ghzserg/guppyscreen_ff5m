@@ -7,3 +7,4 @@ build-test/
 /.idea
 *.po~
 __pycache__/
+*.mo
