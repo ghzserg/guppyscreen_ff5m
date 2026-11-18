@@ -394,3 +394,34 @@ TEST_CASE("starting the same file again reloads its name and estimate once") {
   app::settle(server);
   CHECK(server.request_count("server.files.metadata") == first + 1);
 }
+
+TEST_CASE("print screen refreshes the bed target while its temperature stays constant") {
+  FakeMoonraker server(app::fixture("ad5m_basic.json"));
+  app::start(server);
+  app::wait_ready(server);
+  server.push_status({{"print_stats", {{"filename", "test.gcode"}, {"state", "printing"}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }));
+  server.push_status({{"heater_bed", {{"temperature", 55.0}, {"target", 60.0}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("55 / 60") != nullptr; }));
+  server.push_status({{"heater_bed", {{"target", 70.0}}}});
+  app::settle(server);
+  CHECK_MESSAGE(ui::find_label("55 / 70") != nullptr, ui::dump_screen());
+  server.push_status({{"heater_bed", {{"temperature", 56.0}}}});
+  CHECK(app::wait_until([] { return ui::find_label("56 / 70") != nullptr; }));
+  server.push_status({{"heater_bed", {{"target", 0.0}}}});
+  CHECK(app::wait_until([] { return ui::find_label("56") != nullptr; }));
+}
+
+TEST_CASE("a print started with a preheated bed retains the unchanged bed target") {
+  FakeMoonraker server(app::fixture("ad5m_basic.json"));
+  app::start(server);
+  app::wait_ready(server);
+  server.push_status({{"heater_bed", {{"temperature", 55.0}, {"target", 60.0}}}});
+  app::settle(server);
+  server.push_status({{"print_stats", {{"filename", "preheated.gcode"}, {"state", "printing"}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }));
+  CHECK_MESSAGE(ui::find_label("55 / 60") != nullptr, ui::dump_screen());
+  server.push_status({{"heater_bed", {{"temperature", 56.0}}}});
+  app::settle(server);
+  CHECK_MESSAGE(ui::find_label("56 / 60") != nullptr, ui::dump_screen());
+}

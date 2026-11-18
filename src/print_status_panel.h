@@ -55,6 +55,7 @@ class PrintStatusPanel : public NotifyConsumer {
  private:
   void handle_metadata(const std::string &gcode_file, uint32_t generation, json &j);
   void update_pause_buttons(const json &state);
+  void update_bed_temperature();
   KWebSocketClient &ws;
   MainPanel &main_panel_ref;
   FineTunePanel finetune_panel;
@@ -104,7 +105,6 @@ class PrintStatusPanel : public NotifyConsumer {
   double filament_diameter;
   double flow;
   int extruder_target;
-  int heater_bed_target;
   json current_file;
   bool file_loaded = false;
   uint32_t metadata_generation = 0;

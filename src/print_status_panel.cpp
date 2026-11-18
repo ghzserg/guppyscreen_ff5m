@@ -76,7 +76,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , progress_end(lv_label_create(pbar_cont))
   , detail_cont(lv_obj_create(status_cont))
   , extruder_temp(detail_cont, &extruder, 100, "20")
-  , bed_temp(detail_cont, &bed, 100, "21")
+  , bed_temp(detail_cont, &bed, 100, "...")
   , print_speed(detail_cont, &speed_up_img, 100, ("0 "+ std::string(_("мм")) +"/"+ _("с")).c_str())
   , z_offset(detail_cont, &home_z, 100, ("0.0 "+ std::string(_("мм"))).c_str())
   , flow_rate(detail_cont, &extrude, 100, ("0.0 "+ std::string(_("мм")) +"3/"+ _("с")).c_str())
@@ -89,7 +89,6 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , estimated_time_s(0)
   , filament_diameter(1.75) // XXX: check config
   , extruder_target(-1)
-  , heater_bed_target(-1)
 {
   lv_obj_move_background(status_cont);
   lv_obj_clear_flag(status_cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -234,7 +233,6 @@ void PrintStatusPanel::reset() {
     ->get_data("/printer_state/configfile/config/extruder/filament_diameter"_json_pointer);
   filament_diameter = v.is_null() ? 1.750 : std::atof(v.template get<std::string>().c_str());
   extruder_target = -1;
-  heater_bed_target = -1;
 
   // free src
   KUtils::set_img_src(thumbnail, NULL);
@@ -245,7 +243,24 @@ void PrintStatusPanel::reset() {
   exclude_panel.reset();
 }
 
+void PrintStatusPanel::update_bed_temperature() {
+  static const auto temperature_path = "/printer_state/heater_bed/temperature"_json_pointer;
+  static const auto target_path = "/printer_state/heater_bed/target"_json_pointer;
+  auto *state = State::get_instance();
+  const auto temperature = state->get_data_copy(temperature_path);
+  if (!temperature.is_number()) {
+    bed_temp.update_label("...");
+    return;
+  }
+  const auto target = state->get_data_copy(target_path);
+  const int current = temperature.get<int>();
+  const int desired = target.is_number() ? target.get<int>() : 0;
+  bed_temp.update_label((desired > 0 ? fmt::format("{} / {}", current, desired)
+                                     : fmt::format("{}", current)).c_str());
+}
+
 void PrintStatusPanel::init(json &fans) {
+  update_bed_temperature();
   fan_speeds.clear();
   std::vector<std::string> values;
   for (auto &f : fans.items()) {
@@ -469,18 +484,10 @@ void PrintStatusPanel::consume(json &j) {
     extruder_temp.update_label(extruder_target > 0 ? fmt::format("{}: {} / {}", tool_prefix, v.template get<int>(), extruder_target).c_str() : fmt::format("{}: {}", tool_prefix, v.template get<int>()).c_str());
   }
 
-  v = j["/params/0/heater_bed/target"_json_pointer];
-  if (!v.is_null()) {
-    heater_bed_target = v.template get<int>();
-  }
-
-  v = j["/params/0/heater_bed/temperature"_json_pointer];
-  if (!v.is_null()) {
-    if (heater_bed_target > 0) {
-      bed_temp.update_label(fmt::format("{} / {}", v.template get<int>(), heater_bed_target).c_str());
-    } else {
-      bed_temp.update_label(fmt::format("{}", v.template get<int>()).c_str());
-    }
+  static const auto bed_target_path = "/params/0/heater_bed/target"_json_pointer;
+  static const auto bed_temperature_path = "/params/0/heater_bed/temperature"_json_pointer;
+  if (!j[bed_target_path].is_null() || !j[bed_temperature_path].is_null()) {
+    update_bed_temperature();
   }
 
   // speed
