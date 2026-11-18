@@ -164,6 +164,11 @@ clean:
 
 cleanall: clean libhvclean spdlogclean
 
+# Integration tests on the host (PC); see tests/Makefile and docs/testing.md.
+.PHONY: test
+test:
+	@$(MAKE) --no-print-directory -j$$(nproc) -f tests/Makefile run
+
 install:
 	install -d $(DESTDIR)$(bindir)
 	install $(BUILD_BIN_DIR)/$(BIN) $(DESTDIR)$(bindir)
