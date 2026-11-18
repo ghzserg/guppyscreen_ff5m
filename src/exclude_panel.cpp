@@ -308,7 +308,7 @@ void ExcludePanel::consume(json &j) {
     std::lock_guard<std::mutex> lock(lv_lock);
     if (!active) return;
 
-    auto v = j["/params/0/exclude_object/objects"_json_pointer];
+    const auto &v = j["/params/0/exclude_object/objects"_json_pointer];
     auto ex = j["/params/0/exclude_object/excluded_objects"_json_pointer];
     if (v.is_null() && ex.is_null()) return;
 
@@ -325,7 +325,10 @@ void ExcludePanel::consume(json &j) {
       return;
     }
 
-    load_objects(v, ex.is_null() ? json::array() : ex);
+    if (ex.is_null()) {
+      ex = State::get_instance()->get_data_copy("/printer_state/exclude_object/excluded_objects"_json_pointer);
+    }
+    load_objects(v, ex);
     reset();
     if (!has_polygons) {
       for (const auto &o : objs) {

@@ -132,3 +132,34 @@ TEST_CASE("exclude object map excludes the tapped object") {
     REQUIRE(app::wait_until([] { return ui::find_shown(&lv_canvas_class) == nullptr; }));
   }
 }
+
+TEST_CASE("object updates preserve exclusions until Klipper clears them") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker);
+  open_exclude_panel();
+  auto *canvas = ui::find_shown(&lv_canvas_class);
+  REQUIRE(canvas != nullptr);
+
+  moonraker.push_status({{"exclude_object", {{"excluded_objects", {"CENTER_CUBE"}}}}});
+  REQUIRE(app::wait_until([&] { return count_outline_pixels(canvas).red > 100; }));
+  const auto initial = count_outline_pixels(canvas);
+
+  const auto objects = json::array({
+    {{"name", "CENTER_CUBE"}, {"polygon", square(65, 65, 155, 155)}},
+    {{"name", "CORNER_CUBE"}, {"polygon", square(20, 20, 40, 40)}},
+  });
+  moonraker.push_status({{"exclude_object", {{"objects", objects}}}});
+  REQUIRE(app::wait_until([&] {
+    const auto refreshed = count_outline_pixels(canvas);
+    return refreshed.green + refreshed.red > initial.green + initial.red + 100;
+  }));
+  const auto refreshed = count_outline_pixels(canvas);
+  CHECK(refreshed.red > initial.red);
+  CHECK(refreshed.green == initial.green);
+
+  moonraker.push_status({{"exclude_object", {{"objects", objects}, {"excluded_objects", json::array()}}}});
+  REQUIRE(app::wait_until([&] {
+    const auto cleared = count_outline_pixels(canvas);
+    return cleared.red == 0 && cleared.green == refreshed.green + refreshed.red;
+  }));
+}
