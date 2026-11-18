@@ -54,6 +54,7 @@ class PrintStatusPanel : public NotifyConsumer {
   PidPanel &get_pid_panel();
 
  private:
+  void update_pause_buttons(const json &state);
   KWebSocketClient &ws;
   MainPanel &main_panel_ref;
   FineTunePanel finetune_panel;

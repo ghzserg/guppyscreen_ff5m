@@ -219,3 +219,33 @@ TEST_CASE("touch calibration shows the first point after the startup delay") {
     lv_obj_del(&screen->screenObj);
   }
 }
+
+TEST_CASE("a failed resume stays retryable until the print state changes") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_handler("printer.print.resume", [](const json &) {
+    return FakeMoonraker::error(400, "Filament runout");
+  });
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  moonraker.push_status({{"print_stats", {{"filename", "part.gcode"}, {"state", "paused"}}},
+                         {"pause_resume", {{"is_paused", true}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("Resume") != nullptr; }));
+  ui::tap_label("Resume");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.print.resume") == 1; }));
+  moonraker.push_status({{"pause_resume", {{"is_paused", false}}}});
+  app::settle(moonraker);
+  CHECK(ui::find_label("Pause") == nullptr);
+
+  moonraker.set_handler("printer.print.resume", [](const json &) { return "ok"; });
+  ui::tap_label("Resume");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.print.resume") == 2; }));
+  moonraker.push_status({{"print_stats", {{"state", "printing"}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }));
+  CHECK(ui::find_label("Resume") == nullptr);
+
+  ui::tap_label("Pause");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.print.pause") == 1; }));
+  moonraker.push_status({{"print_stats", {{"state", "paused"}}}});
+  CHECK(app::wait_until([] { return ui::find_label("Resume") != nullptr; }));
+}

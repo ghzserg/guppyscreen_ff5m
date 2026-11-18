@@ -189,6 +189,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_add_flag(fan0.get_container(), LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(fan0.get_container(), &PrintStatusPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
 
+  update_pause_buttons(nullptr);
   ws.register_notify_update(this);
 }
 
@@ -303,14 +304,7 @@ void PrintStatusPanel::populate() {
     }
   }
 
-  auto& pstate = s->get_data("/printer_state/print_stats/state"_json_pointer);
-  if (!pstate.is_null() && pstate.template get<std::string>() == "paused") {
-    lv_obj_clear_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(pause_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-  } else {
-    lv_obj_add_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-    lv_obj_clear_flag(pause_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-  }
+  update_pause_buttons(s->get_data_copy("/printer_state/print_stats/state"_json_pointer));
 
   // progress percentage
   auto v = s->get_data("/printer_state/virtual_sdcard/progress"_json_pointer);
@@ -388,6 +382,7 @@ void PrintStatusPanel::consume(json &j) {
 
   auto& pstate = j["/params/0/print_stats/state"_json_pointer];
   if (!pstate.is_null()) {
+    update_pause_buttons(pstate);
     auto print_status = pstate.template get<std::string>();
     if (print_status != "printing" && print_status != "paused") {
       mini_print_status.hide();
@@ -533,28 +528,22 @@ void PrintStatusPanel::consume(json &j) {
     flow_rate.update_label(fmt::format("{:.1f} "+ std::string(_("мм")) +"3/"+ _("с"), flow > 0.0 ? flow : 0.0).c_str());
   }
 
-  v = j["/params/0/pause_resume/is_paused"_json_pointer];
-  if (!v.is_null()) {
-    bool is_paused = v.template get<bool>();
-    if (is_paused) {
-      resume_btn.enable();
-      lv_obj_clear_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-
-      pause_btn.disable();
-      lv_obj_add_flag(pause_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-
-    } else {
-      pause_btn.enable();
-      lv_obj_clear_flag(pause_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-
-      resume_btn.disable();
-      lv_obj_add_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-    }
-  }
-
   // layers
   v = j["/params/0/print_stats/info"_json_pointer];
   update_layers(v);
+}
+
+void PrintStatusPanel::update_pause_buttons(const json &state) {
+  if (state == "paused") {
+    lv_obj_clear_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  } else {
+    resume_btn.hide();
+  }
+  if (state == "printing") {
+    lv_obj_clear_flag(pause_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  } else {
+    pause_btn.hide();
+  }
 }
 
 void PrintStatusPanel::handle_callback(lv_event_t *event) {
@@ -565,12 +554,10 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
     ws.send_jsonrpc("printer.emergency_stop");
   } else if (btn == pause_btn.get_container()) {
     ws.send_jsonrpc("printer.print.pause");
-    pause_btn.disable();
   } else if (btn == thumbnail_cont) {
     exclude_panel.foreground();
   } else if (btn == resume_btn.get_container()) {
     ws.send_jsonrpc("printer.print.resume");
-    resume_btn.disable();
   } else if (btn == cancel_btn.get_container()) {
     // The print status goes when Klipper reports the print cancelled.
     ws.send_jsonrpc("printer.print.cancel");
