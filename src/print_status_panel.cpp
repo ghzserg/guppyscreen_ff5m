@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 #include <algorithm>
+#include <cstring>
 #include <unistd.h> // Заголовочный файл для POSIX-функций
 #include <fstream>
 
@@ -592,11 +593,14 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
 }
 
 void PrintStatusPanel::update_time_progress(uint32_t time_passed) {
-    int32_t remaining = estimated_time_s - time_passed;
-    if (remaining < 0) {
-      // XXX: better estimate
-      time_left.update_label("...");
+    if (time_passed > estimated_time_s) {
+      if (std::strcmp(lv_label_get_text(progress_end), "...") != 0) {
+        lv_label_set_text_static(progress_end, "...");
+        time_left.update_label("...");
+        mini_print_status.update_eta("...");
+      }
     } else {
+      const uint32_t remaining = estimated_time_s - time_passed;
       auto eta_str = KUtils::eta_string(remaining);
       auto end_str = KUtils::end_time(remaining);
       auto str = eta_str + " / " + end_str;

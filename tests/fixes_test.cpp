@@ -12,6 +12,7 @@
 #include "guppyscreen.h"
 #include "lv_tc_screen.h"
 #include "state.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <cstring>
@@ -194,6 +195,44 @@ TEST_CASE("print metadata leaves Klipper's print duration intact") {
   app::settle(moonraker);
   const auto duration = State::get_instance()->get_data_copy("/printer_state/print_stats/print_duration"_json_pointer);
   CHECK(duration == 30.0);
+}
+
+TEST_CASE("an expired print estimate clears all displayed ETAs") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_result("server.files.metadata", {{"estimated_time", 600}});
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  moonraker.push_status({
+    {"print_stats", {{"filename", "part.gcode"}, {"state", "printing"}, {"print_duration", 60}}},
+    {"virtual_sdcard", {{"progress", 0.55}}},
+  });
+  const auto previous_eta = KUtils::eta_string(540);
+  REQUIRE(app::wait_until([&] { return ui::find_label(previous_eta) != nullptr; }));
+  auto *bar = ui::find_shown(&lv_bar_class);
+  REQUIRE(bar != nullptr);
+  auto end_time = [&] {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    auto *label = lv_obj_get_child(lv_obj_get_parent(bar), -1);
+    REQUIRE(lv_obj_check_type(label, &lv_label_class));
+    return std::string(lv_label_get_text(label));
+  };
+  CHECK(end_time() != "...");
+
+  ui::tap_label("Back");
+  auto *mini = ui::find_label(previous_eta + " / ", ui::Match::Contains);
+  REQUIRE(mini != nullptr);
+  ui::tap(mini);
+  REQUIRE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }));
+
+  moonraker.push_status({{"print_stats", {{"print_duration", 660}}}});
+  const auto elapsed = KUtils::eta_string(660);
+  REQUIRE(app::wait_until([&] { return ui::find_label(elapsed) != nullptr; }));
+  CHECK(ui::find_label(previous_eta) == nullptr);
+  CHECK(end_time() == "...");
+
+  ui::tap_label("Back");
+  CHECK_MESSAGE(ui::find_label("ETA: ...", ui::Match::Contains) != nullptr, ui::dump_screen());
 }
 
 TEST_CASE("touch calibration shows the first point after the startup delay") {

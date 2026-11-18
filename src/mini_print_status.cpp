@@ -80,7 +80,7 @@ lv_obj_t *MiniPrintStatus::get_container() {
   return cont;
 }
 
-void MiniPrintStatus::update_eta(std::string &eta_str) {
+void MiniPrintStatus::update_eta(const std::string &eta_str) {
   eta = eta_str;
   lv_label_set_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
 }
