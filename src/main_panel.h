@@ -50,6 +50,7 @@ class MainPanel : public NotifyConsumer {
   void consume(json &data);
   void init(json &data);
   void subscribe();
+  ConsolePanel &get_console_panel() { return console_panel; }
   PrinterTunePanel& get_tune_panel();
   void enable_spoolman();
   void foreground();

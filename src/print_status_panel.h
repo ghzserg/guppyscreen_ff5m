@@ -106,6 +106,7 @@ class PrintStatusPanel : public NotifyConsumer {
   int extruder_target;
   int heater_bed_target;
   json current_file;
+  bool file_loaded = false;
   uint32_t metadata_generation = 0;
 
   std::map<std::string, int> fan_speeds;

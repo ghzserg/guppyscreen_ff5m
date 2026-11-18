@@ -214,6 +214,7 @@ void PrintStatusPanel::background() {
 }
 
 void PrintStatusPanel::reset() {
+  file_loaded = false;
   ++metadata_generation;
   current_file = nullptr;
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
@@ -281,6 +282,7 @@ void PrintStatusPanel::init(json &fans) {
   if (!pstat_state.is_null()) {
     auto pstatus = pstat_state.template get<std::string>();
     if (pstatus != "printing" && pstatus != "paused") {
+      file_loaded = false;
       mini_print_status.hide();
     } else {
       foreground();
@@ -298,6 +300,7 @@ void PrintStatusPanel::populate() {
   if (!printfile.is_null()) {
     const std::string fname = printfile.template get<std::string>();
     if (fname.length() > 0) {
+      file_loaded = true;
       lv_label_set_text(filename_label, fname.c_str());
       json fname_input = {{"filename", fname }};
       ws.send_jsonrpc("server.files.metadata", fname_input,
@@ -410,6 +413,10 @@ void PrintStatusPanel::consume(json &j) {
 //            json::parse(R"({"script":"G4 P5000\nSDCARD_RESET_FILE"})"));
       }
     } else {
+      if (!file_loaded && printfile.is_null()) {
+        reset();
+        populate();
+      }
       foreground();
       mini_print_status.show();
     }

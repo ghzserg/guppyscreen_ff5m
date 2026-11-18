@@ -339,3 +339,58 @@ TEST_CASE("a failed resume stays retryable until the print state changes") {
   moonraker.push_status({{"print_stats", {{"state", "paused"}}}});
   CHECK(app::wait_until([] { return ui::find_label("Resume") != nullptr; }));
 }
+
+TEST_CASE("late Fluidd history preserves saved and newly entered commands") {
+  FakeMoonraker server(app::fixture("ad5m_basic.json"));
+  server.set_handler("server.database.get_item", [](const json &params) {
+    if (params.value("namespace", "") == "fluidd") {
+      return json{{"value", {{"commandHistory", {"M114"}}}}};
+    }
+    return json{{"value", json::object()}};
+  });
+  server.hold_next_reply("server.database.get_item");
+  app::start(server);
+  app::wait_ready(server);
+  tap_tab(CONSOLE_TAB);
+  auto *input = ui::find_shown(&lv_textarea_class);
+  REQUIRE(input != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_textarea_set_text(input, "M105");
+  }
+  ui::tap_label(LV_SYMBOL_NEW_LINE);
+  REQUIRE(app::wait_until([&] { return server.gcodes() == std::vector<std::string>{"M105"}; }));
+  app::settle(server);
+  CHECK(server.request_count("server.database.post_item") == 0);
+  server.release_reply();
+  app::settle(server);
+  const auto writes = server.requests("server.database.post_item");
+  REQUIRE(writes.size() == 1);
+  CHECK(writes.front().at("value") == json::array({"M105", "M114"}));
+}
+
+TEST_CASE("starting the same file again reloads its name and estimate once") {
+  FakeMoonraker server(app::fixture("ad5m_basic.json"));
+  server.set_result("server.files.metadata", {{"estimated_time", 600}});
+  app::start(server);
+  app::wait_ready(server);
+  server.push_status({{"print_stats", {{"filename", "part.gcode"}, {"state", "printing"}, {"print_duration", 60}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label(KUtils::eta_string(540)) != nullptr; }));
+  const auto first = server.request_count("server.files.metadata");
+  server.push_status({{"print_stats", {{"state", "complete"}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("Pause") == nullptr; }));
+
+  server.push_status({{"print_stats", {{"state", "printing"}, {"print_duration", 1}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }));
+  app::settle(server);
+  CHECK(ui::find_label("part.gcode") != nullptr);
+  CHECK(ui::find_label(KUtils::eta_string(599)) != nullptr);
+  CHECK(server.request_count("server.files.metadata") == first + 1);
+
+  server.push_status({{"print_stats", {{"state", "paused"}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("Resume") != nullptr; }));
+  server.push_status({{"print_stats", {{"state", "printing"}}}});
+  REQUIRE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }));
+  app::settle(server);
+  CHECK(server.request_count("server.files.metadata") == first + 1);
+}

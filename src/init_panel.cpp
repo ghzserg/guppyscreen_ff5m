@@ -54,14 +54,9 @@ void InitPanel::connected(KWebSocketClient &ws) {
         ws.send_jsonrpc("printer.info",
                         [](json& j) { State::get_instance()->set_data("printer_info", j, "/result"); });
 
-        json h = {
-          { "namespace", "fluidd" },
-          { "key", "console" }
-        };
-        ws.send_jsonrpc("server.database.get_item", h,
-                        [](json& j) { State::get_instance()->set_data("console", j, "/result/value"); });
+        this->main_panel.get_console_panel().load_history();
 
-        h = {
+        json h = {
           { "namespace", "guppyscreen" }
         };
         ws.send_jsonrpc("server.database.get_item", h,

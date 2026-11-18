@@ -15,6 +15,7 @@ public:
   ~ConsolePanel();
 
   lv_obj_t *get_container();
+  void load_history();
   void handle_macros(json &j);
   void handle_macro_response(json &j);
 
@@ -50,6 +51,7 @@ private:
   // ---- console output helpers ----
   void append_line(const std::string &line);
   void flush_output();
+  void save_history();
 
   // ---- members ----
   KWebSocketClient &ws;
@@ -63,6 +65,7 @@ private:
   lv_obj_t *input;
   lv_obj_t *kb;
 
+  bool history_loaded = false;
   std::list<std::string> history;
   std::list<std::string> all_macros;
 
