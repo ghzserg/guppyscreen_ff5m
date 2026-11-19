@@ -8,6 +8,7 @@
 #include "button_container.h"
 
 #include <map>
+#include <cmath>
 #include <memory>
 #include <mutex>
 #include <utility>
@@ -26,6 +27,9 @@ class FanPanel : public NotifyConsumer {
 #ifdef GUPPY_FF5M
   // Кнопки циркуляции воздуха (AD5M Pro, C5 Pro) столбцом справа от вентиляторов.
   void show_air_circulation(bool show);
+  // Подсвечивает Int или Ext, если заслонка стоит на угле из их макроса;
+  // value — поле value у servo my_servo.
+  void show_air_mode(const json &value);
   void handle_air_circulation(lv_event_t *event);
   static void _handle_air_circulation(lv_event_t *event) {
     ((FanPanel *)event->user_data)->handle_air_circulation(event);
@@ -63,6 +67,9 @@ class FanPanel : public NotifyConsumer {
   ButtonContainer air_internal_btn;
   ButtonContainer air_external_btn;
   ButtonContainer air_stop_btn;
+  // value заслонки в AIR_CIRCULATION_INTERNAL и _EXTERNAL и допуск сравнения с ним (1°)
+  double air_value[2] = {NAN, NAN};
+  double air_tol = 0;
 #endif
   /* SliderContainer fan0; */
   /* SliderContainer fan1; */

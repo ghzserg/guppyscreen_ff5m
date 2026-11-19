@@ -60,13 +60,16 @@ void KWebSocketClient::expire_pending() {
 // `config` and `settings` is skipped while parsing. Readers:
 // print_status_panel (config/extruder), inputshaper_panel
 // (config/input_shaper), finetune_panel (settings/extruder), retract_panel
-// (settings/firmware_retraction), limits_panel (settings/printer). Other
+// (settings/firmware_retraction), limits_panel (settings/printer), fan_panel
+// (settings/servo my_servo и макросы циркуляции: угол заслонки). Other
 // configfile fields (save_config_pending, warnings, ...) are kept. The macro
 // list (config/gcode_macro *) is fetched by MacrosPanel with keep_macros.
 static bool keep_configfile_section(const std::string &part, const std::string &section,
                                     bool keep_macros) {
   static const char *const config_keep[] = {"extruder", "input_shaper"};
-  static const char *const settings_keep[] = {"extruder", "firmware_retraction", "printer"};
+  static const char *const settings_keep[] = {"extruder", "firmware_retraction", "printer", "servo my_servo",
+                                              "gcode_macro air_circulation_internal",
+                                              "gcode_macro air_circulation_external"};
   if (part == "config") {
     for (const char *k : config_keep) {
       if (section == k) return true;
