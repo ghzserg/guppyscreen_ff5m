@@ -55,12 +55,14 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
 }
 
 FanPanel::~FanPanel() {
+  // Строки вентиляторов удаляют свои объекты сами: до удаления их родителя,
+  // иначе ~SliderContainer удаляет уже удалённый объект.
+  fans.clear();
+
   if (fanpanel_cont != NULL) {
     lv_obj_del(fanpanel_cont);
     fanpanel_cont = NULL;
   }
-
-  fans.clear();
 
   ws.unregister_notify_update(this);
 }
