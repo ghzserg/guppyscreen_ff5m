@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+LV_IMG_DECLARE(fan);
+
 namespace {
 
 std::vector<PrintFile> test_files() {
@@ -183,6 +185,29 @@ TEST_CASE("Fine Tune from the print screen is left by the Print tab") {
   REQUIRE_MESSAGE(ui::find_label("Speed Reset") != nullptr, ui::dump_screen());
   ui::tap_tab(Nav::PRINT);
   CHECK(ui::find_label("Speed Reset") == nullptr);
+  CHECK_MESSAGE(print_screen_shown(), ui::dump_screen());
+}
+
+TEST_CASE("tapping the fan in print status opens fan controls") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_plain(moonraker);
+
+  lv_obj_t *fan_button = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    ui::walk(Nav::get().root(Nav::PRINT), [&](lv_obj_t *obj) {
+      if (lv_obj_check_type(obj, &lv_img_class) && lv_img_get_src(obj) == &fan) {
+        fan_button = lv_obj_get_parent(obj);
+      }
+    });
+  }
+  REQUIRE(fan_button != nullptr);
+
+  ui::tap(fan_button);
+  CHECK_MESSAGE(ui::find_label("Max") != nullptr, ui::dump_screen());
+  CHECK(active_tab() == Nav::PRINT);
+
+  ui::tap_tab(Nav::PRINT);
   CHECK_MESSAGE(print_screen_shown(), ui::dump_screen());
 }
 

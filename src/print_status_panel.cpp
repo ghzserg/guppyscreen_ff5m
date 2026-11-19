@@ -615,9 +615,10 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
              (btn == z_offset.get_container()) or
              (btn == flow_rate.get_container())) {
     finetune_panel.foreground();
+  } else if (btn == fan0.get_container()) {
+    main_panel_ref.handle_fanpanel_cb(event);
   } else if ((btn == extruder_temp.get_container()) or
-             (btn == bed_temp.get_container()) or
-             (btn == fan0.get_container())) {
+             (btn == bed_temp.get_container())) {
     main_panel_ref.foreground();
   }
 }
