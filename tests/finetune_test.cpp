@@ -9,7 +9,9 @@
 #include "fake_printer.h"
 #include "ui.h"
 
+#include "config.h"
 #include "guppyscreen.h"
+#include "nav.h"
 
 #include <mutex>
 
@@ -76,4 +78,36 @@ TEST_CASE("Fine Tune lights nothing until the printer answers") {
 
   moonraker.push_status({{"gcode_move", {{"speed_factor", 1.51}}}});
   CHECK(app::wait_until([&] { return framed_yellow(speed); }));
+}
+
+LV_IMG_DECLARE(zoffset_thicker_img);
+LV_IMG_DECLARE(zoffset_thinner_img);
+
+namespace {
+// Иконка кнопки с подписью `text`.
+const void *icon_of(const char *text) {
+  lv_obj_t *btn = ui::label_container(text);
+  REQUIRE_MESSAGE(btn != nullptr, text << " not shown: " << ui::dump_screen());
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_t *img = ui::find_in(btn, &lv_imgbtn_class);
+  REQUIRE(img != nullptr);
+  return lv_imgbtn_get_src_middle(img, LV_IMGBTN_STATE_RELEASED);
+}
+}  // namespace
+
+TEST_CASE("Fine Tune shows Z+ as a thicker first layer and Z- as a thinner one") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Fine Tune");
+  CHECK(icon_of("Z+") == &zoffset_thicker_img);
+  CHECK(icon_of("Z-") == &zoffset_thinner_img);
+
+  // invert_z_icon переставлял стрелки; толщина слоя от него не зависит.
+  Config::get_instance()->set<bool>("/invert_z_icon", true);
+  ui::tap_tab(Nav::HOME);
+  ui::tap_label("Fine Tune");
+  CHECK(icon_of("Z+") == &zoffset_thicker_img);
+  CHECK(icon_of("Z-") == &zoffset_thinner_img);
 }
