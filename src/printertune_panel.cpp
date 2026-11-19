@@ -125,6 +125,12 @@ BedMeshPanel& PrinterTunePanel::get_bedmesh_panel() {
   return bedmesh_panel;
 }
 
+#ifdef GUPPY_FF5M
+void PrinterTunePanel::show_limits() {
+  limits_panel.foreground();
+}
+#endif
+
 #ifndef GUPPY_FF5M
 PowerPanel& PrinterTunePanel::get_power_panel() {
   return power_panel;

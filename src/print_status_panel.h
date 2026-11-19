@@ -75,7 +75,7 @@ class PrintStatusPanel : public NotifyConsumer {
   bool running = false;  // print_stats.state is printing or paused
   lv_obj_t *buttons_cont;
 #ifdef GUPPY_FF5M
-  ButtonContainer files_btn;  // first: the left of the row
+  ButtonContainer limits_btn;
 #endif
   ButtonContainer finetune_btn;
   ButtonContainer retract_btn;

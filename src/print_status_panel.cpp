@@ -34,7 +34,7 @@ LV_IMG_DECLARE(fine_tune_img);
 #define FINE_TUNE_IMG fine_tune_img
 #endif
 #ifdef GUPPY_FF5M
-LV_IMG_DECLARE(sd_img);
+LV_IMG_DECLARE(limit_img);
 #include "sensor_container.h"
 #endif
 LV_IMG_DECLARE(pause_img);
@@ -59,7 +59,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , status_cont(lv_obj_create(Nav::get().content()))
   , buttons_cont(lv_obj_create(status_cont))
 #ifdef GUPPY_FF5M
-  , files_btn(buttons_cont, &sd_img, _("Files") /* "Файлы" */, &PrintStatusPanel::_handle_callback, this)
+  , limits_btn(buttons_cont, &limit_img, _("Limits") /* "Ограничения" */, &PrintStatusPanel::_handle_callback, this)
 #endif
   , finetune_btn(buttons_cont, &FINE_TUNE_IMG, _("Fine Tune") /* "Настройки" */, &PrintStatusPanel::_handle_callback, this)
   , retract_btn(buttons_cont, &retract, _("Retract") /* "Ретракт" */, &PrintStatusPanel::_handle_callback, this)
@@ -171,13 +171,13 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_flex_flow(buttons_cont, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(buttons_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 #ifdef GUPPY_FF5M
-  // Five buttons with Files: a fifth of the row each.
+  // Пять кнопок равномерно занимают всю ширину.
   lv_obj_set_style_pad_hor(buttons_cont, 0, 0);
   lv_obj_set_style_pad_column(buttons_cont, 0, 0);
   // 14 px lower than its cell's centre: away from the progress bar, still
   // on the screen (369..453 on the AD5M).
   lv_obj_set_style_translate_y(buttons_cont, 14, 0);
-  for (ButtonContainer *b : {&files_btn, &finetune_btn, &retract_btn, &pause_btn, &resume_btn, &cancel_btn}) {
+  for (ButtonContainer *b : {&limits_btn, &finetune_btn, &retract_btn, &pause_btn, &resume_btn, &cancel_btn}) {
     lv_obj_set_width(b->get_container(), LV_PCT(20));
   }
 #endif
@@ -240,6 +240,10 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_text_align(filename_label, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_set_width(filename_label, side_width);
   lv_label_set_long_mode(filename_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
+#ifdef GUPPY_FF5M
+  lv_obj_add_flag(filename_label, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_add_event_cb(filename_label, &PrintStatusPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
+#endif
 
   lv_obj_move_to_index(filename_label, 0);
   lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -706,9 +710,11 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
   } else if (btn == retract_btn.get_container()) {
     retract_panel.foreground();
 #ifdef GUPPY_FF5M
-  } else if (btn == files_btn.get_container()) {
-    // The file list over the print screen; the Print tab comes back here.
+  } else if (btn == filename_label) {
+    // Список файлов открывается по нажатию на имя печатаемого файла.
     if (idle_screen != NULL) lv_obj_move_foreground(idle_screen);
+  } else if (btn == limits_btn.get_container()) {
+    main_panel_ref.get_tune_panel().show_limits();
 #endif
   } else if (btn == mini_print_status.get_container()) {
     foreground();

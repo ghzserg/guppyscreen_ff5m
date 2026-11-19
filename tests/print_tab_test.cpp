@@ -456,10 +456,40 @@ TEST_CASE("Home fits the C5 Pro temperatures and print status") {
                   {"T0", "T1", "T2", "T3", "Bed", "Chamber"});
 }
 
-// While printing, the Print tab shows the print screen; a button at the left
-// of its row opens the file list over it, to look at the models. The Print
-// tab goes back to the print screen.
-TEST_CASE("the print screen opens the file list from a button at its left") {
+// Имя печатаемого файла открывает каталог; кнопка Limits — настройки ограничений.
+TEST_CASE("tapping the filename opens the file list from the print screen") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  FakePrinter printer(moonraker, test_files(), fast(60));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  start_print(moonraker);
+  REQUIRE(app::wait_until(print_screen_shown));
+  REQUIRE(app::wait_until([] { return ui::find_label("cube.gcode") != nullptr; }));
+
+  lv_obj_t *limits = ui::label_container("Limits");
+  lv_obj_t *fine_tune = ui::label_container("Fine Tune");
+  REQUIRE_MESSAGE(limits != nullptr, ui::dump_screen());
+  REQUIRE(fine_tune != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_obj_update_layout(lv_scr_act());
+    lv_area_t f, t;
+    lv_obj_get_coords(limits, &f);
+    lv_obj_get_coords(fine_tune, &t);
+    INFO("Limits " << f.x1 << ".." << f.x2 << ", Fine Tune " << t.x1 << ".." << t.x2);
+    CHECK(f.x2 < t.x1);
+    CHECK(f.y1 == t.y1);
+  }
+
+  ui::tap_label("cube.gcode");
+  CHECK_MESSAGE(app::wait_until(file_list_shown), ui::dump_screen());
+  CHECK(active_tab() == Nav::PRINT);
+  ui::tap_tab(Nav::PRINT);
+  CHECK_MESSAGE(app::wait_until(print_screen_shown), ui::dump_screen());
+  CHECK(!file_list_shown());
+}
+
+TEST_CASE("the print screen Limits button opens the existing limits panel") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   FakePrinter printer(moonraker, test_files(), fast(60));
   app::start(moonraker);
@@ -467,27 +497,9 @@ TEST_CASE("the print screen opens the file list from a button at its left") {
   start_print(moonraker);
   REQUIRE(app::wait_until(print_screen_shown));
 
-  lv_obj_t *files = ui::label_container("Files");
-  lv_obj_t *fine_tune = ui::label_container("Fine Tune");
-  REQUIRE_MESSAGE(files != nullptr, ui::dump_screen());
-  REQUIRE(fine_tune != nullptr);
-  {
-    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    lv_obj_update_layout(lv_scr_act());
-    lv_area_t f, t;
-    lv_obj_get_coords(files, &f);
-    lv_obj_get_coords(fine_tune, &t);
-    INFO("Files " << f.x1 << ".." << f.x2 << ", Fine Tune " << t.x1 << ".." << t.x2);
-    CHECK(f.x2 < t.x1);  // the first of the row
-    CHECK(f.y1 == t.y1);
-  }
-
-  ui::tap_label("Files");
-  CHECK_MESSAGE(app::wait_until(file_list_shown), ui::dump_screen());
+  ui::tap_label("Limits");
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Velocity (mm/s)") != nullptr; }), ui::dump_screen());
   CHECK(active_tab() == Nav::PRINT);
-  ui::tap_tab(Nav::PRINT);
-  CHECK_MESSAGE(app::wait_until(print_screen_shown), ui::dump_screen());
-  CHECK(!file_list_shown());
 }
 
 namespace {
@@ -595,8 +607,8 @@ TEST_CASE("the print screen's thumbnail column fits above the progress bar") {
 
   // Not find_label(): the bug put the name off the screen.
   lv_obj_t *name = nullptr;
-  lv_obj_t *files = ui::label_container("Files");
-  REQUIRE(files != nullptr);
+  lv_obj_t *limits = ui::label_container("Limits");
+  REQUIRE(limits != nullptr);
   std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
   lv_obj_update_layout(lv_scr_act());
   ui::walk(Nav::get().root(Nav::PRINT), [&](lv_obj_t *o) {
@@ -610,9 +622,9 @@ TEST_CASE("the print screen's thumbnail column fits above the progress bar") {
   lv_obj_get_coords(name, &n);
   lv_obj_get_coords(bar, &b);
   lv_obj_get_coords(column, &c);
-  lv_obj_get_coords(files, &f);
+  lv_obj_get_coords(limits, &f);
   INFO("name y " << n.y1 << "; bar " << b.x1 << "," << b.y1 << ".." << b.x2 << "," << b.y2 << "; column x " << c.x1
-       << ".." << c.x2 << "; Files y " << f.y1);
+       << ".." << c.x2 << "; Limits y " << f.y1);
   CHECK(n.y1 >= 0);
   CHECK(c.y2 < b.y1);
   CHECK(b.y2 < f.y1);
@@ -635,9 +647,9 @@ TEST_CASE("the print screen's progress bar spans the screen with the ETA at its 
   }), ui::dump_screen());
 
   lv_obj_t *eta = ui::find_label("ETA: ", ui::Match::Contains);
-  lv_obj_t *files = ui::label_container("Files");
+  lv_obj_t *limits = ui::label_container("Limits");
   lv_obj_t *nozzle = ui::find_label("T0: ", ui::Match::Contains);  // the details' first value
-  REQUIRE(files != nullptr);
+  REQUIRE(limits != nullptr);
   REQUIRE(nozzle != nullptr);
   std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
   lv_obj_update_layout(lv_scr_act());
@@ -649,10 +661,10 @@ TEST_CASE("the print screen's progress bar spans the screen with the ETA at its 
   lv_obj_get_coords(bar, &b);
   lv_obj_get_coords(details, &d);
   lv_obj_get_coords(screen, &s);
-  lv_obj_get_coords(files, &f);
+  lv_obj_get_coords(limits, &f);
   lv_obj_get_coords(eta, &e);
   INFO("bar " << b.x1 << "," << b.y1 << ".." << b.x2 << "," << b.y2 << "; details " << d.x1 << ".." << d.x2 << ","
-              << d.y2 << "; screen x " << s.x1 << ".." << s.x2 << "; Files y " << f.y1 << "; ETA x " << e.x1 << ".."
+              << d.y2 << "; screen x " << s.x1 << ".." << s.x2 << "; Limits y " << f.y1 << "; ETA x " << e.x1 << ".."
               << e.x2);
   CHECK(b.x1 == s.x1 + lv_obj_get_style_pad_left(screen, 0));
   CHECK(b.x2 == d.x2);
