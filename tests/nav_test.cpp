@@ -222,7 +222,7 @@ TEST_CASE("no screen has a Back button") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   start(moonraker);
 
-  for (const char *open : {"Homing", "Extrude", "Fans", "LED"}) {
+  for (const char *open : {"Homing", "Extrude", "Fans", "LED", "Fine Tune", "Bed Mesh"}) {
     ui::tap_label(open);
     app::pump(100);
     CHECK_MESSAGE(ui::find_label("Back") == nullptr, open << ": " << ui::dump_screen());
@@ -234,7 +234,7 @@ TEST_CASE("no screen has a Back button") {
   CHECK_MESSAGE(ui::find_label("Back") == nullptr, ui::dump_screen());
   CHECK(ui::find_label("Status") == nullptr);
   ui::tap_tab(Nav::TUNE);
-  for (const char *open : {"Fine Tune", "Bed Mesh", "Limits", "Retract", "Input Shaper", "Belts/Shake", "Pro", "PID"}) {
+  for (const char *open : {"Limits", "Retract", "Input Shaper", "Belts/Shake", "Pro", "PID"}) {
     if (ui::find_label(open) == nullptr) continue;  // not on this printer
     ui::tap_label(open);
     app::pump(100);
@@ -350,4 +350,37 @@ TEST_CASE("only the nav and full screen panels sit on the screen") {
     if (!lv_obj_has_flag(lv_obj_get_child(lv_scr_act(), i), LV_OBJ_FLAG_HIDDEN)) shown++;
   }
   CHECK(shown == 3);
+}
+
+TEST_CASE("Home opens Fine Tune") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start(moonraker);
+
+  REQUIRE_MESSAGE(ui::find_label("Fine Tune") != nullptr, ui::dump_screen());
+  ui::tap_label("Fine Tune");
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Speed Reset") != nullptr; }), ui::dump_screen());
+  ui::tap_tab(Nav::HOME);
+  CHECK(ui::find_label("Speed Reset") == nullptr);
+  CHECK(ui::find_label("Fine Tune") != nullptr);
+}
+
+TEST_CASE("Home opens Bed Mesh") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start(moonraker);
+
+  REQUIRE_MESSAGE(ui::find_label("Bed Mesh") != nullptr, ui::dump_screen());
+  ui::tap_label("Bed Mesh");
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Calibrate") != nullptr; }), ui::dump_screen());
+  ui::tap_tab(Nav::HOME);
+  CHECK(ui::find_label("Calibrate") == nullptr);
+}
+
+TEST_CASE("Tune has no Fine Tune or Bed Mesh") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start(moonraker);
+
+  ui::tap_tab(Nav::TUNE);
+  REQUIRE_MESSAGE(ui::find_label("Limits") != nullptr, ui::dump_screen());
+  CHECK(ui::find_label("Fine Tune") == nullptr);
+  CHECK(ui::find_label("Bed Mesh") == nullptr);
 }

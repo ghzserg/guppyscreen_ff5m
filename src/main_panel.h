@@ -66,6 +66,10 @@ class MainPanel : public NotifyConsumer {
   void handle_extrude_cb(lv_event_t *event);
   void handle_fanpanel_cb(lv_event_t *event);
   void handle_ledpanel_cb(lv_event_t *event);
+#ifdef GUPPY_FF5M
+  void handle_finetune_cb(lv_event_t *event);
+  void handle_bedmesh_cb(lv_event_t *event);
+#endif
 
   lv_obj_t *create_button(lv_obj_t *parent,
                           const void *btn_img,
@@ -96,6 +100,18 @@ class MainPanel : public NotifyConsumer {
     MainPanel *panel = (MainPanel*)event->user_data;
     panel->handle_ledpanel_cb(event);
   };
+
+#ifdef GUPPY_FF5M
+  static void _handle_finetune_cb(lv_event_t *event) {
+    MainPanel *panel = (MainPanel*)event->user_data;
+    panel->handle_finetune_cb(event);
+  };
+
+  static void _handle_bedmesh_cb(lv_event_t *event) {
+    MainPanel *panel = (MainPanel*)event->user_data;
+    panel->handle_bedmesh_cb(event);
+  };
+#endif
 
 
  private:
@@ -131,6 +147,11 @@ class MainPanel : public NotifyConsumer {
   ButtonContainer extrude_btn;
   ButtonContainer action_btn;
   ButtonContainer led_btn;
+#ifdef GUPPY_FF5M
+  // On Home rather than in Tune.
+  ButtonContainer finetune_btn;
+  ButtonContainer bedmesh_btn;
+#endif
 
 };
 #endif // __MAIN_PANEL_H__

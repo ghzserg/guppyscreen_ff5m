@@ -88,7 +88,6 @@ TEST_CASE("Fine Tune shows Klipper's 1.15 as 115% and steps from it") {
   moonraker.push_status({{"gcode_move", {{"speed_factor", 1.15}, {"extrude_factor", 1.15}}}});
   app::settle(moonraker);
 
-  ui::tap_tab(Nav::TUNE);
   ui::tap_label("Fine Tune");
   REQUIRE_MESSAGE(app::wait_until([] { return ui::find_label("115%") != nullptr; }), ui::dump_screen());
 
