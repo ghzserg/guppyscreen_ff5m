@@ -159,3 +159,32 @@ void SliderContainer::handle_value_update(lv_event_t *event) {
   lv_obj_t * obj = lv_event_get_target(event);
   update_value((int)lv_slider_get_value(obj));
 }
+
+#ifdef GUPPY_FF5M
+void SliderContainer::stack_rows(lv_obj_t *cont) {
+  // Four rows of about 116 px in the 480 px content area: no room for the
+  // theme's padding; what is left goes between the rows.
+  lv_obj_set_style_pad_ver(cont, 0, 0);
+  lv_obj_set_style_pad_row(cont, 0, 0);
+  // Без отступа под кнопками: шрифт релизной сборки (без патча lvgl 0003)
+  // выше, и с ним четыре ряда на 8 px не помещались на экран.
+  for (uint32_t i = 0; i < lv_obj_get_child_cnt(cont); i++) {
+    lv_obj_set_style_pad_bottom(lv_obj_get_child(lv_obj_get_child(cont, i), 1), 0, 0);
+  }
+  lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+  lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);  // they fit: no scrollbar
+  end_rows(cont);
+}
+
+void SliderContainer::end_rows(lv_obj_t *cont) {
+  // The line under each row separates it from the next; none under the last.
+  // Transparent, not removed: the border's inset keeps the row in line.
+  lv_obj_t *last = NULL;
+  for (uint32_t i = 0; i < lv_obj_get_child_cnt(cont); i++) {
+    lv_obj_t *row = lv_obj_get_child(cont, i);
+    lv_obj_remove_local_style_prop(row, LV_STYLE_BORDER_OPA, 0);
+    if (!lv_obj_has_flag(row, LV_OBJ_FLAG_HIDDEN)) last = row;
+  }
+  if (last != NULL) lv_obj_set_style_border_opa(last, LV_OPA_TRANSP, 0);
+}
+#endif

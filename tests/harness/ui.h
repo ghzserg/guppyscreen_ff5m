@@ -38,6 +38,10 @@ std::vector<std::string> row_texts(const std::string &text);
 // First shown widget of class `cls` (e.g. &lv_canvas_class), or nullptr.
 lv_obj_t *find_shown(const lv_obj_class_t *cls);
 
+// The container of the shown label `text` (a slider's row), or nullptr if
+// the label is not shown.
+lv_obj_t *label_container(const std::string &text);
+
 // Whether `obj` has a covering background of `palette`'s main colour (the
 // tile the numpad is for).
 bool has_bg(lv_obj_t *obj, lv_palette_t palette);
@@ -45,6 +49,9 @@ bool has_bg(lv_obj_t *obj, lv_palette_t palette);
 // Enter `value` on the open numpad and press OK. Fails the test if no numpad
 // is open.
 void enter_on_numpad(const std::string &value);
+
+// Button matrices on the screen (shown or not) whose button `idx` reads `text`.
+std::vector<lv_obj_t *> btnmatrices(const std::string &text, uint32_t idx = 0);
 
 // Would a tap at obj's centre reach it (see "shown" above)?
 bool is_shown(lv_obj_t *obj);

@@ -26,6 +26,12 @@ class ImageLabel {
 
   lv_obj_t *get_container();
   void update_label(const char* value);
+  lv_obj_t *get_label() { return label; }
+  // Only the value, centred.
+  void hide_image() {
+    lv_obj_add_flag(image, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+  }
 
  private:
   lv_obj_t *cont;

@@ -52,6 +52,18 @@ void walk(lv_obj_t *obj, const std::function<void(lv_obj_t *)> &fn) {
   }
 }
 
+std::vector<lv_obj_t *> btnmatrices(const std::string &text, uint32_t idx) {
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  std::vector<lv_obj_t *> found;
+  walk(lv_scr_act(), [&](lv_obj_t *o) {
+    if (lv_obj_check_type(o, &lv_btnmatrix_class)) {
+      const char *t = lv_btnmatrix_get_btn_text(o, idx);
+      if (t != nullptr && text == t) found.push_back(o);
+    }
+  });
+  return found;
+}
+
 static void walk_all(const std::function<void(lv_obj_t *)> &fn) {
   lv_obj_update_layout(lv_scr_act());
   for (lv_obj_t *root : {lv_scr_act(), lv_layer_top(), lv_layer_sys()}) {
@@ -227,6 +239,12 @@ std::string join(const std::vector<std::string> &items) {
     out += s;
   }
   return "[" + out + "]";
+}
+
+lv_obj_t *label_container(const std::string &text) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_t *label = find_label_locked(text, Match::Exact);
+  return label == NULL ? NULL : lv_obj_get_parent(label);
 }
 
 bool has_bg(lv_obj_t *obj, lv_palette_t palette) {
