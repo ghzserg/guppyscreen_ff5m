@@ -573,7 +573,7 @@ void PrintStatusPanel::consume(json &j) {
 #ifdef GUPPY_FF5M
   const auto &objects = j["/params/0/exclude_object/objects"_json_pointer];
   if (running && objects.is_array()) {
-    lv_obj_set_style_outline_width(thumbnail, objects.empty() ? 0 : 3, 0);
+    lv_obj_set_style_outline_width(thumbnail, objects.empty() ? 0 : 1, 0);
   }
 #endif
 
