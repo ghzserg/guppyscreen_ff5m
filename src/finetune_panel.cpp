@@ -5,14 +5,13 @@
 #include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
-#include "config.h"
 
 #include <algorithm>
 #include <cmath>
 
 LV_IMG_DECLARE(home_z);
-LV_IMG_DECLARE(z_closer);
-LV_IMG_DECLARE(z_farther);
+LV_IMG_DECLARE(zoffset_thicker_img);
+LV_IMG_DECLARE(zoffset_thinner_img);
 LV_IMG_DECLARE(pa_plus_img);
 LV_IMG_DECLARE(pa_minus_img);
 LV_IMG_DECLARE(refresh_img);
@@ -36,8 +35,8 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , panel_cont(lv_obj_create(Nav::get().content()))
   , values_cont(lv_obj_create(panel_cont))
   , zreset_btn(panel_cont, &refresh_img, _("Reset Z") /* "Сброс Z" */, &FineTunePanel::_handle_zoffset, this)
-  , zup_btn(panel_cont, &z_farther, "Z+", &FineTunePanel::_handle_zoffset, this)
-  , zdown_btn(panel_cont, &z_closer, "Z-", &FineTunePanel::_handle_zoffset, this)
+  , zup_btn(panel_cont, &zoffset_thicker_img, "Z+", &FineTunePanel::_handle_zoffset, this)
+  , zdown_btn(panel_cont, &zoffset_thinner_img, "Z-", &FineTunePanel::_handle_zoffset, this)
   , pareset_btn(panel_cont, &refresh_img, _("Reset PA") /* "Сброс PA" */, &FineTunePanel::_handle_pa, this)
   , paup_btn(panel_cont, &pa_plus_img, "PA+", &FineTunePanel::_handle_pa, this)
   , padown_btn(panel_cont, &pa_minus_img, "PA-", &FineTunePanel::_handle_pa, this)
@@ -201,19 +200,6 @@ void FineTunePanel::foreground() {
     if (!v.is_null()) printer[object] = std::move(v);
   }
   show_values(printer, false);
-
-  //Set the Z axis buttons
-  auto v = Config::get_instance()->get_json("/invert_z_icon");
-  bool inverted = !v.is_null() && v.template get<bool>();
-  if (inverted) {
-    // UP arrow
-    zup_btn.set_image(&z_farther);
-    zdown_btn.set_image(&z_closer);
-  } else {
-    // DOWN arrow
-    zup_btn.set_image(&z_closer);
-    zdown_btn.set_image(&z_farther);
-  }
 
   lv_obj_move_foreground(panel_cont);
 }
