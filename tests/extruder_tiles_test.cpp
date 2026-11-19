@@ -267,22 +267,37 @@ TEST_CASE("a tap on the AD5X nozzle with no channel active keeps Load off") {
   CHECK(moonraker.gcodes().empty());
 }
 
-// COLOR changes the tool like Load: off until a nozzle is picked.
-TEST_CASE("COLOR on a C5 Pro with no tool in the head waits for a picked nozzle") {
+// COLOR доступен без активного сопла и не вызывает переключение инструмента.
+TEST_CASE("COLOR works without an active C5 Pro tool") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
   moonraker.push_status({{"zmod_color", {{"active_tool_id", -1}}}});
   app::settle(moonraker);
 
   ui::tap_label("COLOR");
-  app::settle(moonraker);
-  CHECK(moonraker.gcodes().empty());
+  REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() == 1; }));
+  CHECK(moonraker.gcodes().front().rfind("_GUPPY_MACRO T=-1 ", 0) == 0);
 
   ui::tap(tile("T3"));
   app::settle(moonraker);
-  REQUIRE(moonraker.gcodes().size() == 1);
-  CHECK(moonraker.gcodes().front() == "_T_USE T=3");
+  REQUIRE(moonraker.gcodes().size() == 2);
+  CHECK(moonraker.gcodes().back() == "_T_USE T=3");
+
   ui::tap_label("COLOR");
+  REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() == 3; }));
+  CHECK(moonraker.gcodes().back().rfind("_GUPPY_MACRO T=3 ", 0) == 0);
+}
+
+TEST_CASE("ColdPull does not switch a C5 Pro tool again") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+
+  ui::tap(tile("T2"));
+  app::settle(moonraker);
+  REQUIRE(moonraker.gcodes().size() == 1);
+  CHECK(moonraker.gcodes().front() == "_T_USE T=2");
+
+  ui::tap_label("ColdPull");
   REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() == 2; }));
-  CHECK(moonraker.gcodes().back().find("T=3") != std::string::npos);
+  CHECK(moonraker.gcodes().back() == "COLDPULL T=2");
 }
