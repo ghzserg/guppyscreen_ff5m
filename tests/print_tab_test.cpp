@@ -4,8 +4,10 @@
 #include "doctest/doctest.h"
 
 #include "app.h"
+#include "fake_hw.h"
 #include "fake_moonraker.h"
 #include "fake_printer.h"
+#include "ink.h"
 #include "ui.h"
 
 #include "guppyscreen.h"
@@ -683,6 +685,81 @@ TEST_CASE("the print screen's progress bar spans the screen with the ETA at its 
       CHECK(lv_obj_get_style_text_font(label, 0) == SensorContainer::temperature_font());
     }
   }
+}
+
+// The digits font's line has room under the baseline for descenders: the
+// texts on the progress bar must look centred, by their ink, not their box.
+TEST_CASE("the print screen's progress bar texts are centred on the bar") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  // So slow the bar stays empty: its filled part never runs under a text.
+  FakePrinter printer(moonraker, test_files(), fast(1e6));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  start_print(moonraker);
+  REQUIRE(app::wait_until(print_screen_shown));
+  REQUIRE_MESSAGE(app::wait_until([] {
+    lv_obj_t *l = ui::find_label("ETA: ", ui::Match::Contains);
+    if (l == nullptr) return false;
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return std::string(lv_label_get_text(l)).find_first_of("0123456789") != std::string::npos;
+  }), ui::dump_screen());
+
+  REQUIRE_MESSAGE(ui::find_label("0%") != nullptr, ui::dump_screen());
+
+  app::redraw();
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_t *bar = ui::find_in(Nav::get().root(Nav::PRINT), &lv_bar_class);
+  REQUIRE(bar != nullptr);
+  REQUIRE(lv_bar_get_value(bar) == 0);
+  lv_area_t b;
+  lv_obj_get_coords(bar, &b);
+  int bar_middle2 = b.y1 + b.y2;  // twice the centre: no rounding
+  int texts = 0;
+  for (uint32_t i = 0; i < lv_obj_get_child_cnt(lv_obj_get_parent(bar)); i++) {
+    lv_obj_t *label = lv_obj_get_child(lv_obj_get_parent(bar), i);
+    if (!lv_obj_check_type(label, &lv_label_class)) continue;
+    texts++;
+    lv_area_t l;
+    lv_obj_get_coords(label, &l);
+    // Ink: rows with a pixel unlike the bar's beside the label, on the side
+    // away from the bar's rounded end.
+    int bg_x = l.x1 - b.x1 > b.x2 - l.x2 ? l.x1 - 2 : l.x2 + 2;
+    ink::Rows r = ink::rows(b, l.x1, l.x2, [&](int, int y) { return fake_hw::pixel(bg_x, y); });
+    std::string text = lv_label_get_text(label);
+    REQUIRE_MESSAGE(r.top >= 0, text);
+    INFO(text << ": ink " << r.top << ".." << r.bottom << ", bar " << b.y1 << ".." << b.y2);
+    CHECK(std::abs((r.top + r.bottom) - bar_middle2) <= 1);  // within half a pixel
+  }
+  CHECK(texts == 3);
+}
+
+// The details' values are centred in their frames by their digits (the
+// font keeps room for descenders under the baseline).
+TEST_CASE("the print screen's values are centred in their frames") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  FakePrinter printer(moonraker, test_files(), fast(60));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  start_print(moonraker);
+  REQUIRE(app::wait_until(print_screen_shown));
+  lv_obj_t *nozzle = ui::find_label("T0: ", ui::Match::Contains);
+  REQUIRE_MESSAGE(nozzle != nullptr, ui::dump_screen());
+
+  app::redraw();
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_t *details = lv_obj_get_parent(lv_obj_get_parent(nozzle));  // label < box < details grid
+  int framed = 0;
+  for (uint32_t i = 0; i < lv_obj_get_child_cnt(details); i++) {
+    lv_obj_t *box = lv_obj_get_child(details, i);
+    for (uint32_t j = 0; j < lv_obj_get_child_cnt(box); j++) {
+      lv_obj_t *label = lv_obj_get_child(box, j);
+      if (lv_obj_check_type(label, &lv_label_class)) {
+        ink::check_framed(label);
+        framed++;
+      }
+    }
+  }
+  CHECK(framed == 10);
 }
 
 // The progress bar's ETA is in the details' font, which has only the glyphs

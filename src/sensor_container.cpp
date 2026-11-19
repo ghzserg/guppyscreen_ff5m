@@ -182,7 +182,18 @@ void SensorContainer::update_value(int new_value) {
 
 #ifdef GUPPY_FF5M
 const lv_font_t *SensorContainer::temperature_font() {
-  return &notosemi_22_digits;
+  // В сгенерированном шрифте под базовой линией есть место для выносных
+  // элементов, а над цифрами нет: текст, отцентрованный по своему блоку
+  // (значение в рамке, число на кнопке), стоит выше центра. У этой копии
+  // столько же места над цифрами, и строка симметрична относительно них.
+  // Буква, которой в шрифте нет (новый перевод), берётся из шрифта темы.
+  static const lv_font_t font = [] {
+    lv_font_t f = notosemi_22_digits;
+    f.line_height += f.base_line;
+    f.fallback = &notosemi_20;
+    return f;
+  }();
+  return &font;
 }
 
 lv_coord_t SensorContainer::tile_width() {
@@ -217,11 +228,13 @@ void SensorContainer::as_tile() {
     lv_obj_set_style_border_width(l, 0, 0);
     lv_obj_set_style_text_font(l, temperature_font(), 0);  // bigger than the name
   }
+  // Ставятся по верху цифр: добавленное над ними место вычитается.
+  lv_coord_t room = temperature_font()->line_height - notosemi_22_digits.line_height;
   if (lv_obj_has_flag(target_label, LV_OBJ_FLAG_HIDDEN)) {
-    lv_obj_align(value_label, LV_ALIGN_TOP_RIGHT, 0, 12 * scale);
+    lv_obj_align(value_label, LV_ALIGN_TOP_RIGHT, 0, 12 * scale - room);
   } else {
-    lv_obj_align(target_label, LV_ALIGN_TOP_RIGHT, 0, 2 * scale);
-    lv_obj_align(value_label, LV_ALIGN_TOP_RIGHT, 0, 24 * scale);
+    lv_obj_align(target_label, LV_ALIGN_TOP_RIGHT, 0, 2 * scale - room);
+    lv_obj_align(value_label, LV_ALIGN_TOP_RIGHT, 0, 24 * scale - room);
     update_target(target < 0 ? 0 : target);
   }
 

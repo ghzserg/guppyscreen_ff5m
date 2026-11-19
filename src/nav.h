@@ -31,6 +31,10 @@ class Nav {
   lv_obj_t *content();
   // The content area's width: what a screen is laid out for (740 on the AD5M).
   static lv_coord_t content_width();
+  // Место кнопки вкладки в панели в координатах экрана (96 px высотой на
+  // AD5M): по нему выравниваются экраны.
+  static lv_coord_t slot_height();
+  static lv_coord_t slot_top(Tab t);
 
   // A new, empty screen in the content area (100% x 100%, no padding or
   // border, not scrollable).
