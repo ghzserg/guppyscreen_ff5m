@@ -114,6 +114,7 @@ class SensorContainer {
   std::time_t last_updated_ts;
 #ifdef GUPPY_FF5M
   bool tile = false;
+  void highlight(bool on);  // синяя, пока открыт её numpad
 #endif
 
 };
