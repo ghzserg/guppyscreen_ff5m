@@ -425,7 +425,7 @@ void PrintStatusPanel::init(json &fans) {
 #ifdef GUPPY_FF5M
   if (running) {
     const auto &objects = State::get_instance()->get_data("/printer_state/exclude_object/objects"_json_pointer);
-    lv_obj_set_style_outline_width(thumbnail, objects.is_array() && !objects.empty() ? 3 : 0, 0);
+    lv_obj_set_style_outline_width(thumbnail, objects.is_array() && !objects.empty() ? 1 : 0, 0);
   }
 #endif
 
