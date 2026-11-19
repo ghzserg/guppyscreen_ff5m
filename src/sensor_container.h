@@ -70,13 +70,13 @@ class SensorContainer {
   int get_target_value();
   int get_value() { return value; }
   const std::string &get_id() const { return id; }
+  static constexpr lv_coord_t stripe_width() { return 5; }
 #ifdef GUPPY_FF5M
   // Home's layout: a tile with the icon and the name under it, the target
   // (red when set, grey when off) above the current temperature on the right.
   void as_tile();
   static lv_coord_t tile_width();  // a tile's width on screen
   static constexpr lv_coord_t tile_gap() { return 6; }  // between tiles, Home and Extrude alike
-  static constexpr lv_coord_t stripe_width() { return 5; }  // the colour stripe
 
   // The tiles' temperature font, also the numpad's entered value: the two
   // always match.

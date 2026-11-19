@@ -3,7 +3,7 @@
 
 #include <string>
 
-LV_FONT_DECLARE(notosemi_22_digits);  // digits, minus and point only
+LV_FONT_DECLARE(notosemi_22_digits);
 LV_FONT_DECLARE(notosemi_16);
 
 SensorContainer::SensorContainer(KWebSocketClient &c,

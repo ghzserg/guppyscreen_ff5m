@@ -7,7 +7,7 @@
 #include <string>
 
 #ifdef GUPPY_FF5M
-LV_FONT_DECLARE(notobold_32_numpad);  // digits and the backspace and OK symbols only
+LV_FONT_DECLARE(notobold_32_numpad);
 #endif
 
 Numpad::Numpad(lv_obj_t *parent)
