@@ -202,7 +202,7 @@ msgstr "Перезапуск прошивки"
 
 #: ../finetune_panel.cpp:35
 msgid "Flow Reset"
-msgstr "Сброс поток"
+msgstr "Сброс потока"
 
 #: ../finetune_panel.cpp:36
 msgid "Flow+"
@@ -412,7 +412,7 @@ msgstr "Показать задачу"
 
 #: ../finetune_panel.cpp:32
 msgid "Speed Reset"
-msgstr "Сброс скорость"
+msgstr "Сброс скорости"
 
 #: ../finetune_panel.cpp:33
 msgid "Speed+"
