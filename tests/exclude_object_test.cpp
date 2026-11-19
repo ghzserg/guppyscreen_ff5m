@@ -185,3 +185,48 @@ TEST_CASE("exclude map buttons do not cover the map") {
     CHECK_MESSAGE(!overlaps, "button " << b.x1 << "," << b.y1 << " over the map " << map.x1 << ".." << map.x2);
   }
 }
+
+// Синяя рамка обозначает наличие объектов, доступных для исключения.
+TEST_CASE("print thumbnail is outlined when objects can be excluded") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker);
+
+  lv_obj_t *name = ui::find_label("cubes.gcode");
+  REQUIRE(name != nullptr);
+  lv_obj_t *thumbnail;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    thumbnail = lv_obj_get_child(lv_obj_get_parent(name), 1);
+    REQUIRE(thumbnail != nullptr);
+    REQUIRE(lv_obj_check_type(thumbnail, &lv_img_class));
+    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 3);
+  }
+
+  moonraker.push_status({{"exclude_object", {{"objects", json::array()}}}});
+  app::settle(moonraker);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 0);
+  }
+
+  moonraker.push_status({{"exclude_object", {{"objects", json::array({{{"name", "CENTER_CUBE"}}})}}}});
+  app::settle(moonraker);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 3);
+  }
+
+  moonraker.push_status({{"exclude_object", {{"excluded_objects", {{"CENTER_CUBE"}}}}}});
+  app::settle(moonraker);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 3);
+  }
+
+  moonraker.push_status({{"print_stats", {{"state", "complete"}}}});
+  app::settle(moonraker);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 0);
+  }
+}

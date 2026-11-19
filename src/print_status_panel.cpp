@@ -252,6 +252,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   // the column outgrows the screen, the file name goes off the top and the
   // progress bar slides under the buttons.
   lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_REAL);
+  lv_obj_set_style_outline_color(thumbnail, lv_palette_main(LV_PALETTE_BLUE), 0);
+  lv_obj_set_style_outline_opa(thumbnail, LV_OPA_COVER, 0);
 #endif
 
   // row 1
@@ -345,6 +347,9 @@ void PrintStatusPanel::reset() {
   extruder_target = -1;
 
   // free src
+#ifdef GUPPY_FF5M
+  lv_obj_set_style_outline_width(thumbnail, 0, 0);
+#endif
   KUtils::set_img_src(thumbnail, NULL);
 
   mini_print_status.reset();
@@ -417,6 +422,12 @@ void PrintStatusPanel::init(json &fans) {
   } else {
     mini_print_status.show();
   }
+#ifdef GUPPY_FF5M
+  if (running) {
+    const auto &objects = State::get_instance()->get_data("/printer_state/exclude_object/objects"_json_pointer);
+    lv_obj_set_style_outline_width(thumbnail, objects.is_array() && !objects.empty() ? 3 : 0, 0);
+  }
+#endif
 
 }
 
@@ -559,6 +570,12 @@ void PrintStatusPanel::consume(json &j) {
 
     mini_print_status.update_status(print_status);
   }
+#ifdef GUPPY_FF5M
+  const auto &objects = j["/params/0/exclude_object/objects"_json_pointer];
+  if (running && objects.is_array()) {
+    lv_obj_set_style_outline_width(thumbnail, objects.empty() ? 0 : 3, 0);
+  }
+#endif
 
   auto v = j["/params/0/extruder/target"_json_pointer];
   if (!v.is_null()) {
