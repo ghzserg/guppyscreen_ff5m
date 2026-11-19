@@ -64,20 +64,23 @@ TEST_CASE("the C5 Pro extruder screen shows a tile per nozzle with its temperatu
   CHECK_FALSE(tools_buttons_visible());
 }
 
-// A tap only picks the nozzle: a tool change moves the head, it waits for
-// the button that needs it.
-TEST_CASE("a tap on a C5 Pro nozzle tile selects that nozzle without a tool change") {
+// Нажатие на плитку сразу отправляет команду переключения инструмента.
+TEST_CASE("a tap on a C5 Pro nozzle tile selects and switches the tool immediately") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
 
   CHECK(is_blue(tile("T0")));  // active_tool_id 0 in the fixture
   CHECK_FALSE(is_blue(tile("T2")));
+  ui::tap(tile("T0"));
+  app::settle(moonraker);
+  CHECK(moonraker.gcodes().empty());
 
   ui::tap(tile("T2"));
   app::settle(moonraker);
   CHECK(is_blue(tile("T2")));
   CHECK_FALSE(is_blue(tile("T0")));
-  CHECK(moonraker.gcodes().empty());
+  REQUIRE(moonraker.gcodes().size() == 1);
+  CHECK(moonraker.gcodes().back() == "_T_USE T=2");
 
   // A tool change on the printer shows.
   moonraker.push_status({{"zmod_color", {{"active_tool_id", 3}}}});
@@ -94,8 +97,9 @@ TEST_CASE("Load on a C5 Pro nozzle not in use changes the tool first") {
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
   std::string g = moonraker.gcodes().back();
   INFO(g);
-  CHECK(g.rfind("_T_USE T=2\n", 0) == 0);
-  CHECK(g.find("LOAD_FILAMENT T=2 ") != std::string::npos);
+  REQUIRE(moonraker.gcodes().size() == 2);
+  CHECK(moonraker.gcodes().front() == "_T_USE T=2");
+  CHECK(g.rfind("LOAD_FILAMENT T=2 ", 0) == 0);
 }
 
 // Unload: M109 and G1 E on the active tool.
@@ -108,7 +112,9 @@ TEST_CASE("Unload on a C5 Pro nozzle not in use changes the tool first") {
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
   std::string g = moonraker.gcodes().back();
   INFO(g);
-  CHECK(g.rfind("_T_USE T=1\nM109 S", 0) == 0);
+  REQUIRE(moonraker.gcodes().size() == 2);
+  CHECK(moonraker.gcodes().front() == "_T_USE T=1");
+  CHECK(g.rfind("M109 S", 0) == 0);
   CHECK(g.find(" T1\n") != std::string::npos);
 }
 
@@ -136,6 +142,7 @@ TEST_CASE("a C5 Pro nozzle can't be picked during a print") {
   app::settle(moonraker);
   CHECK(is_blue(tile("T0")));
   CHECK_FALSE(is_blue(tile("T2")));
+  CHECK(moonraker.gcodes().empty());
 }
 
 TEST_CASE("the AD5X extruder screen shows its nozzle's tile and keeps the T0-T3 buttons") {
@@ -217,7 +224,9 @@ TEST_CASE("a C5 Pro nozzle left out of the config keeps the other tiles' tools")
   ui::tap(tile("T2"));
   ui::tap_label("Load");
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
-  CHECK(moonraker.gcodes().back().rfind("_T_USE T=2\nLOAD_FILAMENT T=2 ", 0) == 0);
+  REQUIRE(moonraker.gcodes().size() == 2);
+  CHECK(moonraker.gcodes().front() == "_T_USE T=2");
+  CHECK(moonraker.gcodes().back().rfind("LOAD_FILAMENT T=2 ", 0) == 0);
 
   moonraker.push_status({{"zmod_color", {{"active_tool_id", 3}}}});
   CHECK(app::wait_until([&] { return is_blue(tile("T3")); }));
@@ -237,9 +246,12 @@ TEST_CASE("a C5 Pro nozzle picked with no tool in the head enables Load") {
   CHECK(moonraker.gcodes().empty());
 
   ui::tap(tile("T1"));
+  app::settle(moonraker);
+  REQUIRE(moonraker.gcodes().size() == 1);
+  CHECK(moonraker.gcodes().front() == "_T_USE T=1");
   ui::tap_label("Load");
-  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
-  CHECK(moonraker.gcodes().back().rfind("_T_USE T=1\nLOAD_FILAMENT T=1 ", 0) == 0);
+  REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() == 2; }));
+  CHECK(moonraker.gcodes().back().rfind("LOAD_FILAMENT T=1 ", 0) == 0);
 }
 
 // One nozzle: a tap picks nothing, the buttons follow the printer's tool.
@@ -267,7 +279,10 @@ TEST_CASE("COLOR on a C5 Pro with no tool in the head waits for a picked nozzle"
   CHECK(moonraker.gcodes().empty());
 
   ui::tap(tile("T3"));
+  app::settle(moonraker);
+  REQUIRE(moonraker.gcodes().size() == 1);
+  CHECK(moonraker.gcodes().front() == "_T_USE T=3");
   ui::tap_label("COLOR");
-  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
-  CHECK(moonraker.gcodes().back().rfind("_T_USE T=3\n", 0) == 0);
+  REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() == 2; }));
+  CHECK(moonraker.gcodes().back().find("T=3") != std::string::npos);
 }

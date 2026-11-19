@@ -396,12 +396,15 @@ void ExtruderPanel::enable_actions(bool tool_in_head) {
 
 void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &nozzles, lv_coord_t left, lv_coord_t top) {
   lv_obj_align(nozzle_tiles.get_container(), LV_ALIGN_TOP_LEFT, left, top);  // where Home's are
-  // No colour stripe here. A tap picks the nozzle; the tool change waits for
-  // the button that needs it. During a print the printer's tool stays shown.
+  // При выборе сопла сразу переключаем инструмент; во время печати выбор запрещён.
   nozzle_tiles.create(nozzles, extruder_temp, false, active_tool_id, [this](int tool) {
     auto state = State::get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
     if (state == "printing" || state == "paused") return false;
-    nozzle_tiles.show_selected(tool);  // now, for the buttons
+    if (tool != active_tool_id) {
+      active_tool_id = tool;
+      ws.gcode_script(fmt::format("_T_USE T={}", tool));
+    }
+    nozzle_tiles.show_selected(tool);
     enable_actions(active_tool_id >= 0 && active_tool_id < total_tools);  // one nozzle: the printer's tool
     return true;
   });

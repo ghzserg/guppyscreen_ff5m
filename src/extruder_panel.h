@@ -34,10 +34,9 @@ class ExtruderPanel : public NotifyConsumer {
 #ifdef GUPPY_FF5M
   // A tile per nozzle, like Home's without the colour stripe, replaces the
   // extruder line. With several nozzles (C5 Pro) they also replace the T0-T3
-  // buttons: the printer's tool has a blue background, a tap picks another
-  // (not during a print). A tool change moves the head: it is sent with the
-  // next Load, Unload, COLOR or ColdPull, if the picked nozzle isn't the
-  // printer's tool. One nozzle (AD5M, AD5X) is not selectable. Called by
+  // buttons: the printer's tool has a blue background.
+  // На C5 Pro нажатие сразу вызывает _T_USE (кроме печати).
+  // One nozzle (AD5M, AD5X) is not selectable. Called by
   // MainPanel::create_sensors, under the LVGL lock, with Home's names and
   // colours and where Home's tiles start in its content area (`left`, `top`).
   void create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &nozzles, lv_coord_t left, lv_coord_t top);
