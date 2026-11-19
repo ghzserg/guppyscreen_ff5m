@@ -9,10 +9,14 @@
 #include "fake_printer.h"
 #include "ui.h"
 
+#include "guppyscreen.h"
+
+#include <mutex>
 
 namespace {
 
 bool framed_yellow(lv_obj_t *value_label) {
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
   lv_obj_t *frame = lv_obj_get_parent(value_label);
   lv_color_t c = lv_obj_get_style_border_color(frame, LV_PART_MAIN);
   return c.full == lv_palette_main(LV_PALETTE_YELLOW).full;
