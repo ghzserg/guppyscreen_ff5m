@@ -199,7 +199,7 @@ TEST_CASE("print thumbnail is outlined when objects can be excluded") {
     thumbnail = lv_obj_get_child(lv_obj_get_parent(name), 1);
     REQUIRE(thumbnail != nullptr);
     REQUIRE(lv_obj_check_type(thumbnail, &lv_img_class));
-    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 3);
+    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 1);
   }
 
   moonraker.push_status({{"exclude_object", {{"objects", json::array()}}}});
@@ -213,14 +213,14 @@ TEST_CASE("print thumbnail is outlined when objects can be excluded") {
   app::settle(moonraker);
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 3);
+    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 1);
   }
 
   moonraker.push_status({{"exclude_object", {{"excluded_objects", {{"CENTER_CUBE"}}}}}});
   app::settle(moonraker);
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 3);
+    CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 1);
   }
 
   moonraker.push_status({{"print_stats", {{"state", "complete"}}}});
