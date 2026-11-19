@@ -484,6 +484,15 @@ msgstr "Частотная характеристика Y"
 msgid "Z Reset"
 msgstr "Сброс Z"
 
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
+#: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
+msgid "mm"
+msgstr "мм"
+
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
+msgid "s"
+msgstr "с"
+
 #: ../utils.cpp:262
 msgid "д "
 msgstr "д "

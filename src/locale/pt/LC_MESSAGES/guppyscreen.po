@@ -484,6 +484,15 @@ msgstr "Resposta de Frequência Y"
 msgid "Z Reset"
 msgstr "Redefinir Z"
 
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
+#: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
+msgid "mm"
+msgstr "mm"
+
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
+msgid "s"
+msgstr "s"
+
 #: ../utils.cpp:262
 msgid "д "
 msgstr "d "

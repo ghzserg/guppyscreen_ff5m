@@ -46,7 +46,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , flow_reset_btn(panel_cont, &refresh_img, _("Flow Reset") /* "Сброс поток" */, &FineTunePanel::_handle_flow, this)
   , flow_up_btn(panel_cont, &flow_up_img, _("Flow+") /* "Поток+" */, &FineTunePanel::_handle_flow, this)
   , flow_down_btn(panel_cont, &flow_down_img, _("Flow-") /* "Поток-" */, &FineTunePanel::_handle_flow, this)
-  , zoffset_selector(panel_cont, ("Z ("+ std::string(_("мм")) +") - PA ("+ std::string(_("мм")) +"/"+ _("с") +")").c_str(),
+  , zoffset_selector(panel_cont, ("Z ("+ std::string(_("mm")) +") - PA ("+ std::string(_("mm")) +"/"+ _("s") +")").c_str(),
 #ifdef GUPPY_FF5M
                      {".005", ".01", ".05", ".10", ""},  // no leading zero: fits the bigger digits
                      0, 40, 15,  // as wide as the multiplier's
@@ -57,8 +57,8 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
                      &FineTunePanel::_handle_callback, this)
   , multipler_selector(panel_cont, _("Multiplier Step") /* "Множитель шага (%)" */,
                        {"1", "5", "10", "25", ""}, 0, 40, 15, &FineTunePanel::_handle_callback, this)
-  , z_offset(values_cont, &home_z, 150, 100, 15, ("0.0 "+ std::string(_("мм"))).c_str() )
-  , pa(values_cont, &pa_plus_img, 150, 100, 15, ("0.0 "+ std::string(_("мм")) +"/"+ _("с")).c_str() )
+  , z_offset(values_cont, &home_z, 150, 100, 15, ("0.0 "+ std::string(_("mm"))).c_str() )
+  , pa(values_cont, &pa_plus_img, 150, 100, 15, ("0.0 "+ std::string(_("mm")) +"/"+ _("s")).c_str() )
   , speed_factor(values_cont, &speed_up_img, 150, 100, 15 ,"100%")
   , flow_factor(values_cont, &flow_up_img, 150, 100, 15, "100%")
 {
@@ -172,12 +172,12 @@ void FineTunePanel::show_values(const json &printer, bool flash_changes) {
   }
   auto v = printer.value("/gcode_move/homing_origin/2"_json_pointer, json());
   if (!v.is_null()) {
-    show(Z_OFFSET, fmt::format("{:.3f} "+ std::string(_("мм")) , v.template get<double>()), flash_changes);
+    show(Z_OFFSET, fmt::format("{:.3f} "+ std::string(_("mm")) , v.template get<double>()), flash_changes);
   }
 
   v = printer.value("/extruder/pressure_advance"_json_pointer, json());
   if (!v.is_null()) {
-    show(PA, fmt::format("{:.3f} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()), flash_changes);
+    show(PA, fmt::format("{:.3f} "+ std::string(_("mm")) +"/"+ _("s") , v.template get<double>()), flash_changes);
   }
 
   v = printer.value("/gcode_move/speed_factor"_json_pointer, json());

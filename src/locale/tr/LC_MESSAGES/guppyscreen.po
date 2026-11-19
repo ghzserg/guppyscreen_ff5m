@@ -484,6 +484,15 @@ msgstr "Y Frekans Tepkisi"
 msgid "Z Reset"
 msgstr "Z'yi Sıfırla"
 
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
+#: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
+msgid "mm"
+msgstr "mm"
+
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
+msgid "s"
+msgstr "sn"
+
 #: ../utils.cpp:262
 msgid "д "
 msgstr "g "

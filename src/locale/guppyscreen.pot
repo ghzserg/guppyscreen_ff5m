@@ -474,6 +474,15 @@ msgstr ""
 msgid "Z Reset"
 msgstr ""
 
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
+#: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
+msgid "mm"
+msgstr ""
+
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
+msgid "s"
+msgstr ""
+
 #: ../utils.cpp:262
 msgid "д "
 msgstr ""

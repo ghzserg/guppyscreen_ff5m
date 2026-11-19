@@ -89,7 +89,7 @@ TEST_CASE("Fine Tune's values use the number buttons' font") {
   ui::tap_label("Fine Tune");
   app::settle(moonraker);
 
-  for (const char *text : {"100%", "мм/с", "мм"}) {
+  for (const char *text : {"100%", "mm/s", "mm"}) {
     lv_obj_t *label = ui::find_label(text, text[0] != '1' ? ui::Match::Contains : ui::Match::Exact);
     REQUIRE_MESSAGE(label != nullptr, text << " not shown: " << ui::dump_screen());
     INFO(std::string(text));
@@ -119,7 +119,7 @@ TEST_CASE("Fine Tune shows its values in the bottom row without icons") {
   open_fine_tune(moonraker);
   // Each value under the buttons of its column.
   const std::pair<const char *, const char *> columns[] = {
-    {"0.000 мм", "Z-"}, {"0.025 мм/с", "PA-"}, {"100%", "Speed-"}, {"100%", "Flow-"}};
+    {"0.000 mm", "Z-"}, {"0.025 mm/s", "PA-"}, {"100%", "Speed-"}, {"100%", "Flow-"}};
   std::vector<lv_obj_t *> hundreds;
   for (auto [text, down] : columns) {
     lv_obj_t *button = ui::find_label(down);
