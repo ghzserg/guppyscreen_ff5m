@@ -111,3 +111,16 @@ TEST_CASE("Fine Tune shows Z+ as a thicker first layer and Z- as a thinner one")
   CHECK(icon_of("Z+") == &zoffset_thicker_img);
   CHECK(icon_of("Z-") == &zoffset_thinner_img);
 }
+
+TEST_CASE("Fine Tune says Multiplier Step and Z Reset and PA Reset") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Fine Tune");
+  CHECK_MESSAGE(ui::find_label("Multiplier Step") != nullptr, ui::dump_screen());
+  CHECK(ui::find_label("Z Reset") != nullptr);
+  CHECK(ui::find_label("PA Reset") != nullptr);
+  CHECK(ui::find_label("Speed Reset") != nullptr);
+  CHECK(ui::find_label("Multipler Step") == nullptr);
+}
