@@ -22,7 +22,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            git make cmake gcc g++ pkg-config
+            ca-certificates git make cmake gcc g++ pkg-config
 
       - uses: actions/checkout@v4
         with:
