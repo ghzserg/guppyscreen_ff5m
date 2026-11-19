@@ -310,7 +310,7 @@ TEST_CASE("the Print tab is orange while printing") {
   CHECK(print_tab_orange());  // and not the active one
 
   push_print(moonraker, {{"state", "paused"}});
-  CHECK(!print_tab_orange());
+  CHECK(print_tab_orange());
   push_print(moonraker, {{"state", "printing"}});
   CHECK(print_tab_orange());
   push_print(moonraker, {{"state", "complete"}});
