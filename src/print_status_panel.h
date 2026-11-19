@@ -43,7 +43,7 @@ class PrintStatusPanel : public NotifyConsumer {
 
   void consume(json &j);
   void update_time_progress(uint32_t time_passed);
-  // The time left by the hourglass and, on FF5M, as the bar's ETA.
+  // Оставшееся время в полосе прогресса FF5M или рядом с песочными часами.
   void show_time_left(const std::string &eta);
   void update_filament_progress(float value);
   void update_flow_rate(double filament_used);
@@ -59,6 +59,9 @@ class PrintStatusPanel : public NotifyConsumer {
   MiniPrintStatus &get_mini_print_status() { return mini_print_status; }
 
  private:
+#ifdef GUPPY_FF5M
+  void update_acceleration(const json &value);
+#endif
   void handle_metadata(const std::string &gcode_file, uint32_t generation, json &j);
   void update_pause_buttons(const json &state);
   void update_bed_temperature();
@@ -101,9 +104,13 @@ class PrintStatusPanel : public NotifyConsumer {
   ImageLabel flow_rate;
   ImageLabel layers;
   ImageLabel fan0;
+#ifdef GUPPY_FF5M
+  ImageLabel print_acceleration;
+#endif
   ImageLabel elapsed;
-  /* ImageLabel fan1; */
+#ifndef GUPPY_FF5M
   ImageLabel time_left;
+#endif
   ImageLabel filament;
   /* ImageLabel fan2; */
 

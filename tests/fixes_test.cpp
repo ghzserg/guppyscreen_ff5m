@@ -211,7 +211,7 @@ TEST_CASE("an expired print estimate clears all displayed ETAs") {
     {"virtual_sdcard", {{"progress", 0.55}}},
   });
   const auto previous_eta = KUtils::eta_string(540);
-  REQUIRE(app::wait_until([&] { return ui::find_label(previous_eta) != nullptr; }));
+  REQUIRE(app::wait_until([&] { return ui::find_label("ETA: " + previous_eta) != nullptr; }));
   auto *bar = ui::find_shown(&lv_bar_class);
   REQUIRE(bar != nullptr);
   auto end_time = [&] {
@@ -231,7 +231,7 @@ TEST_CASE("an expired print estimate clears all displayed ETAs") {
   moonraker.push_status({{"print_stats", {{"print_duration", 660}}}});
   const auto elapsed = KUtils::eta_string(660);
   REQUIRE(app::wait_until([&] { return ui::find_label(elapsed) != nullptr; }));
-  CHECK(ui::find_label(previous_eta) == nullptr);
+  CHECK(ui::find_label("ETA: " + previous_eta) == nullptr);
   CHECK(end_time() == "...");
 
   ui::tap_tab(Nav::HOME);
@@ -327,7 +327,7 @@ TEST_CASE("starting the same file again reloads its name and estimate once") {
   app::start(server);
   app::wait_ready(server);
   server.push_status({{"print_stats", {{"filename", "part.gcode"}, {"state", "printing"}, {"print_duration", 60}}}});
-  REQUIRE(app::wait_until([] { return ui::find_label(KUtils::eta_string(540)) != nullptr; }));
+  REQUIRE(app::wait_until([] { return ui::find_label("ETA: " + KUtils::eta_string(540)) != nullptr; }));
   const auto first = server.request_count("server.files.metadata");
   server.push_status({{"print_stats", {{"state", "complete"}}}});
   REQUIRE(app::wait_until([] { return ui::find_label("Pause") == nullptr; }));
@@ -336,7 +336,7 @@ TEST_CASE("starting the same file again reloads its name and estimate once") {
   REQUIRE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }));
   app::settle(server);
   CHECK(ui::find_label("part.gcode") != nullptr);
-  CHECK(ui::find_label(KUtils::eta_string(599)) != nullptr);
+  CHECK(ui::find_label("ETA: " + KUtils::eta_string(599)) != nullptr);
   CHECK(server.request_count("server.files.metadata") == first + 1);
 
   server.push_status({{"print_stats", {{"state", "paused"}}}});

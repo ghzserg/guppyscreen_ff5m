@@ -225,7 +225,7 @@ TEST_CASE("late print metadata cannot overwrite the next print") {
 
   CHECK(shown_thumbnail() == next_thumb);
   CHECK_MESSAGE(ui::find_label("2 / 60") != nullptr, ui::dump_screen());
-  CHECK_MESSAGE(ui::find_label(KUtils::eta_string(570)) != nullptr, ui::dump_screen());
+  CHECK_MESSAGE(ui::find_label("ETA: " + KUtils::eta_string(570)) != nullptr, ui::dump_screen());
 }
 
 TEST_CASE("a print whose thumbnail metadata says width 0 shows no thumbnail") {

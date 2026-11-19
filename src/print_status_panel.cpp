@@ -91,8 +91,13 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , flow_rate(detail_cont, &extrude, 100, ("0.0 "+ std::string(_("мм")) +"3/"+ _("с")).c_str())
   , layers(detail_cont, &layers_img, 100, "...")
   , fan0(detail_cont, &fan, 100, "0%")
+#ifdef GUPPY_FF5M
+  , print_acceleration(detail_cont, &limit_img, 100, "...")
+#endif
   , elapsed(detail_cont, &clock_img, 100, ("0 "+ std::string(_("с"))).c_str())
+#ifndef GUPPY_FF5M
   , time_left(detail_cont, &hourglass, 100, "...")
+#endif
   , filament(detail_cont, &filament_img, 100, "...")
   , filament_m(0)
   , estimated_time_s(0)
@@ -130,18 +135,26 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_grid_cell(layers.get_container(), DETAIL_X, 1, 1, LV_GRID_ALIGN_START, 2, 1);
 
   //detail containter row 4
+#ifdef GUPPY_FF5M
+  lv_obj_set_grid_cell(print_acceleration.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 3, 1);
+#else
   lv_obj_set_grid_cell(elapsed.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 3, 1);
+#endif
   lv_obj_set_grid_cell(fan0.get_container(), DETAIL_X, 1, 1, LV_GRID_ALIGN_START, 3, 1);
 
   //detail containter row 5
+#ifdef GUPPY_FF5M
+  lv_obj_set_grid_cell(elapsed.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 4, 1);
+#else
   lv_obj_set_grid_cell(time_left.get_container(), DETAIL_X, 0, 1, LV_GRID_ALIGN_START, 4, 1);
+#endif
   lv_obj_set_grid_cell(filament.get_container(), DETAIL_X, 1, 1, LV_GRID_ALIGN_START, 4, 1);
   // lv_obj_set_grid_cell(fan2.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);
 #ifdef GUPPY_FF5M
   // The values as big as Home's temperatures, right of their icons; one
   // longer than its cell (three fans at 100%) scrolls, as the file name does.
   for (ImageLabel *value : {&extruder_temp, &bed_temp, &print_speed, &z_offset, &flow_rate, &layers, &fan0,
-                            &elapsed, &time_left, &filament}) {
+                            &print_acceleration, &elapsed, &filament}) {
     lv_obj_t *box = value->get_container();
     lv_obj_t *label = value->get_label();
     lv_obj_set_flex_flow(box, LV_FLEX_FLOW_ROW);
@@ -272,6 +285,10 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
 #endif
 
+#ifdef GUPPY_FF5M
+  lv_obj_add_flag(print_acceleration.get_container(), LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_add_event_cb(print_acceleration.get_container(), &PrintStatusPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
+#endif
   lv_obj_add_flag(print_speed.get_container(), LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(print_speed.get_container(), &PrintStatusPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
   lv_obj_add_flag(z_offset.get_container(), LV_OBJ_FLAG_CLICKABLE);
@@ -372,8 +389,21 @@ void PrintStatusPanel::update_bed_temperature() {
                                      : fmt::format("{}", current)).c_str());
 }
 
+#ifdef GUPPY_FF5M
+void PrintStatusPanel::update_acceleration(const json &value) {
+  if (value.is_number()) {
+    print_acceleration.update_label(fmt::format("{} {}/{}2", value.get<int>(), _("мм"), _("с")).c_str());
+  } else {
+    print_acceleration.update_label("...");
+  }
+}
+#endif
+
 void PrintStatusPanel::init(json &fans) {
   update_bed_temperature();
+#ifdef GUPPY_FF5M
+  update_acceleration(State::get_instance()->get_data_copy("/printer_state/toolhead/max_accel"_json_pointer));
+#endif
   fan_speeds.clear();
   std::vector<std::string> values;
   for (auto &f : fans.items()) {
@@ -628,6 +658,13 @@ void PrintStatusPanel::consume(json &j) {
     update_bed_temperature();
   }
 
+#ifdef GUPPY_FF5M
+  static const auto acceleration_path = "/params/0/toolhead/max_accel"_json_pointer;
+  if (j.contains(acceleration_path)) {
+    update_acceleration(j.at(acceleration_path));
+  }
+#endif
+
   // speed
   auto speed = j["/params/0/motion_report/live_velocity"_json_pointer];
   if (!speed.is_null()) {
@@ -730,7 +767,7 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
   } else if (btn == filename_label) {
     // Список файлов открывается по нажатию на имя печатаемого файла.
     if (idle_screen != NULL) lv_obj_move_foreground(idle_screen);
-  } else if (btn == limits_btn.get_container()) {
+  } else if (btn == limits_btn.get_container() || btn == print_acceleration.get_container()) {
     main_panel_ref.get_tune_panel().show_limits();
 #endif
   } else if (btn == mini_print_status.get_container()) {
@@ -749,9 +786,10 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
 }
 
 void PrintStatusPanel::show_time_left(const std::string &eta) {
-  time_left.update_label(eta.c_str());
 #ifdef GUPPY_FF5M
   KUtils::set_label_text(progress_eta, fmt::format(_("ETA: {}"), eta).c_str());
+#else
+  time_left.update_label(eta.c_str());
 #endif
 }
 

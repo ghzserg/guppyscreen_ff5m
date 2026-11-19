@@ -14,6 +14,7 @@
 #include "nav.h"
 #include "sensor_container.h"
 #include "state.h"
+#include "utils.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -502,6 +503,34 @@ TEST_CASE("the print screen Limits button opens the existing limits panel") {
   ui::tap_label("Limits");
   CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Velocity (mm/s)") != nullptr; }), ui::dump_screen());
   CHECK(active_tab() == Nav::PRINT);
+}
+
+TEST_CASE("the print screen shows the acceleration above elapsed time and opens Limits from it") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_result("server.files.metadata", {{"estimated_time", 1063}});
+  start_plain(moonraker);
+  REQUIRE(ui::find_label("20000 мм/с2") != nullptr);
+
+  moonraker.push_status({{"toolhead", {{"max_accel", 12345.0}}},
+                         {"print_stats", {{"print_duration", 57}}}});
+  const auto elapsed_text = KUtils::eta_string(57);
+  const auto eta_text = "ETA: " + KUtils::eta_string(1006);
+  REQUIRE(app::wait_until([&] { return ui::find_label(eta_text) != nullptr; }));
+  auto *acceleration = ui::find_label("12345 мм/с2");
+  auto *elapsed = ui::find_label(elapsed_text);
+  REQUIRE(acceleration != nullptr);
+  REQUIRE(elapsed != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    auto *acceleration_box = lv_obj_get_parent(acceleration);
+    auto *elapsed_box = lv_obj_get_parent(elapsed);
+    CHECK(lv_obj_get_parent(acceleration_box) == lv_obj_get_parent(elapsed_box));
+    CHECK(lv_obj_get_style_grid_cell_row_pos(acceleration_box, 0) == 3);
+    CHECK(lv_obj_get_style_grid_cell_row_pos(elapsed_box, 0) == 4);
+  }
+
+  ui::tap(acceleration);
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Velocity (mm/s)") != nullptr; }), ui::dump_screen());
 }
 
 namespace {
