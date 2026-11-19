@@ -124,3 +124,17 @@ TEST_CASE("Fine Tune says Multiplier Step and Z Reset and PA Reset") {
   CHECK(ui::find_label("Speed Reset") != nullptr);
   CHECK(ui::find_label("Multipler Step") == nullptr);
 }
+
+TEST_CASE("Fine Tune writes its units in English without a Russian translation") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Fine Tune");
+  app::settle(moonraker);
+  std::string screen = ui::dump_screen();
+  CHECK_MESSAGE(ui::find_label("Z (mm) - PA (mm/s)") != nullptr, screen);
+  CHECK_MESSAGE(ui::find_label(" mm", ui::Match::Contains) != nullptr, screen);
+  CHECK_MESSAGE(ui::find_label(" mm/s", ui::Match::Contains) != nullptr, screen);
+  CHECK_MESSAGE(screen.find("мм") == std::string::npos, screen);
+}
