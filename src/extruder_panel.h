@@ -70,10 +70,6 @@ class ExtruderPanel : public NotifyConsumer {
   // Load, Unload and ColdPull: on with a tool in the head; on FF5M with
   // selectable nozzles (C5 Pro), while one is picked.
   void enable_actions(bool tool_in_head);
-  // The tool Load, Unload, COLOR and ColdPull work on, and the tool change
-  // to send before them ("" or "_T_USE T=n\n").
-  int action_tool() const;
-  std::string tool_change(int tool) const;
 };
 
 #endif // __EXTRUDER_PANEL_H__
