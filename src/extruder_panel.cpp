@@ -376,6 +376,7 @@ void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &
   lv_obj_align(nozzle_tiles.get_container(), LV_ALIGN_TOP_LEFT, left, top);  // where Home's are
   // При выборе сопла сразу переключаем инструмент; во время печати выбор запрещён.
   nozzle_tiles.create(nozzles, extruder_temp, false, active_tool_id, [this](int tool) {
+    if (!nozzle_tiles.selectable()) return false;
     auto state = State::get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
     if (state == "printing" || state == "paused") return false;
     if (tool != active_tool_id) {
