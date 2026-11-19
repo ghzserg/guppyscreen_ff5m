@@ -305,8 +305,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
 
     if (btn == coldpull_btn.get_container()) {
       coldpull_btn.disable();
-      int tool = action_tool();
-      ws.gcode_script(tool_change(tool) + fmt::format("COLDPULL T={}", tool));
+      ws.gcode_script(fmt::format("COLDPULL T={}", active_tool_id));
       coldpull_btn.enable();
     }
 
@@ -318,8 +317,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                    length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      int tool = action_tool();
-      ws.gcode_script(tool_change(tool) + fmt::format("M109 S{} T{}\nM83\nG1 E-{} F{}", temp, tool, len, std::stoi(speed) * 60));
+      ws.gcode_script(fmt::format("M109 S{} T{}\nM83\nG1 E-{} F{}", temp, active_tool_id, len, std::stoi(speed) * 60));
       retract_btn.enable();
     }
 
@@ -331,8 +329,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                     length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      int tool = action_tool();
-      ws.gcode_script(tool_change(tool) + fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", code_macro, tool, temp, len, std::stoi(speed) * 60));
+      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", code_macro, active_tool_id, temp, len, std::stoi(speed) * 60));
       code_btn.enable();
     }
 
@@ -344,8 +341,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                                                   length_selector.get_selected_idx());
       const char *speed = lv_btnmatrix_get_btn_text(speed_selector.get_selector(),
                                                     speed_selector.get_selected_idx());
-      int tool = action_tool();
-      ws.gcode_script(tool_change(tool) + fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", load_filament_macro, tool, temp, len, std::stoi(speed) * 60));
+      ws.gcode_script(fmt::format("{} T={} EXTRUDER_TEMP={} EXTRUDE_LEN={} SPEED={}", load_filament_macro, active_tool_id, temp, len, std::stoi(speed) * 60));
       load_btn.enable();
     }
 
@@ -363,30 +359,12 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
   }
 }
 
-int ExtruderPanel::action_tool() const {
-#ifdef GUPPY_FF5M
-  if (nozzle_tiles.selectable()) return nozzle_tiles.selected();
-#endif
-  return active_tool_id;
-}
-
-std::string ExtruderPanel::tool_change(int tool) const {
-#ifdef GUPPY_FF5M
-  if (nozzle_tiles.selectable() && tool != active_tool_id) return fmt::format("_T_USE T={}\n", tool);
-#endif
-  return "";
-}
-
 void ExtruderPanel::enable_actions(bool tool_in_head) {
   bool on = tool_in_head;
 #ifdef GUPPY_FF5M
-  // The tool change comes first: any picked nozzle will do, even with no
-  // tool in the head (active_tool_id -1). COLOR changes the tool too.
-  if (nozzle_tiles.selectable()) {
-    on = nozzle_tiles.has_selection();
-    if (on) code_btn.enable(); else code_btn.disable();
-  }
+  if (nozzle_tiles.selectable()) on = nozzle_tiles.has_selection();
 #endif
+  code_btn.enable();
   for (ButtonContainer *b : {&load_btn, &retract_btn, &coldpull_btn}) {
     if (on) b->enable(); else b->disable();
   }
