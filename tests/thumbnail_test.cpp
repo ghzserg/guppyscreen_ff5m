@@ -433,6 +433,6 @@ TEST_CASE("clearing an image keeps its size without a No data placeholder") {
   lv_img_set_src(img, LV_SYMBOL_OK);
   KUtils::set_img_src(img, NULL);
   CHECK(lv_img_get_src(img) == NULL);
-  CHECK(((lv_img_t *)img)->src_type == LV_IMG_SRC_SYMBOL);
+  CHECK(static_cast<int>(((lv_img_t *)img)->src_type) == LV_IMG_SRC_SYMBOL);
   lv_obj_del(img);
 }
