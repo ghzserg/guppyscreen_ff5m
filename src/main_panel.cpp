@@ -298,8 +298,13 @@ void MainPanel::create_main(lv_obj_t * parent)
 // The colour of each sensor's stripe and chart line, by sensor id: the one
 // named in its config, unless that name is unknown or an earlier sensor
 // already has it. Those get the first colour of CONTRASTING no sensor has,
-// so no two lines on the chart look alike.
-static std::map<std::string, lv_color_t> sensor_colors(json &temp_sensors) {
+// so no two lines on the chart look alike. `others` (sensors other screens
+// show though Home may not, with their usual colour) get a colour too: their
+// own if Home shows them, else the usual one or, if a Home sensor has it, the
+// first of CONTRASTING none has.
+struct OtherSensor { const char *id; lv_palette_t usual; };
+static std::map<std::string, lv_color_t> sensor_colors(json &temp_sensors,
+                                                       std::initializer_list<OtherSensor> others) {
   // In .rodata: looked up once per sensor at startup.
   static const struct { const char *name; lv_palette_t palette; } NAMED[] = {
     {"red", LV_PALETTE_RED},       {"purple", LV_PALETTE_PURPLE}, {"blue", LV_PALETTE_BLUE},
@@ -342,12 +347,19 @@ static std::map<std::string, lv_color_t> sensor_colors(json &temp_sensors) {
       unset.push_back(sensor.key());
     }
   }
-  for (auto &key : unset) {
-    lv_color_t pick = lv_palette_main(LV_PALETTE_ORANGE);  // more sensors than CONTRASTING colours
+  auto first_free = [&]() {
     for (lv_color_t c : CONTRASTING) {
-      if (!taken(c)) { pick = c; break; }
+      if (!taken(c)) return c;
     }
-    colors[key] = pick;
+    return lv_palette_main(LV_PALETTE_ORANGE);  // more sensors than CONTRASTING colours
+  };
+  for (auto &key : unset) {
+    colors[key] = first_free();
+  }
+  // After Home's: they never take a colour a Home sensor could have.
+  for (const OtherSensor &o : others) {
+    if (temp_sensors.contains(o.id)) continue;
+    colors[o.id] = taken(lv_palette_main(o.usual)) ? first_free() : lv_palette_main(o.usual);
   }
   return colors;
 }
@@ -357,7 +369,24 @@ void MainPanel::create_sensors(json &temp_sensors) {
   std::lock_guard<std::mutex> lock(lv_lock);
   sensors.clear();
 #ifdef GUPPY_FF5M
-  std::map<std::string, lv_color_t> colors = sensor_colors(temp_sensors);
+  // PID shows the bed and the weight even when Home doesn't.
+  std::map<std::string, lv_color_t> colors = sensor_colors(
+      temp_sensors, {{PidPanel::BED, LV_PALETTE_PURPLE}, {PidPanel::WEIGHT, LV_PALETTE_ORANGE}});
+  std::vector<NozzleTiles::Nozzle> nozzles;
+  for (auto &sensor : temp_sensors.items()) {
+    int tool = NozzleTiles::tool_of(sensor.key());
+    if (tool >= 0) {
+      nozzles.push_back({sensor.key(), sensor.value()["display_name"].template get<std::string>(), colors[sensor.key()],
+                         tool});
+    }
+  }
+  // Home's content area, the extruder screen's and PID's all start at the
+  // content area's top left corner; the temperatures are Home's top left cell.
+  lv_coord_t left = lv_obj_get_style_pad_left(main_cont, 0) + lv_obj_get_style_pad_left(temp_cont, 0);
+  lv_coord_t top = lv_obj_get_style_pad_top(main_cont, 0) + lv_obj_get_style_pad_top(temp_cont, 0);
+  print_status_panel.get_pid_panel().create_nozzle_tiles(nozzles, left, top);
+  print_status_panel.get_pid_panel().set_colors(colors[PidPanel::BED], colors[PidPanel::WEIGHT]);
+  extruder_panel.create_nozzle_tiles(nozzles, left, top);
 #endif
   for (auto &sensor : temp_sensors.items()) {
     std::string key = sensor.key();

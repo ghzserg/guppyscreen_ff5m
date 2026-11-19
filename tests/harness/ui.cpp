@@ -247,6 +247,30 @@ lv_obj_t *label_container(const std::string &text) {
   return label == NULL ? NULL : lv_obj_get_parent(label);
 }
 
+lv_obj_t *tile(const std::string &name) {
+  lv_obj_t *t = label_container(name);
+  REQUIRE_MESSAGE(t != nullptr, name << " not shown: " << dump_screen());
+  return t;
+}
+
+std::pair<lv_area_t, lv_area_t> tile_and_icon(const std::string &name) {
+  lv_obj_t *t = tile(name);
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_obj_update_layout(lv_scr_act());
+  lv_area_t a, i;
+  lv_obj_get_coords(t, &a);
+  lv_obj_get_coords(lv_obj_get_child(t, 0), &i);
+  return {a, i};
+}
+
+lv_obj_t *find_in(lv_obj_t *root, const lv_obj_class_t *cls) {
+  lv_obj_t *found = nullptr;
+  walk(root, [&](lv_obj_t *o) {
+    if (found == nullptr && lv_obj_check_type(o, cls)) found = o;
+  });
+  return found;
+}
+
 bool has_bg(lv_obj_t *obj, lv_palette_t palette) {
   std::lock_guard<std::mutex> lock(lv_lock());
   return lv_obj_get_style_bg_opa(obj, 0) == LV_OPA_COVER
@@ -259,6 +283,13 @@ void enter_on_numpad(const std::string &value) {
   std::lock_guard<std::mutex> lock(lv_lock());
   lv_textarea_set_text(input, value.c_str());
   lv_event_send(input, LV_EVENT_READY, NULL);  // the keyboard's OK key
+}
+
+bool any_shown(const std::vector<lv_obj_t *> &objs) {
+  for (lv_obj_t *o : objs) {
+    if (is_shown(o)) return true;
+  }
+  return false;
 }
 
 }  // namespace ui
