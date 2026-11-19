@@ -70,30 +70,18 @@ Pixels count_outline_pixels(lv_obj_t *canvas) {
   return n;
 }
 
-lv_obj_t *find_label_anywhere(lv_obj_t *obj, const char *text) {
-  if (lv_obj_check_type(obj, &lv_label_class) && strcmp(lv_label_get_text(obj), text) == 0) return obj;
-  for (uint32_t i = 0; i < lv_obj_get_child_cnt(obj); i++) {
-    if (lv_obj_t *found = find_label_anywhere(lv_obj_get_child(obj, i), text)) return found;
-  }
-  return nullptr;
-}
-
-// The print status screen opens the exclude panel when the thumbnail is
-// tapped. The thumbnail sits above the progress bar, whose end label shows
-// "00:00" (covered by the bar, so ui::find_label doesn't see it).
+// The print status screen opens the exclude panel when the thumbnail's
+// column (the file name over the thumbnail) is tapped.
 void open_exclude_panel() {
-  REQUIRE_MESSAGE(ui::find_label("cubes.gcode") != nullptr,
-                  "print status not shown; screen: " << ui::dump_screen());
+  lv_obj_t *name = ui::find_label("cubes.gcode");
+  REQUIRE_MESSAGE(name != nullptr, "print status not shown; screen: " << ui::dump_screen());
   lv_point_t p;
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    lv_obj_t *progress_end = find_label_anywhere(lv_scr_act(), "00:00");
-    REQUIRE(progress_end != nullptr);
-    lv_obj_t *thumbnail_cont = lv_obj_get_parent(lv_obj_get_parent(progress_end));
-    lv_obj_t *thumbnail = lv_obj_get_child(thumbnail_cont, 0);
+    lv_obj_t *thumbnail_cont = lv_obj_get_parent(name);
     lv_obj_update_layout(lv_scr_act());
     lv_area_t a;
-    lv_obj_get_coords(thumbnail, &a);
+    lv_obj_get_coords(thumbnail_cont, &a);
     p = {(lv_coord_t)((a.x1 + a.x2) / 2), (lv_coord_t)((a.y1 + a.y2) / 2)};
   }
   ui::tap_at(p.x, p.y);
@@ -128,7 +116,7 @@ TEST_CASE("exclude object map excludes the tapped object") {
       CHECK_MESSAGE(px.red > 100, "red outline pixels after exclude: " << px.red);
     }
 
-    ui::tap_label("Back");
+    ui::tap_tab(Nav::PRINT);  // back to the print screen
     REQUIRE(app::wait_until([] { return ui::find_shown(&lv_canvas_class) == nullptr; }));
   }
 }
@@ -162,4 +150,43 @@ TEST_CASE("object updates preserve exclusions until Klipper clears them") {
     const auto cleared = count_outline_pixels(canvas);
     return cleared.red == 0 && cleared.green == refreshed.green + refreshed.red;
   }));
+}
+
+TEST_CASE("leaving the exclude map through the bar frees it") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker);
+
+  open_exclude_panel();
+  lv_obj_t *canvas = nullptr;
+  REQUIRE(app::wait_until([&] { return (canvas = ui::find_shown(&lv_canvas_class)) != nullptr; }));
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    REQUIRE((int)lv_canvas_get_img(canvas)->header.w > 1);  // drawn
+  }
+  ui::tap_tab(Nav::HOME);
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  CHECK((int)lv_canvas_get_img(canvas)->header.w == 1);  // the 1x1 idle buffer
+}
+
+TEST_CASE("exclude map buttons do not cover the map") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker);
+
+  open_exclude_panel();
+  lv_obj_t *canvas = nullptr;
+  REQUIRE(app::wait_until([&] { return (canvas = ui::find_shown(&lv_canvas_class)) != nullptr; }));
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_update_layout(lv_scr_act());
+  lv_area_t map;
+  lv_obj_get_coords(canvas, &map);
+  CHECK(map.x2 <= 799);
+  lv_obj_t *cont = lv_obj_get_parent(canvas);
+  for (uint32_t i = 0; i < lv_obj_get_child_cnt(cont); i++) {
+    lv_obj_t *btn = lv_obj_get_child(cont, i);
+    if (!lv_obj_check_type(btn, &lv_btn_class) || lv_obj_has_flag(btn, LV_OBJ_FLAG_HIDDEN)) continue;
+    lv_area_t b;
+    lv_obj_get_coords(btn, &b);
+    bool overlaps = b.x1 <= map.x2 && b.x2 >= map.x1 && b.y1 <= map.y2 && b.y2 >= map.y1;
+    CHECK_MESSAGE(!overlaps, "button " << b.x1 << "," << b.y1 << " over the map " << map.x1 << ".." << map.x2);
+  }
 }

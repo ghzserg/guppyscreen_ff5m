@@ -44,7 +44,6 @@ class PidPanel : public NotifyConsumer {
   ButtonContainer clear_nozzle_btn;
   ButtonContainer load_cell_tare_btn;
   ButtonContainer bed_level_screws_tune_btn;
-  ButtonContainer back_btn;
 };
 
 #endif // __PID_PANEL_H__

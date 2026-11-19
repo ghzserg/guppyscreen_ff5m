@@ -42,29 +42,13 @@ size_t count_labels(const char *text) {
   return labels_named(text).size();
 }
 
-// Tap tab `idx` on the main tabview's tab bar (the tabview that holds the
-// macros panel's "Show Hidden" label), as a finger would.
-void tap_tab(uint32_t idx) {
-  lv_point_t p;
-  {
-    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    lv_obj_t *tv = find_label_anywhere("Show Hidden");
-    while (tv && !lv_obj_check_type(tv, &lv_tabview_class)) tv = lv_obj_get_parent(tv);
-    REQUIRE(tv != nullptr);
-    uint32_t n = lv_obj_get_child_cnt(lv_tabview_get_content(tv));
-    REQUIRE(idx < n);
-    lv_obj_update_layout(tv);
-    lv_area_t a;
-    lv_obj_get_coords(lv_tabview_get_tab_btns(tv), &a);  // a vertical bar on the left
-    p = {(lv_coord_t)((a.x1 + a.x2) / 2), (lv_coord_t)(a.y1 + (2 * idx + 1) * lv_area_get_height(&a) / (2 * n))};
-  }
-  ui::tap_at(p.x, p.y);
+// Macros is a screen opened from Settings; Home is a tab.
+void open_macros_tab() {
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("Macros");
   app::pump(100);
 }
-
-constexpr uint32_t HOME_TAB = 0, MACROS_TAB = 3;
-void open_macros_tab() { tap_tab(MACROS_TAB); }
-void open_home_tab() { tap_tab(HOME_TAB); }
+void open_home_tab() { ui::tap_tab(Nav::HOME); }
 
 }  // namespace
 
@@ -131,12 +115,13 @@ TEST_CASE("macro list is built when the macros tab is first opened") {
   open_macros_tab();
   CHECK(count_labels("START_PRINT") == 1);  // kept, not built twice
 
+  // settle() waits for quiet requests, not for the answers to be handled.
   reconnect(moonraker);  // with the tab open
-  CHECK(count_labels("START_PRINT") == 1);
+  CHECK(app::wait_until([] { return count_labels("START_PRINT") == 1; }));
 
   open_home_tab();
   reconnect(moonraker);  // with the tab closed
-  CHECK(count_labels("START_PRINT") == 0);
+  CHECK(app::wait_until([] { return count_labels("START_PRINT") == 0; }));
 
   open_macros_tab();
   CHECK(app::wait_until([] { return ui::find_label("START_PRINT") != nullptr; }));

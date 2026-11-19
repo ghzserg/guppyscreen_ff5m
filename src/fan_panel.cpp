@@ -1,18 +1,17 @@
 #include "fan_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
 LV_IMG_DECLARE(cancel);
 LV_IMG_DECLARE(fan_on);
-LV_IMG_DECLARE(back);
 
 FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   : NotifyConsumer(lock)
   , ws(websocket_client)
-  , fanpanel_cont(lv_obj_create(lv_scr_act()))
+  , fanpanel_cont(lv_obj_create(Nav::get().content()))
   , fans_cont(lv_obj_create(fanpanel_cont))
-  , back_btn(fanpanel_cont, &back, _("Back") /* "Назад" */, &FanPanel::_handle_callback, this)
 {
   lv_obj_set_style_pad_all(fanpanel_cont, 0, 0);
 
@@ -23,7 +22,6 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_size(fans_cont, lv_pct(80), lv_pct(100));
   lv_obj_set_flex_flow(fans_cont, LV_FLEX_FLOW_COLUMN);
 
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
   ws.register_notify_update(this);
 }
 
@@ -84,7 +82,6 @@ void FanPanel::create_fans(json &f) {
     lv_obj_clear_flag(fans_cont, LV_OBJ_FLAG_SCROLLABLE);
   }
 
-  lv_obj_move_foreground(back_btn.get_container());
 }
 
 void FanPanel::foreground() {
@@ -105,18 +102,7 @@ void FanPanel::foreground() {
     }
   }
 
-  lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(fanpanel_cont);
-}
-
-void FanPanel::handle_callback(lv_event_t *event) {
-  lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(fanpanel_cont);
-  }
-  else {
-    spdlog::debug("Unknown action button pressed");
-  }
 }
 
 void FanPanel::handle_fan_update(lv_event_t *event) {

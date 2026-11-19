@@ -1,11 +1,11 @@
 #include "extruder_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
 
 #include <limits>
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(spoolman_img);
 LV_IMG_DECLARE(coldpull);
 LV_IMG_DECLARE(extrude_img);
@@ -21,7 +21,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 )
   : NotifyConsumer(lock)
   , ws(websocket_client)
-  , panel_cont(lv_obj_create(lv_scr_act()))
+  , panel_cont(lv_obj_create(Nav::get().content()))
   , spoolman_panel(sm)
   , extruder_temp(ws, panel_cont, &extruder, 150,
           _("Extruder") /* "Экструдер" */, lv_palette_main(LV_PALETTE_RED), false, true, numpad, "extruder", NULL, NULL)
@@ -42,7 +42,6 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , spoolman_btn(rightside_btns_cont, &spoolman_img, "Spoolman", &ExtruderPanel::_handle_callback, this)
   , cooldown_btn(rightside_btns_cont, &cooldown_img, _("Cool down") /* "Остудить" */, &ExtruderPanel::_handle_callback, this)
   , coldpull_btn(rightside_btns_cont, &coldpull, "ColdPull", &ExtruderPanel::_handle_callback, this)
-  , back_btn(rightside_btns_cont, &back, _("Back") /* "Назад" */, &ExtruderPanel::_handle_callback, this)
   , load_filament_macro("LOAD_FILAMENT")
   , code_macro("_GUPPY_MACRO")
   , cooldown_macro("TURN_OFF_HEATERS")
@@ -288,10 +287,6 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                   fmt::ptr(speed_selector.get_selector()));
   } else if (lv_event_get_code(e) == LV_EVENT_SHORT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(e);
-
-    if (btn == back_btn.get_container()) {
-      lv_obj_move_background(panel_cont);
-    }
 
     if (btn == coldpull_btn.get_container()) {
       coldpull_btn.disable();

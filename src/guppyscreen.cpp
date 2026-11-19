@@ -17,6 +17,7 @@
 #endif
 #include "spdlog/spdlog.h"
 #include "state.h"
+#include "nav.h"
 #include "theme.h"
 #include <time.h>
 #include <experimental/filesystem>
@@ -44,6 +45,7 @@ GuppyScreen::GuppyScreen()
   , init_panel(main_panel, main_panel.get_tune_panel().get_bedmesh_panel(), lv_lock)
 {
   main_panel.create_panel();
+  Nav::get().start();
 }
 
 GuppyScreen *GuppyScreen::get() {

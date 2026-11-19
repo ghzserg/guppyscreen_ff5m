@@ -8,16 +8,11 @@
 LV_IMG_DECLARE(filament_img);
 LV_IMG_DECLARE(light_img);
 LV_IMG_DECLARE(move);
-LV_IMG_DECLARE(print);
-LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(fan);
 LV_IMG_DECLARE(heater);
 
-LV_FONT_DECLARE(materialdesign_font_40);
-#define MACROS_SYMBOL "\xF3\xB1\xB2\x83"
-#define CONSOLE_SYMBOL "\xF3\xB0\x86\x8D"
 #define TUNE_SYMBOL "\xF3\xB1\x95\x82"
 #define HOME_SYMBOL "\xF3\xB0\x8B\x9C"
 #define SETTING_SYMBOL "\xF3\xB0\x92\x93"
@@ -34,15 +29,14 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , homing_panel(ws, lock)
   , fan_panel(ws, lock)
   , led_panel(ws, lock)
-  , tabview(lv_tabview_create(lv_scr_act(), LV_DIR_LEFT, 60))
-  , main_tab(lv_tabview_add_tab(tabview, HOME_SYMBOL))
-  , printertune_tab(lv_tabview_add_tab(tabview, TUNE_SYMBOL))
-  , setting_tab(lv_tabview_add_tab(tabview, SETTING_SYMBOL))
-  , macros_tab(lv_tabview_add_tab(tabview, MACROS_SYMBOL))
+  , main_tab(Nav::get().add_tab(Nav::HOME, HOME_SYMBOL))
+  , printertune_tab(Nav::get().add_tab(Nav::TUNE, TUNE_SYMBOL))
+  , setting_tab(Nav::get().add_tab(Nav::SETTINGS, SETTING_SYMBOL))
+  , macros_tab(Nav::get().add_screen())
   , macros_panel(ws, lock, macros_tab)
-  , console_tab(lv_tabview_add_tab(tabview, CONSOLE_SYMBOL))
+  , console_tab(Nav::get().add_screen())
   , console_panel(ws, lock, console_tab)
-  , setting_panel(websocket, lock, setting_tab/*, sm*/)
+  , setting_panel(websocket, lock, setting_tab, [this]() { open_macros(); }, [this]() { open_console(); }/*, sm*/)
   , main_cont(lv_obj_create(main_tab))
   , print_status_panel(websocket, lock, main_cont, *this)
   , print_panel(ws, lock, print_status_panel)
@@ -57,13 +51,6 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , extrude_btn(main_cont, &filament_img, _("Extrude") /* "Экструдер" */, &MainPanel::_handle_extrude_cb, this)
   , action_btn(main_cont, &fan, _("Fans") /* "Обдув" */, &MainPanel::_handle_fanpanel_cb, this)
   , led_btn(main_cont, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
-  , print_btn(main_cont, &print, _("Print") /* "Печать" */, &MainPanel::_handle_print_cb, this)
-  , emergency_btn(main_cont, &emergency, _("Stop") /* "Стоп" */, &MainPanel::_handle_emergency_cb, this,
-                  _("Do you want to emergency stop?") /* "Выполнить аварийную остановку?" */,
-                  [&websocket]() {
-                    spdlog::debug("emergency stop pressed");
-                    websocket.send_jsonrpc("printer.emergency_stop");
-                  })
 {
     lv_style_init(&style);
     lv_style_set_img_recolor_opa(&style, LV_OPA_30);
@@ -72,30 +59,27 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_style_set_bg_color(&style, lv_palette_darken(LV_PALETTE_GREY, 4));
 
     ws.register_notify_update(this);
+
+    Nav::get().set_stop([this]() { ws.send_jsonrpc("printer.emergency_stop"); });
+    Nav::get().on_leave(macros_tab, [this]() { macros_panel.background(); });
 }
 
 MainPanel::~MainPanel() {
-  if (tabview != NULL) {
-    lv_obj_del(tabview);
-    tabview = NULL;
-  }
-
   sensors.clear();
 }
 
 void MainPanel::foreground() {
-  lv_obj_move_foreground(tabview);
-  lv_tabview_set_act(tabview, 0, LV_ANIM_OFF);
+  Nav::get().activate(Nav::HOME);
 }
 
-// The tabview sends LV_EVENT_VALUE_CHANGED for taps on the tab bar and for
-// lv_tabview_set_act() (through its scroll-end handler).
-void MainPanel::handle_tab_change(lv_event_t *e) {
-  if (lv_tabview_get_tab_act(tabview) == lv_obj_get_index(macros_tab)) {
-    macros_panel.foreground();
-  } else {
-    macros_panel.background();
-  }
+// Macros and Console: screens opened from Settings, left through the bar.
+void MainPanel::open_macros() {
+  lv_obj_move_foreground(macros_tab);
+  macros_panel.foreground();  // builds the list the first time
+}
+
+void MainPanel::open_console() {
+  lv_obj_move_foreground(console_tab);
 }
 
 void MainPanel::subscribe() {
@@ -152,34 +136,7 @@ void MainPanel::consume(json &j) {
   }
 }
 
-static void scroll_begin_event(lv_event_t * e)
-{
-  /*Disable the scroll animations. Triggered when a tab button is clicked */
-  if (lv_event_get_code(e) == LV_EVENT_SCROLL_BEGIN) {
-    lv_anim_t * a = (lv_anim_t*)lv_event_get_param(e);
-    if(a)  a->time = 0;
-  }
-}
-
 void MainPanel::create_panel() {
-  lv_obj_clear_flag(lv_tabview_get_content(tabview), LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_add_event_cb(lv_tabview_get_content(tabview), scroll_begin_event, LV_EVENT_SCROLL_BEGIN, NULL);
-  lv_obj_add_event_cb(tabview, &MainPanel::_handle_tab_change, LV_EVENT_VALUE_CHANGED, this);
-
-  lv_obj_t * tab_btns = lv_tabview_get_tab_btns(tabview);
-  lv_obj_set_style_bg_color(tab_btns, lv_palette_main(LV_PALETTE_GREY), LV_STATE_CHECKED | LV_PART_ITEMS);
-  lv_obj_set_style_outline_width(tab_btns, 0, LV_PART_ITEMS | LV_STATE_FOCUS_KEY | LV_STATE_FOCUS_KEY);
-  lv_obj_set_style_border_side(tab_btns, 0, LV_PART_ITEMS | LV_STATE_CHECKED);
-  lv_obj_set_style_text_font(tab_btns, &materialdesign_font_40, LV_STATE_DEFAULT);
-
-  // lv_obj_set_style_text_font(lv_scr_act(), LV_FONT_DEFAULT, 0);
-
-  lv_obj_set_style_pad_all(main_tab, 0, 0);
-  lv_obj_set_style_pad_all(printertune_tab, 0, 0);
-  lv_obj_set_style_pad_all(macros_tab, 0, 0);
-  lv_obj_set_style_pad_all(console_tab, 0, 0);
-  lv_obj_set_style_pad_all(setting_tab, 0, 0);
-
   create_main(main_tab);
 }
 
@@ -212,20 +169,6 @@ void MainPanel::handle_ledpanel_cb(lv_event_t *event) {
   }
 }
 
-void MainPanel::handle_print_cb(lv_event_t *event) {
-  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
-    spdlog::trace("clicked print");
-    print_panel.foreground();
-  }
-}
-
-void MainPanel::handle_emergency_cb(lv_event_t *event) {
-  if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
-    spdlog::trace("clicked emergency");
-    ws.send_jsonrpc("printer.emergency_stop");
-  }
-}
-
 void MainPanel::create_main(lv_obj_t * parent)
 {
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_ROW_WRAP);
@@ -248,8 +191,6 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_grid_cell(extrude_btn.get_container(),   LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_set_grid_cell(action_btn.get_container(),    LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_set_grid_cell(led_btn.get_container(),       LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(print_btn.get_container(),     LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-    lv_obj_set_grid_cell(emergency_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
     // Разрешаем прокрутку контейнера
     lv_obj_add_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);

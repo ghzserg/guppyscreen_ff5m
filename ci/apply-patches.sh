@@ -8,3 +8,5 @@ git -C libhv apply ../patches/0004-fix-cppflags-override.patch
 git -C libhv apply ../patches/0005-libhv-websocket-release-big-message-buffer.patch
 git -C lvgl apply ../patches/0006-lvgl-draw-indexed-8bit-decoded-images.patch
 git -C lvgl apply ../patches/0007-lvgl-draw-indexed-8bit-images-whole.patch
+git -C lvgl apply ../patches/0009-lvgl-transformed-area-margin-only-when-transformed.patch
+git -C lvgl apply ../patches/0010-lvgl-redraw-skips-children-under-a-covering-one.patch

@@ -21,19 +21,11 @@ class ExcludePanel : public NotifyConsumer {
   void background();
   void consume(json &j);
 
-  void handle_callback(lv_event_t *event);
-
-  static void _handle_callback(lv_event_t *event) {
-    ExcludePanel *panel = (ExcludePanel*)event->user_data;
-    panel->handle_callback(event);
-  };
-
  private:
   KWebSocketClient &ws;
   lv_obj_t *cont;
   lv_obj_t *exclude_cont;
   std::vector<SwitchContainer*> switches;
-  ButtonContainer back_btn;
 };
 
 #endif // __EXCLUDE_PANEL_H__

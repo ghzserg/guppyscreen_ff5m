@@ -16,12 +16,9 @@ class PrintPanel : public NotifyConsumer {
 
   void consume(json &data);
   void subscribe();
-  void foreground();
   void handle_callback(lv_event_t *event);
   void handle_metadata(const std::string &path, uint32_t request_id, json &data);
-  void handle_back_btn(lv_event_t *event);
   void handle_print_callback(lv_event_t *event);
-  void handle_status_btn(lv_event_t *event);
   void handle_btns(lv_event_t *event);
 
   static void _handle_callback(lv_event_t *event) {
@@ -29,20 +26,11 @@ class PrintPanel : public NotifyConsumer {
     panel->handle_callback(event);
   };
 
-  static void _handle_back_btn(lv_event_t *event) {
-    PrintPanel *panel = (PrintPanel*)event->user_data;
-    panel->handle_back_btn(event);
-  };
-
   static void _handle_print_callback(lv_event_t *event) {
     PrintPanel *panel = (PrintPanel*)event->user_data;
     panel->handle_print_callback(event);
   };
 
-  static void _handle_status_btn(lv_event_t *event) {
-    PrintPanel *panel = (PrintPanel*)event->user_data;
-    panel->handle_status_btn(event);
-  };
 
   static void _handle_btns(lv_event_t *event) {
     PrintPanel *panel = (PrintPanel*)event->user_data;
@@ -74,9 +62,7 @@ class PrintPanel : public NotifyConsumer {
 
   lv_obj_t *file_table;
   lv_obj_t *file_view;
-  ButtonContainer status_btn;
   ButtonContainer print_btn;
-  ButtonContainer back_btn;
   Tree root;
   Tree *cur_dir;
   Tree *cur_file;

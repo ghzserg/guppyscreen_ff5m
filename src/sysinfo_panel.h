@@ -50,7 +50,6 @@ class SysInfoPanel {
   lv_obj_t *theme_dd;
   uint32_t theme;
 #endif
-  ButtonContainer back_btn;
 
   static std::vector<std::string> log_levels;
   static std::vector<std::string> themes;

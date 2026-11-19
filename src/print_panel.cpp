@@ -1,4 +1,5 @@
 #include "print_panel.h"
+#include "nav.h"
 #include "file_panel.h"
 #include "state.h"
 #include "utils.h"
@@ -7,14 +8,12 @@
 #include <map>
 #include <sstream>
 
-LV_IMG_DECLARE(info_img);
 LV_IMG_DECLARE(print);
-LV_IMG_DECLARE(back);
 
 PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatusPanel &ps)
   : NotifyConsumer(lock)
   , ws(websocket)
-  , files_cont(lv_obj_create(lv_scr_act()))
+  , files_cont(lv_obj_create(Nav::get().content()))
 #ifndef GUPPY_FF5M
   , prompt_cont(lv_obj_create(lv_scr_act()))
   , msgbox(lv_obj_create(prompt_cont))
@@ -29,9 +28,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , az_sort_btn(lv_btn_create(file_table_btns))
   , file_table(lv_table_create(left_cont))
   , file_view(lv_obj_create(files_cont))
-  , status_btn(file_view, &info_img, _("Status") /* "Статус" */, &PrintPanel::_handle_status_btn, this)
   , print_btn(file_view, &print, _("Print") /* "Печать" */, &PrintPanel::_handle_print_callback, this)
-  , back_btn(file_view, &back, _("Back") /* "Назад" */, &PrintPanel::_handle_back_btn, this)
   , root("", "", 0)
   , cur_dir(&root)
   , cur_file(NULL)
@@ -40,6 +37,10 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 {
   spdlog::trace("building print panel");
   lv_obj_move_background(files_cont);
+  // The Print tab: this file list when idle, the print status while printing.
+  Nav::get().add_tab(Nav::PRINT, files_cont, &print);
+  print_status.set_idle_screen(files_cont);
+  Nav::get().on_leave(files_cont, [this]() { file_panel.uncache_thumbnail(); });
 
   lv_obj_set_size(files_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_clear_flag(files_cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -93,13 +94,9 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_grid_dsc_array(file_view, grid_main_col_dsc, grid_main_row_dsc);
   lv_obj_set_grid_cell(file_panel.get_container(), LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
 
-  lv_obj_set_grid_cell(status_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 1, 1);
   lv_obj_set_grid_cell(print_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_END, 1, 1);
-  lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 1, 1);
 
-  lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(print_btn.get_container());
-  lv_obj_move_foreground(status_btn.get_container());
 
 #ifndef GUPPY_FF5M
   // prompt
@@ -171,10 +168,8 @@ void PrintPanel::consume(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
   if(pstat_state.template get<std::string>() != "printing"
      && pstat_state.template get<std::string>() != "paused") {
-    status_btn.disable();
     print_btn.enable();
   } else {
-    status_btn.enable();
     print_btn.disable();
   }
 }
@@ -199,23 +194,6 @@ void PrintPanel::subscribe() {
     cur_dir = root.find_path(KUtils::split(cur_path, '/'));
     show_dir(cur_dir);
   });
-}
-
-void PrintPanel::foreground() {
-  json &pstat_state = State::get_instance()
-    ->get_data("/printer_state/print_stats/state"_json_pointer);
-  spdlog::debug("print panel print stats {}",
-                pstat_state.is_null() ? "nil" : pstat_state.template get<std::string>());
-
-  if (!pstat_state.is_null()
-      && pstat_state.template get<std::string>() != "printing"
-      && pstat_state.template get<std::string>() != "paused") {
-    status_btn.disable();
-  } else {
-    status_btn.enable();
-  }
-
-  lv_obj_move_foreground(files_cont);
 }
 
 void PrintPanel::handle_callback(lv_event_t *e) {
@@ -356,15 +334,6 @@ void PrintPanel::handle_metadata(const std::string &path, uint32_t request_id, j
   }
 }
 
-void PrintPanel::handle_back_btn(lv_event_t *event) {
-  lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    file_panel.uncache_thumbnail();
-    lv_obj_move_background(files_cont);
-    print_status.background();
-  }
-}
-
 void PrintPanel::handle_print_callback(lv_event_t *event) {
   lv_event_code_t code = lv_event_get_code(event);
   if (code == LV_EVENT_SHORT_CLICKED && cur_file != NULL) {
@@ -384,8 +353,17 @@ void PrintPanel::handle_print_callback(lv_event_t *event) {
 
       json fname_input = {{"filename", cur_file->full_path }};
       ws.gcode_script("ZCONTROL_ON");
-      ws.send_jsonrpc("printer.print.start", fname_input);
-      print_status.foreground();
+      // One print per tap: enabled again when Klipper reports an idle state
+      // (consume) or the start fails. The print status shows when Klipper
+      // reports printing.
+      print_btn.disable();
+      ws.send_jsonrpc("printer.print.start", fname_input, [this](json &d) {
+        if (d.contains("error")) {
+          spdlog::warn("print start failed: {}", d["error"].dump());
+          std::lock_guard<std::mutex> lock(lv_lock);
+          print_btn.enable();
+        }
+      });
 
     } else {
 #ifndef GUPPY_FF5M
@@ -395,14 +373,6 @@ void PrintPanel::handle_print_callback(lv_event_t *event) {
       print_status.foreground();
 #endif
     }
-  }
-}
-
-void PrintPanel::handle_status_btn(lv_event_t *event) {
-  lv_event_code_t code = lv_event_get_code(event);
-  if (code == LV_EVENT_SHORT_CLICKED && cur_file != NULL) {
-    spdlog::trace("status button clicked");
-    print_status.foreground();
   }
 }
 

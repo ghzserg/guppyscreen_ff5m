@@ -64,7 +64,6 @@ class FineTunePanel : public NotifyConsumer {
   ButtonContainer flow_reset_btn;
   ButtonContainer flow_up_btn;
   ButtonContainer flow_down_btn;
-  ButtonContainer back_btn;
   Selector zoffset_selector;
   Selector multipler_selector;
   ImageLabel z_offset;

@@ -63,6 +63,10 @@ TEST_CASE("homing panel sends G28") {
 - `row_texts(text)`: texts of the labels next to label `text`, i.e. in its parent container. For example, a sensor row: name, value, "/", target.
 - `texts_in(obj)`: shown label texts under `obj`.
 - `tap(obj)`, `tap_label(text)`: press and release at the widget's centre through the fake touch panel. The touch is read at once (not after LVGL's 30 ms poll), so the click handlers have run when it returns; what they queue runs within the following 20 ms pump.
+- `table_has_row(text)`, `tap_table_row(text)`: rows of a visible table, e.g. the print file list.
+- `tap_tab(Nav::Tab)`: tap a tab of the navigation bar (Home, Print, Tune, Settings), then pump 100 ms. Screens are left this way: there are no Back buttons.
+- `is_shown(obj)`: would a tap at `obj`'s centre reach it.
+- `walk(obj, fn)`: `fn` on `obj` and everything under it. Hold the LVGL lock.
 - `dump_screen()`: all shown label texts. Use it in failure messages.
 - `join(vector)`: format a list for failure messages.
 
@@ -84,7 +88,9 @@ TEST_CASE("homing panel sends G28") {
 - a few macros;
 - `configfile` with `config` and `settings`.
 
-`printer.gcode.script` is always answered with `"ok"` and recorded.
+`printer.gcode.script` is recorded and answered with `"ok"` (or by a handler set with `set_handler`).
+
+**`FakePrinter`** (`tests/harness/fake_printer.h`) sits on top of a `FakeMoonraker` (construct it before `app::start()`): print files with metadata and generated thumbnails, a print state machine (`printer.print.start/pause/resume/cancel`, heat up, progress, `complete`), and extruder/bed heaters that follow their targets and G-code (`SET_HEATER_TEMPERATURE`, `M104/M109/M140/M190`, `TURN_OFF_HEATERS`). It pushes `notify_status_update` from its own thread; `Options` make it fast for tests.
 
 The test config (written by `app::start`) shows the sensors "Extruder" and "Bed" and the three fans. It uses English names on purpose, so tests don't depend on the Russian defaults in `Config`. No translation catalog is loaded, so `_("...")` returns the English source string.
 

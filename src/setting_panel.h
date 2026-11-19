@@ -18,11 +18,14 @@
 #include "websocket_client.h"
 #include "lvgl/lvgl.h"
 
+#include <functional>
 #include <mutex>
 
 class SettingPanel {
  public:
-  SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent/*, SpoolmanPanel &sm*/);
+  // open_macros / open_console: open those screens (they live in MainPanel).
+  SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
+               std::function<void()> open_macros, std::function<void()> open_console/*, SpoolmanPanel &sm*/);
   ~SettingPanel();
 
   lv_obj_t *get_container();
@@ -60,6 +63,10 @@ class SettingPanel {
   ButtonContainer display_on_btn;
   ButtonContainer web_btn;
   ButtonContainer zrestore_btn;
+  ButtonContainer macros_btn;
+  ButtonContainer console_btn;
+  std::function<void()> open_macros;
+  std::function<void()> open_console;
 #ifndef GUPPY_FF5M
   ButtonContainer guppy_update_btn;
   ButtonContainer printer_select_btn;

@@ -1,4 +1,5 @@
 #include "bedmesh_panel.h"
+#include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -7,7 +8,6 @@
 #include <algorithm>
 #include <string>
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(delete_img);
 LV_IMG_DECLARE(auto_img);
 LV_IMG_DECLARE(bedmesh_img);
@@ -24,8 +24,8 @@ uint16_t selected_col = LV_TABLE_CELL_NONE;
 BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
-  , cont(lv_obj_create(lv_scr_act()))
-  , prompt(lv_obj_create(lv_scr_act()))
+  , cont(lv_obj_create(Nav::get().content()))
+  , prompt(lv_obj_create(Nav::get().content()))
   , top_cont(lv_obj_create(cont))
   , mesh_table(lv_table_create(top_cont))
   , profile_cont(lv_table_create(top_cont))
@@ -36,7 +36,6 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   , clear_btn(controls_cont, &delete_img, _("Clean") /* "Очистить" */, &BedMeshPanel::_handle_callback, this)
   , auto_btn(controls_cont, &auto_img, _("Calibrate") /* "Калибровка" */, &BedMeshPanel::_handle_callback, this)
   , calibrate_btn(controls_cont, &bedmesh_img, _("Cold") /* "Холодн" */, &BedMeshPanel::_handle_callback, this)
-  , back_btn(controls_cont, &back, _("Back") /* "Назад" */, &BedMeshPanel::_handle_callback, this)
   , msgbox(lv_obj_create(prompt))
   , input(lv_textarea_create(msgbox))
   , kb(lv_keyboard_create(prompt))
@@ -149,6 +148,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_keyboard_set_textarea(kb, input);
 
   lv_obj_move_background(prompt);
+  Nav::get().add_dialog(prompt);  // stays on top of a tab switch, blocks the tabs
 
   ws.register_notify_update(this);
 }
@@ -464,9 +464,6 @@ void BedMeshPanel::handle_callback(lv_event_t *event) {
     }
     ws.gcode_script("G28\nAUTO_FULL_BED_LEVEL");
     auto_btn.enable();
-  } else if (btn == back_btn.get_container()) {
-    spdlog::trace("back button pressed");
-    lv_obj_move_background(cont);
   }
 }
 

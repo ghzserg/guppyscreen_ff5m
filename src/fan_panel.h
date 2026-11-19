@@ -21,15 +21,10 @@ class FanPanel : public NotifyConsumer {
   lv_obj_t *get_container();
   void create_fans(json &f);
   void foreground();
-  void handle_callback(lv_event_t *event);
   void handle_fan_update(lv_event_t *event);
   void handle_fan_update_part_fan(lv_event_t *event);
   void handle_fan_update_generic(lv_event_t *event);
 
-  static void _handle_callback(lv_event_t *event) {
-    FanPanel *panel = (FanPanel*)event->user_data;
-    panel->handle_callback(event);
-  };
 
   static void _handle_fan_update(lv_event_t *event) {
     FanPanel *panel = (FanPanel*)event->user_data;
@@ -55,7 +50,6 @@ class FanPanel : public NotifyConsumer {
   /* SliderContainer fan0; */
   /* SliderContainer fan1; */
   /* SliderContainer fan2; */
-  ButtonContainer back_btn;
 };
 
 #endif // __FAN_PANEL_H__
