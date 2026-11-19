@@ -70,21 +70,16 @@ Pixels count_outline_pixels(lv_obj_t *canvas) {
   return n;
 }
 
-// The print status screen opens the exclude panel when the thumbnail's
-// column (the file name over the thumbnail) is tapped.
+// Проверяем экран исключения объектов: имя файла теперь открывает каталог.
 void open_exclude_panel() {
   lv_obj_t *name = ui::find_label("cubes.gcode");
   REQUIRE_MESSAGE(name != nullptr, "print status not shown; screen: " << ui::dump_screen());
-  lv_point_t p;
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     lv_obj_t *thumbnail_cont = lv_obj_get_parent(name);
-    lv_obj_update_layout(lv_scr_act());
-    lv_area_t a;
-    lv_obj_get_coords(thumbnail_cont, &a);
-    p = {(lv_coord_t)((a.x1 + a.x2) / 2), (lv_coord_t)((a.y1 + a.y2) / 2)};
+    lv_event_send(thumbnail_cont, LV_EVENT_SHORT_CLICKED, nullptr);
   }
-  ui::tap_at(p.x, p.y);
+  app::pump(20);
 }
 
 }  // namespace

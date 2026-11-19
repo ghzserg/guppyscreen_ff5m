@@ -142,6 +142,11 @@ msgstr ""
 "Tah. Süre: {}\n"
 "Durum: {}"
 
+#: ../print_status_panel.cpp:731
+#, c++-format
+msgid "ETA: {}"
+msgstr "Tah. Süre: {}"
+
 #: ../sysinfo_panel.cpp:197
 msgid "Emergency stop confirmation"
 msgstr "Acil durdurma onayı"
@@ -177,6 +182,10 @@ msgstr "Ekstrüzyon Hızı (mm/s)"
 #: ../main_panel.cpp:52
 msgid "Fans"
 msgstr "Fanlar"
+
+#: ../print_status_panel.cpp:62
+msgid "Files"
+msgstr "Dosyalar"
 
 #: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
 msgid "Fine Tune"

@@ -142,6 +142,11 @@ msgstr ""
 "ETA: {}\n"
 "Status: {}"
 
+#: ../print_status_panel.cpp:731
+#, c++-format
+msgid "ETA: {}"
+msgstr "ETA: {}"
+
 #: ../sysinfo_panel.cpp:197
 msgid "Emergency stop confirmation"
 msgstr "Emergency stop confirmation"
@@ -177,6 +182,10 @@ msgstr ""
 #: ../main_panel.cpp:52
 msgid "Fans"
 msgstr "Fans"
+
+#: ../print_status_panel.cpp:62
+msgid "Files"
+msgstr "Files"
 
 #: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
 msgid "Fine Tune"

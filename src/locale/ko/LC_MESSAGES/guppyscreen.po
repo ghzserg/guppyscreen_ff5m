@@ -142,6 +142,11 @@ msgstr ""
 "ETA: {}\n"
 "상태: {}"
 
+#: ../print_status_panel.cpp:731
+#, c++-format
+msgid "ETA: {}"
+msgstr "ETA: {}"
+
 #: ../sysinfo_panel.cpp:197
 msgid "Emergency stop confirmation"
 msgstr "긴급 정지 확인"
@@ -177,6 +182,10 @@ msgstr "압출 속도(mm/s)"
 #: ../main_panel.cpp:52
 msgid "Fans"
 msgstr "팬"
+
+#: ../print_status_panel.cpp:62
+msgid "Files"
+msgstr "파일"
 
 #: ../print_status_panel.cpp:50 ../printertune_panel.cpp:44
 msgid "Fine Tune"

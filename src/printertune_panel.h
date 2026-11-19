@@ -26,6 +26,9 @@ class PrinterTunePanel {
 
   lv_obj_t *get_container();
   BedMeshPanel &get_bedmesh_panel();
+#ifdef GUPPY_FF5M
+  void show_limits();
+#endif
 #ifndef GUPPY_FF5M
   PowerPanel &get_power_panel();
 #endif

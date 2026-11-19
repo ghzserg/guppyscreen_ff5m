@@ -27,9 +27,10 @@ OPTS="--bpp 3 --size 32 --lcd \
 
 docker run --rm -v "$PWD:/work" -w /work lv_font_conv $OPTS
 
-# Температуры на Home и поле ввода Numpad, 22 px.
+# Температуры на Home, поле ввода Numpad, значения и полоса прогресса экрана
+# печати, 22 px: цифры, единицы всех языков и буквы "ETA: {}".
 OPTS="--bpp 3 --size 22 --lcd \
---font NotoSans-SemiBold.ttf --range 32,37,44-58,84,100,103-105,109,110,115,1076,1084,1089,1095 \
+--font NotoSans-SemiBold.ttf --range 32,37,44-58,65,69,83,84,97,100,101,103-105,109,110,114,115,252,1054,1072,1076,1083,1084,1086,1089,1090,1095,1100 \
 --lv-fallback notosemi_20 --format lvgl -o notosemi_22_digits.c"
 
 docker run --rm -v "$PWD:/work" -w /work lv_font_conv $OPTS
