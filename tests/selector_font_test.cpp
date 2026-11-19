@@ -103,7 +103,7 @@ TEST_CASE("Fine Tune's values use the number buttons' font") {
 TEST_CASE("Fine Tune has its step buttons on top") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   open_fine_tune(moonraker);
-  lv_obj_t *reset = ui::find_label("Reset Z");
+  lv_obj_t *reset = ui::find_label("Z Reset");
   REQUIRE(reset != nullptr);
   lv_obj_t *z = selector_with(".10"), *m = selector_with("25");
   std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
@@ -157,7 +157,7 @@ TEST_CASE("Fine Tune's step buttons are centred over their columns") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   open_fine_tune(moonraker);
   const struct { const char *fourth, *left, *right; } rows[] = {
-    {".10", "Reset Z", "Reset PA"}, {"25", "Speed Reset", "Flow Reset"}};
+    {".10", "Z Reset", "PA Reset"}, {"25", "Speed Reset", "Flow Reset"}};
   for (auto r : rows) {
     lv_obj_t *left = ui::find_label(r.left), *right = ui::find_label(r.right);
     REQUIRE(left != nullptr);

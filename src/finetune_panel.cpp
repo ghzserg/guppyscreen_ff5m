@@ -34,10 +34,10 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , ws(websocket_client)
   , panel_cont(lv_obj_create(Nav::get().content()))
   , values_cont(lv_obj_create(panel_cont))
-  , zreset_btn(panel_cont, &refresh_img, _("Reset Z") /* "Сброс Z" */, &FineTunePanel::_handle_zoffset, this)
+  , zreset_btn(panel_cont, &refresh_img, _("Z Reset") /* "Сброс Z" */, &FineTunePanel::_handle_zoffset, this)
   , zup_btn(panel_cont, &zoffset_thicker_img, "Z+", &FineTunePanel::_handle_zoffset, this)
   , zdown_btn(panel_cont, &zoffset_thinner_img, "Z-", &FineTunePanel::_handle_zoffset, this)
-  , pareset_btn(panel_cont, &refresh_img, _("Reset PA") /* "Сброс PA" */, &FineTunePanel::_handle_pa, this)
+  , pareset_btn(panel_cont, &refresh_img, _("PA Reset") /* "Сброс PA" */, &FineTunePanel::_handle_pa, this)
   , paup_btn(panel_cont, &pa_plus_img, "PA+", &FineTunePanel::_handle_pa, this)
   , padown_btn(panel_cont, &pa_minus_img, "PA-", &FineTunePanel::_handle_pa, this)
   , speed_reset_btn(panel_cont, &refresh_img, _("Speed Reset") /* "Сброс скорость" */, &FineTunePanel::_handle_speed, this)
@@ -55,7 +55,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
                      0, 30, 15,
 #endif
                      &FineTunePanel::_handle_callback, this)
-  , multipler_selector(panel_cont, _("Multipler Step") /* "Множитель шага (%)" */,
+  , multipler_selector(panel_cont, _("Multiplier Step") /* "Множитель шага (%)" */,
                        {"1", "5", "10", "25", ""}, 0, 40, 15, &FineTunePanel::_handle_callback, this)
   , z_offset(values_cont, &home_z, 150, 100, 15, ("0.0 "+ std::string(_("мм"))).c_str() )
   , pa(values_cont, &pa_plus_img, 150, 100, 15, ("0.0 "+ std::string(_("мм")) +"/"+ _("с")).c_str() )

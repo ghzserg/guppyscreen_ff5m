@@ -277,7 +277,7 @@ msgid "Motor off"
 msgstr "Выключить двигатели"
 
 #: ../finetune_panel.cpp:40
-msgid "Multipler Step"
+msgid "Multiplier Step"
 msgstr "Шаг множителя"
 
 #: ../spoolman_panel.cpp:140
@@ -295,6 +295,10 @@ msgstr "Сеть"
 #: ../fan_panel.cpp:73 ../led_panel.cpp:77
 msgid "Off"
 msgstr "Выкл"
+
+#: ../finetune_panel.cpp:29
+msgid "PA Reset"
+msgstr "Сброс PA"
 
 #: ../pid_panel.cpp:34
 msgid "PID Bed"
@@ -353,14 +357,6 @@ msgstr ""
 #: ../retract_panel.cpp:15 ../retract_panel.cpp:16
 msgid "Reset"
 msgstr "Сброс"
-
-#: ../finetune_panel.cpp:29
-msgid "Reset PA"
-msgstr "Сброс PA"
-
-#: ../finetune_panel.cpp:26
-msgid "Reset Z"
-msgstr "Сброс Z"
 
 #: ../setting_panel.cpp:60
 msgid "Restore Print"
@@ -483,6 +479,10 @@ msgstr "Частотная характеристика X"
 #: ../inputshaper_panel.cpp:98
 msgid "Y Frequency Response"
 msgstr "Частотная характеристика Y"
+
+#: ../finetune_panel.cpp:26
+msgid "Z Reset"
+msgstr "Сброс Z"
 
 #: ../utils.cpp:262
 msgid "д "

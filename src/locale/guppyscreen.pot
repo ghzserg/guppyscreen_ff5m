@@ -274,7 +274,7 @@ msgid "Motor off"
 msgstr ""
 
 #: ../finetune_panel.cpp:40
-msgid "Multipler Step"
+msgid "Multiplier Step"
 msgstr ""
 
 #: ../spoolman_panel.cpp:140
@@ -291,6 +291,10 @@ msgstr ""
 
 #: ../fan_panel.cpp:73 ../led_panel.cpp:77
 msgid "Off"
+msgstr ""
+
+#: ../finetune_panel.cpp:29
+msgid "PA Reset"
 msgstr ""
 
 #: ../pid_panel.cpp:34
@@ -345,14 +349,6 @@ msgstr ""
 #: ../limits_panel.cpp:30 ../retract_panel.cpp:13 ../retract_panel.cpp:14
 #: ../retract_panel.cpp:15 ../retract_panel.cpp:16
 msgid "Reset"
-msgstr ""
-
-#: ../finetune_panel.cpp:29
-msgid "Reset PA"
-msgstr ""
-
-#: ../finetune_panel.cpp:26
-msgid "Reset Z"
 msgstr ""
 
 #: ../setting_panel.cpp:60
@@ -472,6 +468,10 @@ msgstr ""
 
 #: ../inputshaper_panel.cpp:98
 msgid "Y Frequency Response"
+msgstr ""
+
+#: ../finetune_panel.cpp:26
+msgid "Z Reset"
 msgstr ""
 
 #: ../utils.cpp:262
