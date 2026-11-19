@@ -28,6 +28,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Apply build patches (AD5M)
+        run: bash ci/apply-patches.sh ad5m
+
       - name: Run tests
         run: make test
 

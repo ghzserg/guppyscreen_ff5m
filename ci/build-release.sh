@@ -40,12 +40,7 @@ esac
 printf 'Building %s %s with %s (sysroot %s)\n' "$model" "$GUPPYSCREEN_VERSION" "$machine" "$SYSROOT"
 
 # These patches are applied in Buildroot after fetching submodules, too.
-git -C lv_drivers apply "../patches/0001-lv_driver_fb_ioctls_flashforge_${model}.patch"
-git -C spdlog apply ../patches/0002-spdlog_fmt_initializer_list.patch
-git -C libhv apply ../patches/0004-fix-cppflags-override.patch
-git -C libhv apply ../patches/0005-libhv-websocket-release-big-message-buffer.patch
-git -C lvgl apply ../patches/0006-lvgl-draw-indexed-8bit-decoded-images.patch
-git -C lvgl apply ../patches/0007-lvgl-draw-indexed-8bit-images-whole.patch
+bash ci/apply-patches.sh "$model"
 
 # Both Buildroot packages use the FF5M screen layout, including small-screen DPI.
 make_args=(
