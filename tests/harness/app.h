@@ -21,6 +21,11 @@ namespace app {
 // Absolute path of a file in tests/fixtures/.
 std::string fixture(const std::string &name);
 
+// A config patch for start(): the monitored sensors of `printer` in the zMod
+// guppyconfig fixture `config` (e.g. "guppyconfig_c5pro.json", "C5Pro"),
+// without the one whose id is `left_out`, if given.
+json zmod_sensors(const std::string &config, const std::string &printer, const std::string &left_out = "");
+
 // Write a test config pointing at `moonraker`, then run GuppyScreen::init().
 // Config, themes and logs go to a fresh temporary directory. `config_patch`
 // is merged into the test config (JSON merge patch).

@@ -54,6 +54,7 @@ class PrintStatusPanel : public NotifyConsumer {
   ExcludePanel &get_exclude_panel();
   ProPanel &get_pro_panel();
   PidPanel &get_pid_panel();
+  MiniPrintStatus &get_mini_print_status() { return mini_print_status; }
 
  private:
   void handle_metadata(const std::string &gcode_file, uint32_t generation, json &j);

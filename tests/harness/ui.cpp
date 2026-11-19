@@ -229,4 +229,18 @@ std::string join(const std::vector<std::string> &items) {
   return "[" + out + "]";
 }
 
+bool has_bg(lv_obj_t *obj, lv_palette_t palette) {
+  std::lock_guard<std::mutex> lock(lv_lock());
+  return lv_obj_get_style_bg_opa(obj, 0) == LV_OPA_COVER
+      && lv_color_to32(lv_obj_get_style_bg_color(obj, 0)) == lv_color_to32(lv_palette_main(palette));
+}
+
+void enter_on_numpad(const std::string &value) {
+  lv_obj_t *input = find_shown(&lv_textarea_class);
+  REQUIRE_MESSAGE(input != NULL, "numpad did not open: " << dump_screen());
+  std::lock_guard<std::mutex> lock(lv_lock());
+  lv_textarea_set_text(input, value.c_str());
+  lv_event_send(input, LV_EVENT_READY, NULL);  // the keyboard's OK key
+}
+
 }  // namespace ui

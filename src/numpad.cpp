@@ -1,7 +1,14 @@
 #include "numpad.h"
+#ifdef GUPPY_FF5M
+#include "sensor_container.h"
+#endif
 #include "spdlog/spdlog.h"
 
 #include <string>
+
+#ifdef GUPPY_FF5M
+LV_FONT_DECLARE(notobold_32_numpad);
+#endif
 
 Numpad::Numpad(lv_obj_t *parent)
   : edit_cont(lv_obj_create(parent))
@@ -26,6 +33,9 @@ Numpad::Numpad(lv_obj_t *parent)
 
   lv_obj_set_size(input, LV_PCT(100), LV_SIZE_CONTENT);
   lv_textarea_set_one_line(input, true);
+#ifdef GUPPY_FF5M
+  lv_obj_set_style_text_font(input, SensorContainer::temperature_font(), 0);  // as big as Home's temperatures
+#endif
 
   lv_obj_set_size(kb, LV_PCT(100), LV_PCT(85));
   static const char * kb_map[] = {"1", "2", "3", "\n", "4", "5", "6", "\n", "7", "8", "9", "\n", LV_SYMBOL_BACKSPACE, "0", LV_SYMBOL_OK, NULL };
@@ -33,6 +43,9 @@ Numpad::Numpad(lv_obj_t *parent)
   lv_keyboard_set_map(kb, LV_KEYBOARD_MODE_USER_1, kb_map, kb_ctrl);
 
   lv_keyboard_set_mode(kb, LV_KEYBOARD_MODE_USER_1);
+#ifdef GUPPY_FF5M
+  lv_obj_set_style_text_font(kb, &notobold_32_numpad, LV_PART_ITEMS);
+#endif
   lv_keyboard_set_textarea(kb, input);
 
   lv_obj_add_event_cb(input, &Numpad::_handle_input, LV_EVENT_ALL, this);

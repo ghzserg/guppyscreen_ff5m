@@ -3,6 +3,7 @@
     "objects": [
       "webhooks", "configfile", "mcu", "mcu eboard", "gcode_move", "print_stats", "virtual_sdcard",
       "pause_resume", "display_status", "exclude_object", "heaters", "heater_bed", "extruder", "fan",
+      "temperature_sensor head", "temperature_sensor weightValue",
       "output_pin fan0", "output_pin fan1", "output_pin fan2", "toolhead", "motion_report",
       "idle_timeout", "bed_mesh", "firmware_retraction",
       "gcode_macro START_PRINT", "gcode_macro END_PRINT", "gcode_macro LOAD_FILAMENT"
@@ -86,6 +87,8 @@
         "available_monitors": []
       },
       "heater_bed": {"temperature": 27.8, "target": 0.0, "power": 0.0},
+      "temperature_sensor head": {"temperature": 33.4},
+      "temperature_sensor weightValue": {"temperature": 90.0},
       "extruder": {
         "temperature": 31.2, "target": 0.0, "power": 0.0, "can_extrude": false,
         "pressure_advance": 0.025, "smooth_time": 0.04, "motor_offset": 0.0

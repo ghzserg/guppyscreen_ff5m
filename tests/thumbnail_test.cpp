@@ -163,11 +163,12 @@ TEST_CASE("a print whose file has a single thumbnail shows it scaled") {
   REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") > 0; }));
   app::settle(moonraker);
 
-  // Print status panel: 192 px wide; mini status on Home: 5% of the screen.
+  // Print status panel: 192 px wide, mini status on Home: 76 px, its whole
+  // height above the progress bar.
   auto zooms = png_zooms();
   INFO("zooms: " << zooms.size());
   CHECK(std::find(zooms.begin(), zooms.end(), 192 * 256 / THUMB) != zooms.end());
-  CHECK(std::find(zooms.begin(), zooms.end(), (uint16_t)(0.05 * 800 / THUMB * 256)) != zooms.end());
+  CHECK(std::find(zooms.begin(), zooms.end(), 76 * 256 / THUMB) != zooms.end());
 }
 
 TEST_CASE("late print metadata cannot overwrite the next print") {
