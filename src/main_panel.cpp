@@ -3,6 +3,8 @@
 #include "lvgl/lvgl.h"
 #include "spdlog/spdlog.h"
 
+#include <algorithm>
+#include <strings.h>
 #include <string>
 #include <map>
 #include <optional>
@@ -135,6 +137,28 @@ void MainPanel::init(json &j) {
   auto fans = State::get_instance()->get_display_fans();
   print_status_panel.init(fans);
   printertune_panel.init(j);
+#ifdef GUPPY_FF5M
+  // Циркуляция воздуха там, где у Klipper есть вентиляторы, которыми управляют
+  // макросы AIR_CIRCULATION_* Z-Mod (на AD5X они пустые): внутренний и внешний
+  // вентиляторы и заслонка AD5M Pro, вентиляторы камеры C5 Pro. Тогда её
+  // кнопки на экране вентиляторов, а не на экране Pro.
+  json objs = State::get_instance()->get_data("/printer_objs/objects"_json_pointer);
+  auto has = [&objs](std::initializer_list<const char *> names) {
+    for (const char *n : names) {
+      // Без учёта регистра: Klipper отдаёт имя макроса так, как оно записано в конфиге.
+      auto same = [n](const json &o) { return o.is_string() && strcasecmp(o.get_ref<const std::string &>().c_str(), n) == 0; };
+      if (!objs.is_array() || std::none_of(objs.begin(), objs.end(), same)) return false;
+    }
+    return true;
+  };
+  bool air = has({"servo my_servo", "fan_generic internal", "fan_generic external"})
+      || has({"fan_generic chamber_heat_fan", "fan_generic chamber_loop_fan", "fan_generic chamber_cool_fan"});
+  fan_panel.show_air_circulation(air);
+  // Калибровки Z-Mod определяет на C5 Pro с выключенным экраном.
+  bool pro = print_status_panel.get_pro_panel().configure(!air, has({"gcode_macro CALIBRATE_EXTRUDERS"}),
+                                                          has({"gcode_macro CALIBRATE_VFA"}));
+  printertune_panel.show_pro(pro);
+#endif
 //  print_status_panel.get_exclude_panel().init(j);
   print_status_panel.get_retract_panel().init(j);
 }

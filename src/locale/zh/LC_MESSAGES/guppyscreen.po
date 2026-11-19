@@ -154,6 +154,10 @@ msgstr "紧急停止确认"
 msgid "Excitate"
 msgstr "激励频率"
 
+#: ../fan_panel.cpp:26
+msgid "Ext"
+msgstr ""
+
 #: ../pro_panel.cpp:17
 msgid "External circulation"
 msgstr "外循环模式"
@@ -225,6 +229,10 @@ msgstr "归位"
 #: ../main_panel.cpp:50
 msgid "Homing"
 msgstr "归位操作"
+
+#: ../fan_panel.cpp:24
+msgid "Int"
+msgstr ""
 
 #: ../pro_panel.cpp:16
 msgid "Internal circulation"
@@ -421,6 +429,10 @@ msgstr "速度-"
 msgid "Square Corner Velocity (mm/s)"
 msgstr "直角拐角速度（毫米/秒）"
 
+#: ../fan_panel.cpp:28
+msgid "Stop"
+msgstr "停止"
+
 #: ../pro_panel.cpp:18
 msgid "Stop circulation"
 msgstr "停止循环"
@@ -514,6 +526,3 @@ msgstr "h "
 
 #~ msgid "Status"
 #~ msgstr "状态"
-
-#~ msgid "Stop"
-#~ msgstr "停止"

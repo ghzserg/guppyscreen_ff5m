@@ -155,6 +155,10 @@ msgstr "Acil durdurma onayı"
 msgid "Excitate"
 msgstr "Uyar"
 
+#: ../fan_panel.cpp:26
+msgid "Ext"
+msgstr ""
+
 #: ../pro_panel.cpp:17
 msgid "External circulation"
 msgstr "Harici Dolaşım"
@@ -226,6 +230,10 @@ msgstr "Sıfıra Git"
 #: ../main_panel.cpp:50
 msgid "Homing"
 msgstr "Sıfıra Gitme"
+
+#: ../fan_panel.cpp:24
+msgid "Int"
+msgstr ""
 
 #: ../pro_panel.cpp:16
 msgid "Internal circulation"
@@ -422,6 +430,10 @@ msgstr "Hız-"
 msgid "Square Corner Velocity (mm/s)"
 msgstr "Köşe Hızı (SCV)(mm/s)"
 
+#: ../fan_panel.cpp:28
+msgid "Stop"
+msgstr "Dur"
+
 #: ../pro_panel.cpp:18
 msgid "Stop circulation"
 msgstr "Dolaşımı Durdur"
@@ -515,6 +527,3 @@ msgstr "s "
 
 #~ msgid "Status"
 #~ msgstr "Durum"
-
-#~ msgid "Stop"
-#~ msgstr "Dur"

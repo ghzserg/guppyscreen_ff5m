@@ -156,6 +156,10 @@ msgstr "Подтверждение аварийной остановки"
 msgid "Excitate"
 msgstr "Запуск"
 
+#: ../fan_panel.cpp:26
+msgid "Ext"
+msgstr "Внеш"
+
 #: ../pro_panel.cpp:17
 msgid "External circulation"
 msgstr "Внешняя циркуляция"
@@ -227,6 +231,10 @@ msgstr "Домой"
 #: ../main_panel.cpp:50
 msgid "Homing"
 msgstr "Домой"
+
+#: ../fan_panel.cpp:24
+msgid "Int"
+msgstr "Внутр"
 
 #: ../pro_panel.cpp:16
 msgid "Internal circulation"
@@ -422,6 +430,10 @@ msgstr "Скор-"
 msgid "Square Corner Velocity (mm/s)"
 msgstr "Скорость углов (SCV)(мм/с)"
 
+#: ../fan_panel.cpp:28
+msgid "Stop"
+msgstr "Стоп"
+
 #: ../pro_panel.cpp:18
 msgid "Stop circulation"
 msgstr "Остановить циркуляцию"
@@ -518,6 +530,3 @@ msgstr "ч "
 
 #~ msgid "Status"
 #~ msgstr "Статус"
-
-#~ msgid "Stop"
-#~ msgstr "Стоп"

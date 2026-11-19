@@ -15,6 +15,12 @@ class ProPanel : public NotifyConsumer {
   ~ProPanel();
 
   void foreground();
+#ifdef GUPPY_FF5M
+  // Кнопки циркуляции, если `circulation` (их нет на экране вентиляторов), и
+  // калибровки, если у Klipper есть их макросы; без циркуляции калибровки
+  // в первом ряду. Возвращает, показана ли хоть одна кнопка.
+  bool configure(bool circulation, bool calibrate_extruders, bool calibrate_vfa);
+#endif
   void handle_callback(lv_event_t *event);
   void consume(json &j);
   static void _handle_callback(lv_event_t *event) {

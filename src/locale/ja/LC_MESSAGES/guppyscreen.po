@@ -155,6 +155,10 @@ msgstr "緊急停止の確認"
 msgid "Excitate"
 msgstr "励起する"
 
+#: ../fan_panel.cpp:26
+msgid "Ext"
+msgstr ""
+
 #: ../pro_panel.cpp:17
 msgid "External circulation"
 msgstr "外部循環"
@@ -226,6 +230,10 @@ msgstr "ホーム"
 #: ../main_panel.cpp:50
 msgid "Homing"
 msgstr "ホーム移動"
+
+#: ../fan_panel.cpp:24
+msgid "Int"
+msgstr ""
 
 #: ../pro_panel.cpp:16
 msgid "Internal circulation"
@@ -422,6 +430,10 @@ msgstr "速度－"
 msgid "Square Corner Velocity (mm/s)"
 msgstr "直角コーナー速度 (mm/s)"
 
+#: ../fan_panel.cpp:28
+msgid "Stop"
+msgstr "停止"
+
 #: ../pro_panel.cpp:18
 msgid "Stop circulation"
 msgstr "循環停止"
@@ -515,6 +527,3 @@ msgstr "h "
 
 #~ msgid "Status"
 #~ msgstr "状態"
-
-#~ msgid "Stop"
-#~ msgstr "停止"

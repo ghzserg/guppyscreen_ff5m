@@ -3,6 +3,8 @@
 #include "state.h"
 #include "spdlog/spdlog.h"
 
+#include <utility>
+
 LV_IMG_DECLARE(air_circulation_internal_img);
 LV_IMG_DECLARE(air_circulation_external_img);
 LV_IMG_DECLARE(air_circulation_stop_img);
@@ -38,6 +40,29 @@ ProPanel::ProPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_grid_cell(calibrate_extruders_btn.get_container(),      LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(calibrate_vfa_btn.get_container(),            LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
 }
+
+#ifdef GUPPY_FF5M
+bool ProPanel::configure(bool circulation, bool calibrate_extruders, bool calibrate_vfa) {
+  const std::pair<ButtonContainer *, bool> buttons[] = {
+      {&air_circulation_internal_btn, circulation}, {&air_circulation_external_btn, circulation},
+      {&air_circulation_stop_btn, circulation}, {&calibrate_extruders_btn, calibrate_extruders},
+      {&calibrate_vfa_btn, calibrate_vfa}};
+  bool any = false;
+  for (const auto &[btn, show] : buttons) {
+    if (show) {
+      lv_obj_clear_flag(btn->get_container(), LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_add_flag(btn->get_container(), LV_OBJ_FLAG_HIDDEN);
+    }
+    any = any || show;
+  }
+  // Без циркуляции калибровки поднимаются в первый ряд: без пустого ряда.
+  const int row = circulation ? 2 : 1;
+  lv_obj_set_grid_cell(calibrate_extruders_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, row, 1);
+  lv_obj_set_grid_cell(calibrate_vfa_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, row, 1);
+  return any;
+}
+#endif
 
 ProPanel::~ProPanel() {
   if (cont != NULL) {

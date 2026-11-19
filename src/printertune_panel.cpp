@@ -159,6 +159,17 @@ void PrinterTunePanel::init(json &j) {
 #endif
 }
 
+#ifdef GUPPY_FF5M
+void PrinterTunePanel::show_pro(bool show) {
+  if (show) {
+    lv_obj_clear_flag(pro_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(pro_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  }
+  lv_obj_set_grid_cell(pid_btn.get_container(), LV_GRID_ALIGN_CENTER, show ? 1 : 0, 1, LV_GRID_ALIGN_START, 2, 1);
+}
+#endif
+
 void PrinterTunePanel::handle_callback(lv_event_t *event) {
   if (lv_event_get_code(event) == LV_EVENT_SHORT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(event);

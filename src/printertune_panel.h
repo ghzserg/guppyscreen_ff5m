@@ -33,6 +33,11 @@ class PrinterTunePanel {
   PowerPanel &get_power_panel();
 #endif
   void init(json &j);
+#ifdef GUPPY_FF5M
+  // Pro только если на его экране есть кнопки для этого принтера; иначе PID
+  // на месте Pro.
+  void show_pro(bool show);
+#endif
   void handle_callback(lv_event_t *event);
 
   static void _handle_callback(lv_event_t *event) {
