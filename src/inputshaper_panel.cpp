@@ -106,15 +106,8 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   // graphs
   lv_img_set_zoom(xgraph, 95);
   lv_obj_center(xgraph);
-  if (fs::exists("/opt/config/mod_data/resonances_X.png")) {
-    KUtils::set_img_src(xgraph, "A:/opt/config/mod_data/resonances_X.png");
-  }
-
   lv_img_set_zoom(ygraph, 95);
   lv_obj_center(ygraph);
-  if (fs::exists("/opt/config/mod_data/resonances_Y.png")) {
-    KUtils::set_img_src(ygraph, "A:/opt/config/mod_data/resonances_Y.png");
-  }
 
   lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
   lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -261,6 +254,14 @@ void InputShaperPanel::foreground() {
       lv_dropdown_set_selected(yshaper_dd, idx);
     }
   }
+
+  // Корень config становится доступен после ответа Moonraker.
+  const std::string config_root = KUtils::is_running_local() ? KUtils::get_root_path("config") : "";
+  const std::string root = config_root.empty() ? "/opt/config" : config_root;
+  const std::string xfile = fmt::format("{}/{}", root, X_PNG);
+  const std::string yfile = fmt::format("{}/{}", root, Y_PNG);
+  if (fs::exists(xfile)) KUtils::set_img_src(xgraph, ("A:" + xfile).c_str());
+  if (fs::exists(yfile)) KUtils::set_img_src(ygraph, ("A:" + yfile).c_str());
 
   lv_obj_move_foreground(cont);
 }
