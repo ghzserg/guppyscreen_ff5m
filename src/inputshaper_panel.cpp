@@ -283,8 +283,6 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
       // free src
       KUtils::set_img_src(xgraph, NULL);
-      // hack to color in empty space.
-      ((lv_img_t*)xgraph)->src_type = LV_IMG_SRC_SYMBOL;
 
       lv_label_set_text(xoutput, "");
       lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
@@ -298,8 +296,6 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
       // free src
       KUtils::set_img_src(ygraph, NULL);
-      // hack to color in empty space.
-      ((lv_img_t*)ygraph)->src_type = LV_IMG_SRC_SYMBOL;
 
       lv_label_set_text(youtput, "");
       lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);

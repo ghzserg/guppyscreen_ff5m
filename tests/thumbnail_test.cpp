@@ -421,3 +421,18 @@ TEST_CASE("file browser preserves the chosen sort in folders and after refresh")
   ui::tap_table_row("folder");
   CHECK(ui::find_label("zulu.gcode") != nullptr);
 }
+
+TEST_CASE("clearing an image keeps its size without a No data placeholder") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_t *img = lv_img_create(lv_scr_act());
+  lv_obj_set_size(img, 120, 80);
+  lv_img_set_src(img, LV_SYMBOL_OK);
+  KUtils::set_img_src(img, NULL);
+  CHECK(lv_img_get_src(img) == NULL);
+  CHECK(((lv_img_t *)img)->src_type == LV_IMG_SRC_SYMBOL);
+  lv_obj_del(img);
+}

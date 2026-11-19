@@ -55,6 +55,7 @@ namespace KUtils {
 
   // lv_img_set_src(), then drop the decoded copy of the file `img` showed
   // before (if any) from the image cache.
+  // При src == NULL изображение остаётся пустым.
   void set_img_src(lv_obj_t *img, const void *src);
 
   // Drop the decoded copy of the file `img` shows from the image cache, e.g.

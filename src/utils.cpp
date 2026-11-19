@@ -344,6 +344,10 @@ std::string end_time(int64_t seconds_to_add) {
   void set_img_src(lv_obj_t *img, const void *src) {
     std::string old = file_src(img);
     lv_img_set_src(img, src);
+    if (src == NULL) {
+      // Без источника LVGL рисует белый прямоугольник «No data».
+      ((lv_img_t *)img)->src_type = LV_IMG_SRC_SYMBOL;
+    }
     if (!old.empty()) {
       lv_img_cache_invalidate_src(old.c_str());
     }
