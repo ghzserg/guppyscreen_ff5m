@@ -14,7 +14,7 @@ msgstr ""
 
 #: ../print_panel.cpp:73
 msgid " A-Z"
-msgstr " A–Z"
+msgstr " A-Z"
 
 #: ../print_panel.cpp:69
 msgid " Changed"
@@ -35,6 +35,10 @@ msgstr "%d.%m.%Y %H:%M"
 #: ../file_panel.cpp:60 ../file_panel.cpp:73 ../file_panel.cpp:75
 msgid "(Unknown)"
 msgstr "(Neznámé)"
+
+#: ../extruder_panel.cpp:49
+msgid "Remove"
+msgstr "Odebrat"
 
 #: ../limits_panel.cpp:28
 msgid "Acceleration (mm/s2)"
