@@ -135,6 +135,19 @@ void MainPanel::init(json &j) {
   auto fans = State::get_instance()->get_display_fans();
   print_status_panel.init(fans);
   printertune_panel.init(j);
+#ifdef GUPPY_FF5M
+  const json objects = State::get_instance()->get_data("/printer_objs/objects"_json_pointer);
+  bool has_weight = false;
+  if (objects.is_array()) {
+    for (const auto &obj : objects) {
+      if (obj == PidPanel::WEIGHT) {
+        has_weight = true;
+        break;
+      }
+    }
+  }
+  print_status_panel.get_pid_panel().show_weight_controls(has_weight);
+#endif
 //  print_status_panel.get_exclude_panel().init(j);
   print_status_panel.get_retract_panel().init(j);
 }

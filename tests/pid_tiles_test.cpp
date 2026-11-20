@@ -248,11 +248,16 @@ std::vector<uint32_t> pid_chart_colours(lv_obj_t *nozzle) {
 
 }  // namespace
 
-// PID's bed and weight tiles (and lines) take Home's colours: the bed's from
-// the config, the weight's (not on Home on a C5 Pro) one no Home sensor has.
-TEST_CASE("the C5 Pro PID screen colours the bed and the weight as Home does") {
+// При наличии weightValue доступны все три управления независимо от имени профиля.
+TEST_CASE("the C5 Pro PID screen keeps weight controls and colours when weightValue exists") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
-  app::start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+  json objects = moonraker.result("printer.objects.list");
+  objects["objects"].push_back("temperature_sensor weightValue");
+  moonraker.set_result("printer.objects.list", objects);
+  json config = app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro");
+  config["default_printer"] = "C5Pro";
+  config["printers"]["C5Pro"] = config["printers"]["FF5M"];
+  app::start(moonraker, config);
   app::wait_ready(moonraker);
   std::vector<uint32_t> home;
   for (const char *name : {"T0", "T1", "T2", "T3", "Bed", "Chamber"}) home.push_back(stripe_of(tile(name)));
@@ -261,6 +266,8 @@ TEST_CASE("the C5 Pro PID screen colours the bed and the weight as Home does") {
   open_pid(moonraker);
   lv_obj_t *bed = tile("Bed");
   lv_obj_t *weight = tile("Weight");
+  CHECK(ui::find_label("Clear nozzle") != nullptr);
+  CHECK(ui::find_label("Load Cell") != nullptr);
   CHECK(stripe_of(bed) == home_bed);
   INFO("weight " << std::hex << stripe_of(weight));
   CHECK(std::find(home.begin(), home.end(), stripe_of(weight)) == home.end());

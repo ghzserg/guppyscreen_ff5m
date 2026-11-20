@@ -1,5 +1,4 @@
 #include "pid_panel.h"
-#include "config.h"
 #include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -121,14 +120,6 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_grid_cell(clear_nozzle_btn.get_container(),          LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(bed_level_screws_tune_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(load_cell_tare_btn.get_container(),        LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-#ifdef GUPPY_FF5M
-  const json &printer = Config::get_instance()->get_json("/default_printer");
-  if (printer.is_string() && printer.get_ref<const std::string &>().rfind("C5", 0) == 0) {
-    lv_obj_add_flag(weight_temp.get_sensor(), LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(clear_nozzle_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(load_cell_tare_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-  }
-#endif
   ws.register_notify_update(this);
 }
 
@@ -294,6 +285,13 @@ int PidPanel::chart_selected_nozzle() {
     lv_chart_set_series_color(temp_chart, extruder_temp_series, nozzle_tiles.nozzle(tool)->color);
   }
   return tool;
+}
+
+void PidPanel::show_weight_controls(bool show) {
+  for (lv_obj_t *obj : {weight_temp.get_sensor(), clear_nozzle_btn.get_container(), load_cell_tare_btn.get_container()}) {
+    if (show) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+  }
 }
 
 void PidPanel::set_colors(lv_color_t bed, lv_color_t weight) {
