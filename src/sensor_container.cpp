@@ -303,6 +303,13 @@ void SensorContainer::handle_edit2(lv_event_t *e) {
         update_target(v);
     });
     numpad.foreground_reset();
-    numpad.set_close_callback(this, nullptr);  // for forget() on delete
+    std::function<void()> on_close;
+#ifdef GUPPY_FF5M
+    if (tile) {
+      highlight(true);
+      on_close = [this] { highlight(false); };
+    }
+#endif
+    numpad.set_close_callback(this, std::move(on_close));
   }
 }

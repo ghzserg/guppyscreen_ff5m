@@ -287,6 +287,13 @@ int PidPanel::chart_selected_nozzle() {
   return tool;
 }
 
+void PidPanel::show_weight_controls(bool show) {
+  for (lv_obj_t *obj : {weight_temp.get_sensor(), clear_nozzle_btn.get_container(), load_cell_tare_btn.get_container()}) {
+    if (show) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
 void PidPanel::set_colors(lv_color_t bed, lv_color_t weight) {
   heater_bed_temp.set_color(bed);
   weight_temp.set_color(weight);

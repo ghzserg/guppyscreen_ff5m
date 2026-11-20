@@ -31,6 +31,9 @@ class PidPanel : public NotifyConsumer {
   static constexpr const char *WEIGHT = "temperature_sensor weightValue";
 
 #ifdef GUPPY_FF5M
+  // Вес, очистка сопла и сброс веса доступны при наличии тензодатчика Klipper.
+  void show_weight_controls(bool show);
+
   // The nozzles' tiles instead of the extruder's and the T0-T3 buttons: a
   // tap selects the nozzle to calibrate (with several) and asks for the
   // calibration temperature. Called by MainPanel::create_sensors, under the
