@@ -138,3 +138,18 @@ TEST_CASE("Fine Tune writes its units in English without a Russian translation")
   CHECK_MESSAGE(ui::find_label(" mm/s", ui::Match::Contains) != nullptr, screen);
   CHECK_MESSAGE(screen.find("мм") == std::string::npos, screen);
 }
+
+// Знак на сопле чёрный, а не прозрачный: на любом фоне он не пропадает.
+TEST_CASE("Fine Tune's Z offset icons draw their sign black on the nozzle") {
+  for (const lv_img_dsc_t *img : {&zoffset_thicker_img, &zoffset_thinner_img}) {
+    REQUIRE(img->header.cf == LV_IMG_CF_INDEXED_8BIT);
+    const lv_color32_t *palette = (const lv_color32_t *)img->data;
+    const uint8_t *px = img->data + 256 * sizeof(lv_color32_t);
+    int black = 0;
+    for (uint32_t i = 0; i < img->header.w * img->header.h; i++) {
+      lv_color32_t c = palette[px[i]];
+      if (c.ch.alpha == 0xff && c.ch.red < 40 && c.ch.green < 40 && c.ch.blue < 40) black++;
+    }
+    CHECK(black >= 20);
+  }
+}
