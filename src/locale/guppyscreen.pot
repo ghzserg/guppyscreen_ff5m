@@ -153,6 +153,14 @@ msgstr ""
 msgid "Excitate"
 msgstr ""
 
+#: ../switch_container.cpp:93
+msgid "Exclude"
+msgstr ""
+
+#: ../switch_container.cpp:95
+msgid "Exclude Object?"
+msgstr ""
+
 #: ../fan_panel.cpp:26
 msgid "Ext"
 msgstr ""
@@ -460,6 +468,10 @@ msgid ""
 "Weight: {} g|{}\n"
 "Time: {}\n"
 "Size: {} MB"
+msgstr ""
+
+#: ../init_panel.cpp:29
+msgid "Welcome to Guppy Screen. Use the settings to add your printer."
 msgstr ""
 
 #: ../inputshaper_panel.cpp:88

@@ -90,9 +90,9 @@ void SwitchContainer::hide() {
 }
 
 void SwitchContainer::handle_prompt() {
-    static const char * swts[] = {"Exclude", "Cancel", ""};
+    static const char * swts[] = {_("Exclude"), _("Cancel"), ""};
 
-    lv_obj_t *mbox1 = lv_msgbox_create(NULL, "Exclude Object?/Исключить объект?", prompt_text.c_str(), swts, false);
+    lv_obj_t *mbox1 = lv_msgbox_create(NULL, _("Exclude Object?"), prompt_text.c_str(), swts, false);
     lv_obj_t *msg = ((lv_msgbox_t*)mbox1)->text;
     lv_obj_set_style_text_align(msg, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_width(msg, LV_PCT(100));

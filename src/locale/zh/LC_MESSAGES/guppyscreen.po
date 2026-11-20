@@ -154,6 +154,14 @@ msgstr "紧急停止确认"
 msgid "Excitate"
 msgstr "激励频率"
 
+#: ../switch_container.cpp:93
+msgid "Exclude"
+msgstr "排除"
+
+#: ../switch_container.cpp:95
+msgid "Exclude Object?"
+msgstr "排除对象？"
+
 #: ../fan_panel.cpp:26
 msgid "Ext"
 msgstr ""
@@ -470,6 +478,10 @@ msgstr ""
 "重量：{} 克|{}\n"
 "时间：{}\n"
 "大小：{} MB"
+
+#: ../init_panel.cpp:29
+msgid "Welcome to Guppy Screen. Use the settings to add your printer."
+msgstr "欢迎使用 Guppy Screen。请在设置中添加您的打印机。"
 
 #: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"

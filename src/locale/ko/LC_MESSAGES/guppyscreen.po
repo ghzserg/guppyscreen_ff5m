@@ -155,6 +155,14 @@ msgstr "긴급 정지 확인"
 msgid "Excitate"
 msgstr "격려"
 
+#: ../switch_container.cpp:93
+msgid "Exclude"
+msgstr "제외"
+
+#: ../switch_container.cpp:95
+msgid "Exclude Object?"
+msgstr "객체를 제외할까요?"
+
 #: ../fan_panel.cpp:26
 msgid "Ext"
 msgstr ""
@@ -471,6 +479,10 @@ msgstr ""
 "무게: {} g|{}\n"
 "시간: {}\n"
 "크기: {} MB"
+
+#: ../init_panel.cpp:29
+msgid "Welcome to Guppy Screen. Use the settings to add your printer."
+msgstr "Guppy Screen에 오신 것을 환영합니다. 설정에서 프린터를 추가하세요."
 
 #: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"

@@ -156,6 +156,14 @@ msgstr "Подтверждение аварийной остановки"
 msgid "Excitate"
 msgstr "Запуск"
 
+#: ../switch_container.cpp:93
+msgid "Exclude"
+msgstr "Исключить"
+
+#: ../switch_container.cpp:95
+msgid "Exclude Object?"
+msgstr "Исключить объект?"
+
 #: ../fan_panel.cpp:26
 msgid "Ext"
 msgstr "Внеш"
@@ -471,6 +479,10 @@ msgstr ""
 "Вес: {} г|{}\n"
 "Время: {}\n"
 "Размер: {} МБ"
+
+#: ../init_panel.cpp:29
+msgid "Welcome to Guppy Screen. Use the settings to add your printer."
+msgstr "Добро пожаловать в Guppy Screen. Добавьте принтер в настройках."
 
 #: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"

@@ -50,7 +50,7 @@ static std::map<int32_t, uint32_t> sleepsec_to_dd_idx = {
 };
 
 static std::map<std::string, uint32_t> sleep_label_to_sec = {
-  {"Никогда", -1}, // never
+  {"None", -1}, // never
   {"5m", 300}, // 5 min
   {"10m", 600}, // 10 min
   {"20m", 1200}, // 20 min

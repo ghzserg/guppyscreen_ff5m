@@ -229,3 +229,36 @@ TEST_CASE("print thumbnail is outlined when objects can be excluded") {
     CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 0);
   }
 }
+
+TEST_CASE("the exclude prompt of an object without a polygon is in English without a Russian translation") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  std::ifstream f(app::fixture("ad5m_basic.json"));
+  json sub = json::parse(f)["printer.objects.subscribe"];
+  sub["status"]["print_stats"]["state"] = "printing";
+  sub["status"]["print_stats"]["filename"] = "cubes.gcode";
+  sub["status"]["exclude_object"] = {
+    {"objects", json::array({{{"name", "CENTER_CUBE"}}})},  // без polygon: список переключателей
+    {"excluded_objects", json::array()},
+    {"current_object", "CENTER_CUBE"},
+  };
+  moonraker.set_result("printer.objects.subscribe", sub);
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  open_exclude_panel();
+
+  lv_obj_t *name = nullptr;
+  REQUIRE_MESSAGE(app::wait_until([&] { return (name = ui::find_label("CENTER_CUBE")) != nullptr; }), ui::dump_screen());
+  app::settle(moonraker);
+  ui::tap(name);
+  bool shown = app::wait_until([] { return ui::find_label("Exclude Object?") != nullptr; });
+  std::string screen = ui::dump_screen();
+  CHECK_MESSAGE(shown, screen);
+  lv_obj_t *btns = ui::find_shown(&lv_btnmatrix_class);
+  REQUIRE_MESSAGE(btns != nullptr, screen);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(std::string(lv_btnmatrix_get_btn_text(btns, 0)) == "Exclude");
+    CHECK(std::string(lv_btnmatrix_get_btn_text(btns, 1)) == "Cancel");
+  }
+  CHECK_MESSAGE(screen.find("Исключить") == std::string::npos, screen);
+}

@@ -155,6 +155,14 @@ msgstr "緊急停止の確認"
 msgid "Excitate"
 msgstr "励起する"
 
+#: ../switch_container.cpp:93
+msgid "Exclude"
+msgstr "除外"
+
+#: ../switch_container.cpp:95
+msgid "Exclude Object?"
+msgstr "オブジェクトを除外しますか？"
+
 #: ../fan_panel.cpp:26
 msgid "Ext"
 msgstr ""
@@ -471,6 +479,10 @@ msgstr ""
 "重量: {} g|{}\n"
 "時間: {}\n"
 "サイズ: {} MB"
+
+#: ../init_panel.cpp:29
+msgid "Welcome to Guppy Screen. Use the settings to add your printer."
+msgstr "Guppy Screen へようこそ。設定でプリンターを追加してください。"
 
 #: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"

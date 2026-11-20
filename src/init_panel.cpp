@@ -24,9 +24,9 @@ InitPanel::InitPanel(MainPanel &mp, BedMeshPanel &bmp, std::mutex& l)
 
   Config *conf = Config::get_instance();
   if (!conf->get_json("/default_printer").is_null()) {
-    lv_label_set_text(label, LV_SYMBOL_WARNING " Ждем запуска Klipper...");
+    lv_label_set_text(label, (LV_SYMBOL_WARNING + std::string(_(" Waiting for the Klipper launch..."))).c_str());
   } else {
-    lv_label_set_text(label, "Добро пожаловать в Guppy Screen. Используйте параметры, для добавления вашего принтера.");
+    lv_label_set_text(label, _("Welcome to Guppy Screen. Use the settings to add your printer."));
   }
   lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);

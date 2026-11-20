@@ -155,6 +155,14 @@ msgstr "Confirmação de paragem de emergência"
 msgid "Excitate"
 msgstr "Excitar"
 
+#: ../switch_container.cpp:93
+msgid "Exclude"
+msgstr "Excluir"
+
+#: ../switch_container.cpp:95
+msgid "Exclude Object?"
+msgstr "Excluir objeto?"
+
 #: ../fan_panel.cpp:26
 msgid "Ext"
 msgstr ""
@@ -471,6 +479,10 @@ msgstr ""
 "Peso: {} g|{}\n"
 "Tempo: {}\n"
 "Tamanho: {} MB"
+
+#: ../init_panel.cpp:29
+msgid "Welcome to Guppy Screen. Use the settings to add your printer."
+msgstr "Bem-vindo ao Guppy Screen. Adicione sua impressora nas configurações."
 
 #: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"

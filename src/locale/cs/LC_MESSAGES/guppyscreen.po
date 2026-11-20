@@ -150,6 +150,14 @@ msgstr "Potvrzení nouzového zastavení"
 msgid "Excitate"
 msgstr "Excitovat"
 
+#: ../switch_container.cpp:93
+msgid "Exclude"
+msgstr "Vyloučit"
+
+#: ../switch_container.cpp:95
+msgid "Exclude Object?"
+msgstr "Vyloučit objekt?"
+
 #: ../fan_panel.cpp:26
 msgid "Ext"
 msgstr ""
@@ -466,6 +474,10 @@ msgstr ""
 "Hmotnost: {} g|{}\n"
 "Čas: {}\n"
 "Velikost: {} MB"
+
+#: ../init_panel.cpp:29
+msgid "Welcome to Guppy Screen. Use the settings to add your printer."
+msgstr "Vítejte v Guppy Screen. Přidejte svou tiskárnu v nastavení."
 
 #: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"
