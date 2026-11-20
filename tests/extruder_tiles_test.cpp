@@ -2,7 +2,8 @@
 // extruder line. With several nozzles (C5 Pro) they replace the T0-T3 buttons:
 // a tap selects the nozzle, the active one has a blue background. With one
 // nozzle (AD5M, AD5X) there is nothing to select; the AD5X keeps its T0-T3
-// buttons (four tools on one nozzle). No colour stripe under the tiles.
+// buttons (four tools on one nozzle).
+// Цветные полоски под соплами такие же, как на Home и PID.
 
 #include "doctest/doctest.h"
 
@@ -58,12 +59,13 @@ TEST_CASE("the C5 Pro extruder screen shows a tile per nozzle with its temperatu
   CHECK(std::find(t2.begin(), t2.end(), "187") != t2.end());
   CHECK(std::find(t2.begin(), t2.end(), "210") != t2.end());
   for (const char *t : {"T0", "T1", "T3"}) CHECK(ui::find_label(t) != nullptr);
-  CHECK_FALSE(has_stripe(tile("T2")));
+  for (const char *t : {"T0", "T1", "T2", "T3"}) CHECK(has_stripe(tile(t)));
   // No single extruder line and no T0-T3 buttons.
   CHECK(ui::find_label("Extruder") == nullptr);
   CHECK_FALSE(tools_buttons_visible());
   auto last_tool = ui::coords(tile("T3"));
   auto remove = ui::coords(tile("Remove"));
+  CHECK_FALSE(has_stripe(tile("Remove")));
   CHECK(remove.x1 > last_tool.x2);
   CHECK(remove.y1 == last_tool.y1);
   CHECK(remove.y2 == last_tool.y2);
@@ -220,7 +222,7 @@ TEST_CASE("the AD5M nozzle tile on the extruder screen is not selectable") {
   auto texts = ui::row_texts("Extruder");
   CHECK(std::find(texts.begin(), texts.end(), "/") == texts.end());
   CHECK_FALSE(is_blue(tile("Extruder")));
-  CHECK_FALSE(has_stripe(tile("Extruder")));
+  CHECK(has_stripe(tile("Extruder")));
   CHECK(ui::find_label("Remove") == nullptr);
   ui::tap(tile("Extruder"));
   app::settle(moonraker);

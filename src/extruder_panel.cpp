@@ -399,7 +399,7 @@ void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &
     lv_obj_del(remove_tool_tile);
     remove_tool_tile = nullptr;
   }
-  nozzle_tiles.create(nozzles, extruder_temp, false, active_tool_id, [this](int tool) {
+  nozzle_tiles.create(nozzles, extruder_temp, true, active_tool_id, [this](int tool) {
     if (!nozzle_tiles.selectable()) return false;
     auto state = State::get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
     if (state == "printing" || state == "paused") return false;
