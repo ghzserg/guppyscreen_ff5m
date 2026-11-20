@@ -42,8 +42,8 @@ msgid "(Unknown)"
 msgstr "(Bilinmeyen)"
 
 #: ../extruder_panel.cpp:49
-msgid "Remove extruder"
-msgstr "Ekstrüderi çıkar"
+msgid "Remove"
+msgstr "Çıkar"
 
 #: ../limits_panel.cpp:28
 msgid "Acceleration (mm/s2)"

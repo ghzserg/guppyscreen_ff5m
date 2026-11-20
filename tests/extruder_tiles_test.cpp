@@ -62,6 +62,11 @@ TEST_CASE("the C5 Pro extruder screen shows a tile per nozzle with its temperatu
   // No single extruder line and no T0-T3 buttons.
   CHECK(ui::find_label("Extruder") == nullptr);
   CHECK_FALSE(tools_buttons_visible());
+  auto last_tool = ui::coords(tile("T3"));
+  auto remove = ui::coords(tile("Remove"));
+  CHECK(remove.x1 > last_tool.x2);
+  CHECK(remove.y1 == last_tool.y1);
+  CHECK(remove.y2 == last_tool.y2);
 }
 
 // Нажатие на плитку сразу отправляет команду переключения инструмента.
@@ -92,9 +97,9 @@ TEST_CASE("Remove extruder parks the selected C5 Pro tool") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
 
-  REQUIRE(ui::find_label("Remove extruder") != nullptr);
+  REQUIRE(ui::find_label("Remove") != nullptr);
   ui::tap(tile("T2"));
-  ui::tap_label("Remove extruder");
+  ui::tap_label("Remove");
   REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() == 2; }));
   CHECK(moonraker.gcodes()[0] == "_T_USE T=2");
   CHECK(moonraker.gcodes()[1] == "_T_OUT");
@@ -102,7 +107,7 @@ TEST_CASE("Remove extruder parks the selected C5 Pro tool") {
   moonraker.push_status({{"zmod_color", {{"active_tool_id", -1}}}});
   app::settle(moonraker);
   CHECK_FALSE(is_blue(tile("T2")));
-  ui::tap_label("Remove extruder");
+  ui::tap_label("Remove");
   app::settle(moonraker);
   CHECK(moonraker.gcodes().size() == 2);
 }
@@ -113,8 +118,8 @@ TEST_CASE("Remove extruder does nothing if the C5 Pro carriage is empty") {
   moonraker.push_status({{"zmod_color", {{"active_tool_id", -1}}}});
   app::settle(moonraker);
 
-  REQUIRE(ui::find_label("Remove extruder") != nullptr);
-  ui::tap_label("Remove extruder");
+  REQUIRE(ui::find_label("Remove") != nullptr);
+  ui::tap_label("Remove");
   app::settle(moonraker);
   CHECK(moonraker.gcodes().empty());
 }
@@ -130,7 +135,7 @@ TEST_CASE("Remove extruder is blocked while the C5 Pro prints or pauses") {
     ui::tap_label("Extrude");
     app::settle(moonraker);
 
-    ui::tap_label("Remove extruder");
+    ui::tap_label("Remove");
     app::settle(moonraker);
     CHECK(moonraker.gcodes().empty());
   }
@@ -205,7 +210,7 @@ TEST_CASE("the AD5X extruder screen shows its nozzle's tile and keeps the T0-T3 
   CHECK(std::find(texts.begin(), texts.end(), "210") != texts.end());
   CHECK(std::find(texts.begin(), texts.end(), "/") == texts.end());  // a tile, not the line
   CHECK(tools_buttons_visible());
-  CHECK(ui::find_label("Remove extruder") == nullptr);
+  CHECK(ui::find_label("Remove") == nullptr);
 }
 
 TEST_CASE("the AD5M nozzle tile on the extruder screen is not selectable") {
@@ -216,7 +221,7 @@ TEST_CASE("the AD5M nozzle tile on the extruder screen is not selectable") {
   CHECK(std::find(texts.begin(), texts.end(), "/") == texts.end());
   CHECK_FALSE(is_blue(tile("Extruder")));
   CHECK_FALSE(has_stripe(tile("Extruder")));
-  CHECK(ui::find_label("Remove extruder") == nullptr);
+  CHECK(ui::find_label("Remove") == nullptr);
   ui::tap(tile("Extruder"));
   app::settle(moonraker);
   CHECK_FALSE(is_blue(tile("Extruder")));

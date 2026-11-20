@@ -42,7 +42,7 @@ msgid "(Unknown)"
 msgstr ""
 
 #: ../extruder_panel.cpp:49
-msgid "Remove extruder"
+msgid "Remove"
 msgstr ""
 
 #: ../limits_panel.cpp:28

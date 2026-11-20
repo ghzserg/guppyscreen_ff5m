@@ -42,8 +42,8 @@ msgid "(Unknown)"
 msgstr "(알 수 없음)"
 
 #: ../extruder_panel.cpp:49
-msgid "Remove extruder"
-msgstr "익스트루더 분리"
+msgid "Remove"
+msgstr "분리"
 
 #: ../limits_panel.cpp:28
 msgid "Acceleration (mm/s2)"
