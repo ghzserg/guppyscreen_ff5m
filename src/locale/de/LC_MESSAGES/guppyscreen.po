@@ -464,7 +464,7 @@ msgstr "Gewicht"
 
 #: ../file_panel.cpp:72
 msgid ""
-"Weight: {} г|{}\n"
+"Weight: {} g|{}\n"
 "Time: {}\n"
 "Size: {} MB"
 msgstr ""
@@ -491,6 +491,10 @@ msgstr "d "
 #: ../utils.cpp:276
 msgid "h "
 msgstr "h "
+
+#: ../print_status_panel.cpp:378 ../print_status_panel.cpp:906
+msgid "m"
+msgstr "m"
 
 #: ../utils.cpp:279
 msgid "min "

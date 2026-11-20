@@ -375,7 +375,7 @@ void PrintStatusPanel::reset() {
   flow_rate.update_label(("0.0 "+ std::string(_("mm")) +"3/"+ _("s")).c_str());
   elapsed.update_label(("0 "+ std::string(_("s"))).c_str());
   show_time_left("...");
-  filament.update_label("0 м");
+  filament.update_label(("0 " + std::string(_("m"))).c_str());
   filament_m = 0;
   estimated_time_s = 0;
   layers.update_label(fmt::format("{} / {}", 0, 0).c_str());
@@ -903,7 +903,7 @@ int PrintStatusPanel::current_layer(json &info) {
 }
 
 void PrintStatusPanel::update_filament_progress(float value) {
-  filament.update_label(fmt::format("{:.2f} м", value).c_str());
+  filament.update_label(fmt::format("{:.2f} {}", value, _("m")).c_str());
     if (value>filament_m+(float)0.1) {
       filament_m=value;
       spdlog::trace("drop_caches");

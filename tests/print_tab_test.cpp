@@ -848,5 +848,6 @@ TEST_CASE("the print screen writes its units and time in English without a Russi
   std::string screen = ui::dump_screen();
   CHECK_MESSAGE(ui::find_label(" mm/s", ui::Match::Contains) != nullptr, screen);
   CHECK_MESSAGE(ui::find_label(" mm3/s", ui::Match::Contains) != nullptr, screen);
-  CHECK_MESSAGE(screen.find("мм") == std::string::npos, screen);
+  CHECK_MESSAGE(ui::find_label("0 m") != nullptr, screen);
+  CHECK_MESSAGE(screen.find(" м") == std::string::npos, screen);
 }
