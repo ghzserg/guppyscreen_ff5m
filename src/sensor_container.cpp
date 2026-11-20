@@ -263,6 +263,11 @@ int SensorContainer::get_target_value() {
   return target;
 }
 
+void SensorContainer::attach_series(lv_obj_t *new_chart, lv_chart_series_t *new_series) {
+  chart = new_chart;
+  series = new_series;
+}
+
 void SensorContainer::update_series(int v) {
   if (series != NULL && chart != NULL) {
     auto delta = std::time(nullptr) - last_updated_ts;

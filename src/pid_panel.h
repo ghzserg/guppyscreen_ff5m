@@ -47,6 +47,8 @@ class PidPanel : public NotifyConsumer {
 #endif
 
  private:
+  void create_chart();
+
   KWebSocketClient &ws;
   lv_obj_t *cont;
   Numpad numpad;
@@ -54,11 +56,8 @@ class PidPanel : public NotifyConsumer {
   int total_tools = 1;
 
   lv_obj_t *temp_cont;
-  lv_obj_t *temp_chart;
+  lv_obj_t *temp_chart = nullptr;
   lv_obj_t *tools_btnmatrix;
-  lv_chart_series_t *extruder_temp_series;
-  lv_chart_series_t *heater_bed_temp_series;
-  lv_chart_series_t *weight_temp_series;
   SensorContainer extruder_temp;
   SensorContainer heater_bed_temp;
   SensorContainer weight_temp;
@@ -74,6 +73,7 @@ class PidPanel : public NotifyConsumer {
   // Once a nozzle is tapped, the printer's tool no longer moves the selection.
   bool nozzle_picked = false;
   bool bed_selected = false;
+  lv_chart_series_t *extruder_temp_series = nullptr;
   int charted_tool = -1;  // whose temperature and colour the chart's line has
   int chart_selected_nozzle();  // the selected tool
 #endif

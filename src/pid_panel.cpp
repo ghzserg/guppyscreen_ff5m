@@ -18,17 +18,13 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   , cont(lv_obj_create(Nav::get().content()))
   , numpad(Numpad(cont))
   , temp_cont(lv_obj_create(cont))
-  , temp_chart(lv_chart_create(cont))
-  , extruder_temp_series(lv_chart_add_series(temp_chart, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y))
-  , heater_bed_temp_series(lv_chart_add_series(temp_chart, lv_palette_main(LV_PALETTE_PURPLE), LV_CHART_AXIS_PRIMARY_Y))
-  , weight_temp_series(lv_chart_add_series(temp_chart, lv_palette_main(LV_PALETTE_ORANGE), LV_CHART_AXIS_PRIMARY_Y))
   , extruder_temp(ws, temp_cont, &extruder, 150,
-          _("Extruder") /* "Экструдер" */, lv_palette_main(LV_PALETTE_RED), true, true, numpad, "extruder", temp_chart, extruder_temp_series, true)
+          _("Extruder") /* "Экструдер" */, lv_palette_main(LV_PALETTE_RED), true, true, numpad, "extruder", nullptr, nullptr, true)
   , heater_bed_temp(ws, temp_cont, &bed, 150,
           _("Bed") /* "Стол" */, lv_palette_main(LV_PALETTE_PURPLE), true, true, numpad,
- BED, temp_chart, heater_bed_temp_series, true)
+ BED, nullptr, nullptr, true)
   , weight_temp(ws, temp_cont, &heater, 150,
-          _("Weight") /* "Вес" */, lv_palette_main(LV_PALETTE_ORANGE), false, false, numpad, WEIGHT, temp_chart, weight_temp_series, true)
+          _("Weight") /* "Вес" */, lv_palette_main(LV_PALETTE_ORANGE), false, false, numpad, WEIGHT, nullptr, nullptr, true)
   , pid_extruder_btn(cont, &pid_extruder_img, _("PID Extruder") /* "PID Экструдера" */, &PidPanel::_handle_callback, this)
   , pid_bed_btn(cont, &pid_bed_img, _("PID Bed") /* "PID Стола" */, &PidPanel::_handle_callback, this)
   , clear_nozzle_btn(cont, &clear_nozzle_img, _("Clear nozzle") /* "Очистить сопло" */, &PidPanel::_handle_callback, this)
@@ -65,23 +61,6 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_pad_column(temp_cont, SensorContainer::tile_gap(), 0);
 #endif
   lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 2);
-
-  lv_obj_align(temp_chart, LV_ALIGN_CENTER, 0, 0);
-  lv_obj_set_size(temp_chart, LV_PCT(45), LV_PCT(40));
-
-  lv_obj_set_style_pad_top(temp_chart, 0, 0);
-  lv_obj_set_style_pad_bottom(temp_chart, 4, 0);
-
-  lv_obj_set_style_size(temp_chart, 0, LV_PART_INDICATOR);
-
-  lv_chart_set_range(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 350);
-  lv_obj_set_grid_cell(temp_chart, LV_GRID_ALIGN_END, 0, 2, LV_GRID_ALIGN_END, 2, 1);
-  lv_chart_set_axis_tick(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 6, 5, true, 50);
-
-  lv_chart_set_div_line_count(temp_chart, 3, 8);
-  lv_chart_set_point_count(temp_chart, 200);
-  lv_chart_set_zoom_x(temp_chart, 5000);
-  lv_obj_scroll_to_x(temp_chart, LV_COORD_MAX, LV_ANIM_OFF);
 
   extruder_temp.update_target(245);
   heater_bed_temp.update_target(80);
@@ -133,6 +112,10 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
 }
 
 PidPanel::~PidPanel() {
+  ws.unregister_notify_update(this);
+  extruder_temp.attach_series(nullptr, nullptr);
+  heater_bed_temp.attach_series(nullptr, nullptr);
+  weight_temp.attach_series(nullptr, nullptr);
   if (cont != NULL) {
     lv_obj_del(cont);
     cont = NULL;
@@ -194,7 +177,9 @@ void PidPanel::consume(json &j) {
   if (!nozzle_tiles.empty()) {  // the extruder's tile is hidden
     if (!nozzle_picked && !bed_selected) nozzle_tiles.show_selected(active_tool_id);  // at first, the printer's tool
     nozzle_tiles.update(j, false);  // their targets: the calibration temperature
-    extruder_temp.update_series(nozzle_tiles.tile(chart_selected_nozzle())->get_value());
+    if (temp_chart) {
+      extruder_temp.update_series(nozzle_tiles.tile(chart_selected_nozzle())->get_value());
+    }
   } else
 #endif
   {
@@ -230,7 +215,40 @@ void PidPanel::consume(json &j) {
   }
 }
 
+void PidPanel::create_chart() {
+  temp_chart = lv_chart_create(cont);
+  lv_obj_move_to_index(temp_chart, 2);
+  lv_obj_set_size(temp_chart, LV_PCT(45), LV_PCT(40));
+
+  lv_obj_set_style_pad_top(temp_chart, 0, 0);
+  lv_obj_set_style_pad_bottom(temp_chart, 4, 0);
+
+  lv_obj_set_style_size(temp_chart, 0, LV_PART_INDICATOR);
+
+  lv_chart_set_range(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 350);
+  lv_obj_set_grid_cell(temp_chart, LV_GRID_ALIGN_END, 0, 2, LV_GRID_ALIGN_END, 2, 1);
+  lv_chart_set_axis_tick(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 6, 5, true, 50);
+
+  lv_chart_set_div_line_count(temp_chart, 3, 8);
+  lv_chart_set_point_count(temp_chart, 200);
+  lv_chart_set_zoom_x(temp_chart, 5000);
+  lv_obj_scroll_to_x(temp_chart, LV_COORD_MAX, LV_ANIM_OFF);
+
+  for (SensorContainer *sensor : {&extruder_temp, &heater_bed_temp, &weight_temp}) {
+    const auto color = lv_obj_get_style_border_color(sensor->get_sensor(), LV_PART_MAIN);
+    auto *series = lv_chart_add_series(temp_chart, color, LV_CHART_AXIS_PRIMARY_Y);
+    sensor->attach_series(temp_chart, series);
+#ifdef GUPPY_FF5M
+    if (sensor == &extruder_temp) extruder_temp_series = series;
+#endif
+  }
+#ifdef GUPPY_FF5M
+  if (!nozzle_tiles.empty()) chart_selected_nozzle();
+#endif
+}
+
 void PidPanel::foreground() {
+  if (!temp_chart) create_chart();
   lv_obj_move_foreground(cont);
 }
 

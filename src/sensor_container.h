@@ -66,6 +66,7 @@ class SensorContainer {
   lv_obj_t *get_sensor();
   void update_target(int new_target);
   void update_value(int new_value);
+  void attach_series(lv_obj_t *chart, lv_chart_series_t *series);
   void update_series(int value);
   int get_target_value();
   int get_value() { return value; }

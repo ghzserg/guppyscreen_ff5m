@@ -168,6 +168,27 @@ TEST_CASE("a C5 Pro nozzle left out of the config keeps the PID screen's tools")
   CHECK(moonraker.gcodes().back() == "PID_TUNE_EXTRUDER T=2 TEMPERATURE=230");
 }
 
+TEST_CASE("the PID chart is allocated on the first visit") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  const auto charts = [] {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    int count = 0;
+    ui::walk(lv_scr_act(), [&](lv_obj_t *obj) {
+      if (lv_obj_check_type(obj, &lv_chart_class)) ++count;
+    });
+    return count;
+  };
+
+  const int before_pid = charts();
+  open_pid(moonraker);
+  CHECK(charts() == before_pid + 1);
+  open_pid(moonraker);
+  CHECK(charts() == before_pid + 1);
+}
+
 // The chart's extruder line: the selected nozzle's, in its tile's colour.
 TEST_CASE("the PID chart draws the selected nozzle in its tile's colour") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
