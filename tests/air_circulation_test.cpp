@@ -298,11 +298,53 @@ TEST_CASE("the AD5M Pro lights nothing before Klipper reports the vent servo") {
   CHECK_FALSE(lit("Ext"));
 }
 
-TEST_CASE("the C5 Pro lights no air circulation button: its macros move no vent servo") {
+TEST_CASE("the C5 Pro lights Int or Ext by its chamber fans") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   start_c5pro(moonraker, false);
   open_fans(moonraker);
-  for (const char *b : BUTTONS) CHECK_FALSE(lit(b));
+  for (const char *b : BUTTONS) CHECK_FALSE(lit(b));  // все вентиляторы камеры стоят
+
+  auto speeds = [&](double heat, double loop, double chamber, double cool) {
+    moonraker.push_status({{"fan_generic chamber_heat_fan", {{"speed", heat}}},
+                           {"fan_generic chamber_loop_fan", {{"speed", loop}}},
+                           {"fan_generic chamber_fan", {{"speed", chamber}}},
+                           {"fan_generic chamber_cool_fan", {{"speed", cool}}}});
+    app::pump(50);
+  };
+  speeds(0.6, 0.4, 0, 0);  // внутренняя: heat > 0.5 и loop > 0.3
+  CHECK(lit("Int"));
+  CHECK_FALSE(lit("Ext"));
+  speeds(0.6, 0.3, 0, 0);  // loop не больше 0.3
+  CHECK_FALSE(lit("Int"));
+  speeds(0, 0, 0.6, 0.6);  // внешняя: chamber > 0.5 и cool > 0.5
+  CHECK_FALSE(lit("Int"));
+  CHECK(lit("Ext"));
+  speeds(0, 0, 0.6, 0.5);  // cool не больше 0.5
+  CHECK_FALSE(lit("Ext"));
+  CHECK_FALSE(lit("Stop"));
+}
+
+TEST_CASE("the C5 Pro shows the mode its chamber fans are in when the fan screen opens") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  std::ifstream f(app::fixture("c5pro_basic.json"));
+  json sub = json::parse(f)["printer.objects.subscribe"];
+  sub["status"]["fan_generic chamber_fan"]["speed"] = 1.0;
+  sub["status"]["fan_generic chamber_cool_fan"]["speed"] = 1.0;
+  moonraker.set_result("printer.objects.subscribe", sub);
+  start_c5pro(moonraker, false);
+  open_fans(moonraker);
+  CHECK(lit("Ext"));
+  CHECK_FALSE(lit("Int"));
+}
+
+TEST_CASE("the AD5M Pro's chamber fan alone lights no Ext") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_ad5m_pro(moonraker, 95);
+  open_fans(moonraker);
+  moonraker.push_status({{"fan_generic chamber_fan", {{"speed", 1.0}}}});
+  app::pump(50);
+  CHECK_FALSE(lit("Ext"));
+  CHECK_FALSE(lit("Int"));
 }
 
 TEST_CASE("an air circulation macro with its angle as a template lights nothing") {
