@@ -11,6 +11,7 @@
 
 #include "guppyscreen.h"
 
+#include <cmath>
 #include <fstream>
 #include <mutex>
 
@@ -20,7 +21,12 @@ const char *BUTTONS[] = {"Int", "Ext", "Stop"};  // short: a column at the right
 
 // The AD5M Pro: Klipper has the vent servo and the two fans, zMod's config
 // lists the Pro's fans.
-void start_ad5m_pro(FakeMoonraker &moonraker) {
+// Заслонка my_servo на угле `angle` (°); NAN — Klipper её значение не прислал.
+// Настройки сервопривода и макросы циркуляции как у Z-Mod на AD5M Pro.
+double servo_value(double angle) { return (0.0005 + angle / 180.0 * 0.002) / 0.020; }
+
+// `settings_patch` меняет настройки Klipper (JSON merge patch), например макрос.
+void start_ad5m_pro(FakeMoonraker &moonraker, double angle = NAN, const json &settings_patch = json::object()) {
   json fixture = json::parse(std::ifstream(app::fixture("ad5m_basic.json")));
   json objects = fixture["printer.objects.list"];
   for (const char *o : {"servo my_servo", "fan_generic internal", "fan_generic external", "fan_generic chamber_fan",
@@ -34,6 +40,15 @@ void start_ad5m_pro(FakeMoonraker &moonraker) {
   sub["status"]["fan_generic external"] = fan;
   sub["status"]["fan_generic chamber_fan"] = fan;
   sub["status"]["fan_generic fanM106"] = fan;
+  json &settings = sub["status"]["configfile"]["settings"];
+  settings["servo my_servo"] = {{"minimum_pulse_width", 0.0005}, {"maximum_pulse_width", 0.0025},
+                                {"maximum_servo_angle", 180.0}};
+  settings["gcode_macro air_circulation_internal"]["gcode"] =
+      "\nSET_FAN_SPEED FAN=external_fan SPEED=1\nSET_FAN_SPEED FAN=internal_fan SPEED=0\nSET_SERVO SERVO=my_servo ANGLE=105";
+  settings["gcode_macro air_circulation_external"]["gcode"] =
+      "\nSET_FAN_SPEED FAN=external_fan SPEED=1\nSET_FAN_SPEED FAN=internal_fan SPEED=1\nSET_SERVO SERVO=my_servo ANGLE=165";
+  settings.merge_patch(settings_patch);
+  if (!std::isnan(angle)) sub["status"]["servo my_servo"] = {{"value", servo_value(angle)}};
   moonraker.set_result("printer.objects.subscribe", sub);
   app::start(moonraker, {{"printers", {{"FF5M", {{"fans", {
     {{"display_name", "Internal"}, {"id", "fan_generic internal"}},
@@ -243,4 +258,123 @@ TEST_CASE("the fan screen lists M106 first then the chamber then Klipper's order
   start_ad5m_pro(moonraker);  // Klipper: internal, external, chamber_fan, fanM106
   open_fans(moonraker);
   CHECK(fan_rows("M106") == std::vector<std::string>{"M106", "Chamber", "Internal", "External"});
+}
+
+namespace {
+// Подсвечена ли кнопка циркуляции с подписью `text`.
+bool lit(const char *text) {
+  lv_obj_t *btn = ui::label_container(text);
+  REQUIRE_MESSAGE(btn != nullptr, text << " not shown: " << ui::dump_screen());
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  return lv_obj_has_state(btn, LV_STATE_CHECKED);
+}
+}  // namespace
+
+TEST_CASE("the AD5M Pro lights Int or Ext by the vent servo's angle from their macros") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_ad5m_pro(moonraker, 105);
+  open_fans(moonraker);
+  CHECK(lit("Int"));
+  CHECK_FALSE(lit("Ext"));
+  CHECK_FALSE(lit("Stop"));
+
+  moonraker.push_status({{"servo my_servo", {{"value", servo_value(165)}}}});
+  app::pump(50);
+  CHECK_FALSE(lit("Int"));
+  CHECK(lit("Ext"));
+
+  moonraker.push_status({{"servo my_servo", {{"value", servo_value(95)}}}});  // AIR_CIRCULATION_STOP
+  app::pump(50);
+  CHECK_FALSE(lit("Int"));
+  CHECK_FALSE(lit("Ext"));
+  CHECK_FALSE(lit("Stop"));
+}
+
+TEST_CASE("the AD5M Pro lights nothing before Klipper reports the vent servo") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_ad5m_pro(moonraker);
+  open_fans(moonraker);
+  CHECK_FALSE(lit("Int"));
+  CHECK_FALSE(lit("Ext"));
+}
+
+TEST_CASE("the C5 Pro lights Int or Ext by its chamber fans") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  start_c5pro(moonraker, false);
+  open_fans(moonraker);
+  for (const char *b : BUTTONS) CHECK_FALSE(lit(b));  // все вентиляторы камеры стоят
+
+  auto speeds = [&](double heat, double loop, double chamber, double cool) {
+    moonraker.push_status({{"fan_generic chamber_heat_fan", {{"speed", heat}}},
+                           {"fan_generic chamber_loop_fan", {{"speed", loop}}},
+                           {"fan_generic chamber_fan", {{"speed", chamber}}},
+                           {"fan_generic chamber_cool_fan", {{"speed", cool}}}});
+    app::pump(50);
+  };
+  speeds(0.9, 0.3, 0, 0);  // AIR_CIRCULATION_INTERNAL из Z-Mod
+  CHECK(lit("Int"));
+  CHECK_FALSE(lit("Ext"));
+  speeds(0.5, 0.3, 0, 0);  // оба значения на пороге
+  CHECK(lit("Int"));
+  speeds(0.49, 0.3, 0, 0);  // heat ниже порога
+  CHECK_FALSE(lit("Int"));
+  speeds(0.9, 0.29, 0, 0);  // loop ниже порога
+  CHECK_FALSE(lit("Int"));
+  speeds(0, 0, 0.5, 0.7);  // AIR_CIRCULATION_EXTERNAL из Z-Mod
+  CHECK_FALSE(lit("Int"));
+  CHECK(lit("Ext"));
+  speeds(0, 0, 0.5, 0.5);  // оба значения на пороге
+  CHECK(lit("Ext"));
+  speeds(0, 0, 0.49, 0.7);  // chamber ниже порога
+  CHECK_FALSE(lit("Ext"));
+  speeds(0, 0, 0.5, 0.49);  // cool ниже порога
+  CHECK_FALSE(lit("Ext"));
+  speeds(0.9, 0.3, 0, 0);  // Ext -> Int
+  CHECK(lit("Int"));
+  CHECK_FALSE(lit("Ext"));
+  speeds(0, 0, 0, 0);  // Stop
+  CHECK_FALSE(lit("Int"));
+  CHECK_FALSE(lit("Ext"));
+  CHECK_FALSE(lit("Stop"));
+}
+
+TEST_CASE("the C5 Pro shows the mode its chamber fans are in when the fan screen opens") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  std::ifstream f(app::fixture("c5pro_basic.json"));
+  json sub = json::parse(f)["printer.objects.subscribe"];
+  sub["status"]["fan_generic chamber_fan"]["speed"] = 0.5;
+  sub["status"]["fan_generic chamber_cool_fan"]["speed"] = 0.7;
+  moonraker.set_result("printer.objects.subscribe", sub);
+  start_c5pro(moonraker, false);
+  open_fans(moonraker);
+  CHECK(lit("Ext"));
+  CHECK_FALSE(lit("Int"));
+}
+
+TEST_CASE("the AD5M Pro's chamber fan alone lights no Ext") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_ad5m_pro(moonraker, 95);
+  open_fans(moonraker);
+  moonraker.push_status({{"fan_generic chamber_fan", {{"speed", 1.0}}}});
+  app::pump(50);
+  CHECK_FALSE(lit("Ext"));
+  CHECK_FALSE(lit("Int"));
+}
+
+TEST_CASE("an air circulation macro with its angle as a template lights nothing") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_ad5m_pro(moonraker, 0, {{"gcode_macro air_circulation_internal", {{"gcode",
+      "\nSET_SERVO SERVO=my_servo ANGLE={printer['gcode_macro _AIR'].angle}\nSET_SERVO SERVO=other ANGLE=0"}}}});
+  open_fans(moonraker);
+  CHECK_FALSE(lit("Int"));
+}
+
+TEST_CASE("an air circulation angle past the servo's maximum lights at the maximum where Klipper moves it") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_ad5m_pro(moonraker, 150, {{"servo my_servo", {{"maximum_servo_angle", 150.0}}}});
+  // value для 150° при диапазоне 150°: та же ширина импульса, что 180° при 180°.
+  moonraker.push_status({{"servo my_servo", {{"value", (0.0005 + 0.002) / 0.020}}}});
+  open_fans(moonraker);
+  CHECK(lit("Ext"));  // в макросе ANGLE=165
+  CHECK_FALSE(lit("Int"));
 }

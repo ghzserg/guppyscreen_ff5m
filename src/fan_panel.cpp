@@ -5,6 +5,7 @@
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
+#include <cstdlib>
 
 LV_IMG_DECLARE(cancel);
 LV_IMG_DECLARE(fan_on);
@@ -12,6 +13,14 @@ LV_IMG_DECLARE(fan_on);
 LV_IMG_DECLARE(air_circulation_internal_img);
 LV_IMG_DECLARE(air_circulation_external_img);
 LV_IMG_DECLARE(air_circulation_stop_img);
+
+// Поля Klipper, по которым виден режим циркуляции (FanPanel::air_now).
+static const char *const AIR_FIELDS[5] = {
+  "servo my_servo/value",
+  "fan_generic chamber_heat_fan/speed", "fan_generic chamber_loop_fan/speed",
+  "fan_generic chamber_fan/speed", "fan_generic chamber_cool_fan/speed"};
+
+static double number(const json &v) { return v.is_number() ? v.get<double>() : NAN; }
 #endif
 
 FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
@@ -47,6 +56,9 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_flex_align(air_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   for (ButtonContainer *b : {&air_internal_btn, &air_external_btn, &air_stop_btn}) {
     lv_obj_set_width(b->get_container(), 100 * (double)lv_disp_get_physical_hor_res(NULL) / 800.0);  // короткие подписи
+    lv_obj_set_style_radius(b->get_container(), 8, LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(b->get_container(), LV_OPA_COVER, LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(b->get_container(), lv_palette_main(LV_PALETTE_BLUE), LV_STATE_CHECKED);
   }
   show_air_circulation(false);
 #endif
@@ -83,6 +95,21 @@ void FanPanel::consume(json &j) {
       f.second->update_value(v);
     }
   }
+#ifdef GUPPY_FF5M
+  static const std::vector<json::json_pointer> fields = [] {
+    std::vector<json::json_pointer> v;
+    for (const char *f : AIR_FIELDS) v.emplace_back(std::string("/params/0/") + f);
+    return v;
+  }();
+  bool changed = false;
+  for (size_t i = 0; i < fields.size(); i++) {
+    if (j.contains(fields[i])) {
+      air_now[i] = number(j[fields[i]]);
+      changed = true;
+    }
+  }
+  if (changed) show_air_mode();
+#endif
 }
 
 void FanPanel::create_fans(json &f) {
@@ -168,10 +195,61 @@ void FanPanel::show_air_circulation(bool show) {
     lv_obj_update_layout(air_cont);
     lv_obj_set_width(fans_cont, lv_obj_get_content_width(fanpanel_cont) - lv_obj_get_width(air_cont));
     lv_obj_align(fans_cont, LV_ALIGN_LEFT_MID, 0, 0);
+    // Угол заслонки каждого режима берётся из его макроса: SET_SERVO SERVO=my_servo ANGLE=<угол>,
+    // и переводится в value, которое Klipper сообщает: ширина импульса / период 20 мс.
+    State *state = State::get_instance();
+    json servo = state->get_data_copy("/printer_state/configfile/settings/servo my_servo"_json_pointer);
+    double min = 0.001, max = 0.002, range = 180;  // умолчания Klipper
+    if (servo.is_object()) {
+      min = servo.value("minimum_pulse_width", min);
+      max = servo.value("maximum_pulse_width", max);
+      range = servo.value("maximum_servo_angle", range);
+    }
+    air_tol = (max - min) / range / 0.020;  // 1°
+    const char *macros[2] = {"air_circulation_internal", "air_circulation_external"};
+    for (int i = 0; i < 2; i++) {
+      air_value[i] = NAN;
+      json g = state->get_data_copy(json::json_pointer(
+          std::string("/printer_state/configfile/settings/gcode_macro ") + macros[i] + "/gcode"));
+      if (!servo.is_object() || !g.is_string()) continue;
+      std::string gcode = g.get<std::string>();
+      std::transform(gcode.begin(), gcode.end(), gcode.begin(), ::tolower);
+      // Только число в той же строке SET_SERVO: шаблон {…} угла не даёт.
+      size_t at = gcode.find("servo=my_servo");
+      if (at == std::string::npos) continue;
+      size_t eol = gcode.find('\n', at);
+      at = gcode.find("angle=", at);
+      if (at >= eol) continue;
+      char *end;
+      double angle = strtod(gcode.c_str() + at + 6, &end);
+      if (end == gcode.c_str() + at + 6) continue;
+      angle = std::min(std::max(angle, 0.0), range);  // Klipper ставит угол в этих пределах
+      air_value[i] = (min + angle / range * (max - min)) / 0.020;
+    }
+    for (int i = 0; i < 5; i++) {
+      air_now[i] = number(state->get_data_copy(json::json_pointer(std::string("/printer_state/") + AIR_FIELDS[i])));
+    }
+    show_air_mode();
   } else {
     lv_obj_add_flag(air_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_set_width(fans_cont, LV_PCT(80));
     lv_obj_center(fans_cont);
+  }
+}
+
+void FanPanel::show_air_mode() {
+  // C5 Pro: внутренняя — chamber_heat_fan >= 0.5 и chamber_loop_fan >= 0.3,
+  // внешняя — chamber_fan >= 0.5 и chamber_cool_fan >= 0.5.
+  bool lit[2] = {
+    std::fabs(air_now[0] - air_value[0]) < air_tol || (air_now[1] >= 0.5 && air_now[2] >= 0.3),
+    std::fabs(air_now[0] - air_value[1]) < air_tol || (air_now[3] >= 0.5 && air_now[4] >= 0.5)};
+  ButtonContainer *btns[2] = {&air_internal_btn, &air_external_btn};
+  for (int i = 0; i < 2; i++) {
+    if (lit[i]) {
+      lv_obj_add_state(btns[i]->get_container(), LV_STATE_CHECKED);
+    } else {
+      lv_obj_clear_state(btns[i]->get_container(), LV_STATE_CHECKED);
+    }
   }
 }
 
