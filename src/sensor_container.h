@@ -83,6 +83,7 @@ class SensorContainer {
   // The tiles' temperature font, also the numpad's entered value: the two
   // always match.
   static const lv_font_t *temperature_font();
+  void highlight(bool on);
 #endif
   void handle_edit(lv_event_t *event);
   void handle_edit2(lv_event_t *event);
@@ -114,7 +115,6 @@ class SensorContainer {
   std::time_t last_updated_ts;
 #ifdef GUPPY_FF5M
   bool tile = false;
-  void highlight(bool on);  // синяя, пока открыт её numpad
 #endif
 
 };

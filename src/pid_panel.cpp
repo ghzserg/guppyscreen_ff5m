@@ -120,6 +120,15 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_grid_cell(clear_nozzle_btn.get_container(),          LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(bed_level_screws_tune_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(load_cell_tare_btn.get_container(),        LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+#ifdef GUPPY_FF5M
+  lv_obj_add_event_cb(heater_bed_temp.get_sensor(), [](lv_event_t *e) {
+    auto *panel = (PidPanel *)lv_event_get_user_data(e);
+    if (!panel->nozzle_tiles.empty()) {
+      panel->bed_selected = true;
+      panel->nozzle_tiles.tile(panel->nozzle_tiles.selected())->highlight(false);
+    }
+  }, LV_EVENT_SHORT_CLICKED, this);
+#endif
   ws.register_notify_update(this);
 }
 
@@ -183,7 +192,7 @@ void PidPanel::consume(json &j) {
   json temp_value;
 #ifdef GUPPY_FF5M
   if (!nozzle_tiles.empty()) {  // the extruder's tile is hidden
-    if (!nozzle_picked) nozzle_tiles.show_selected(active_tool_id);  // at first, the printer's tool
+    if (!nozzle_picked && !bed_selected) nozzle_tiles.show_selected(active_tool_id);  // at first, the printer's tool
     nozzle_tiles.update(j, false);  // their targets: the calibration temperature
     extruder_temp.update_series(nozzle_tiles.tile(chart_selected_nozzle())->get_value());
   } else
@@ -308,7 +317,9 @@ void PidPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &nozzl
   // to calibrate (not the printer's tool) and asks for the temperature.
   nozzle_tiles.create(nozzles, extruder_temp, true, active_tool_id, [this](int tool) {
     nozzle_picked = true;
+    bed_selected = false;
     nozzle_tiles.show_selected(tool);  // now, for the chart
+    nozzle_tiles.tile(tool)->highlight(true);
     chart_selected_nozzle();
     numpad.set_callback([this](double v) {
       extruder_temp.update_target(v);  // what the buttons send

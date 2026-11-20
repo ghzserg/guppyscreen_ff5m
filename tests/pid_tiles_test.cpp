@@ -110,10 +110,12 @@ TEST_CASE("the AD5X PID screen calibrates its one nozzle without T0-T3 buttons")
   open_pid(moonraker);
 
   CHECK_FALSE(ui::any_shown(ui::btnmatrices("T0")));
+  CHECK_FALSE(ui::has_bg(tile("Extruder"), LV_PALETTE_BLUE));
   ui::tap(tile("Extruder"));
+  CHECK(ui::has_bg(tile("Extruder"), LV_PALETTE_BLUE));
   ui::enter_on_numpad("250");
   app::settle(moonraker);
-  CHECK_FALSE(ui::has_bg(tile("Extruder"), LV_PALETTE_BLUE));  // nothing to select
+  CHECK(ui::has_bg(tile("Extruder"), LV_PALETTE_BLUE));
   ui::tap_label("PID Extruder");
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
   CHECK(moonraker.gcodes().back() == "PID_TUNE_EXTRUDER T=0 TEMPERATURE=250");
@@ -319,6 +321,7 @@ TEST_CASE("the C5 Pro PID bed tile opens temperature input after nozzle selectio
   ui::tap(ui::tile("Bed"));
   REQUIRE_MESSAGE(ui::find_shown(&lv_textarea_class) != nullptr, "Bed did not open PID temperature input");
   CHECK(ui::has_bg(ui::tile("Bed"), LV_PALETTE_BLUE));
+  CHECK_FALSE(ui::has_bg(ui::tile("T2"), LV_PALETTE_BLUE));
   ui::enter_on_numpad("90");
   CHECK_FALSE(ui::has_bg(ui::tile("Bed"), LV_PALETTE_BLUE));
   ui::tap_label("PID Bed");
@@ -327,6 +330,10 @@ TEST_CASE("the C5 Pro PID bed tile opens temperature input after nozzle selectio
   ui::tap_label("PID Extruder");
   REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() >= 2; }));
   CHECK(moonraker.gcodes().back() == "PID_TUNE_EXTRUDER T=2 TEMPERATURE=230");
+  ui::tap(ui::tile("T2"));
+  CHECK(ui::has_bg(ui::tile("T2"), LV_PALETTE_BLUE));
+  CHECK_FALSE(ui::has_bg(ui::tile("Bed"), LV_PALETTE_BLUE));
+  ui::enter_on_numpad("");
 }
 
 TEST_CASE("the AD5M PID bed tile accepts its calibration temperature") {

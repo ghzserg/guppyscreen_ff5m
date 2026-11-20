@@ -73,6 +73,7 @@ class PidPanel : public NotifyConsumer {
   NozzleTiles nozzle_tiles;
   // Once a nozzle is tapped, the printer's tool no longer moves the selection.
   bool nozzle_picked = false;
+  bool bed_selected = false;
   int charted_tool = -1;  // whose temperature and colour the chart's line has
   int chart_selected_nozzle();  // the selected tool
 #endif
