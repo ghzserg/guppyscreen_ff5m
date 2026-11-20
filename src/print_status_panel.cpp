@@ -4,7 +4,6 @@
 #include "finetune_panel.h"
 #include "retract_panel.h"
 #include "exclude_panel.h"
-#include "pro_panel.h"
 #include "pid_panel.h"
 #include "state.h"
 #include "utils.h"
@@ -53,7 +52,6 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , finetune_panel(websocket_client, lock)
   , retract_panel(websocket_client, lock)
   , exclude_panel(websocket_client, lock)
-  , pro_panel(websocket_client, lock)
   , pid_panel(websocket_client, lock)
   , mini_print_status(mini_parent, &PrintStatusPanel::_handle_callback, this, websocket_client)
   , status_cont(lv_obj_create(Nav::get().content()))
@@ -899,10 +897,6 @@ RetractPanel &PrintStatusPanel::get_retract_panel() {
 
 ExcludePanel &PrintStatusPanel::get_exclude_panel() {
   return exclude_panel;
-}
-
-ProPanel &PrintStatusPanel::get_pro_panel() {
-  return pro_panel;
 }
 
 PidPanel &PrintStatusPanel::get_pid_panel() {

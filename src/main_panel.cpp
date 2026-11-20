@@ -58,7 +58,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , print_panel(ws, lock, print_status_panel)
   , extruder_panel(ws, lock, numpad, sm)
   , prompt_panel(websocket, lock, main_cont, extruder_panel)
-  , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel(), print_status_panel.get_retract_panel(), print_status_panel.get_pro_panel(), print_status_panel.get_pid_panel(), prompt_panel)
+  , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel(), print_status_panel.get_retract_panel(), print_status_panel.get_pid_panel(), prompt_panel)
   , numpad(Numpad(main_cont))
   , spoolman_panel(sm)
   , temp_cont(lv_obj_create(main_cont))
@@ -141,7 +141,7 @@ void MainPanel::init(json &j) {
   // Циркуляция воздуха там, где у Klipper есть вентиляторы, которыми управляют
   // макросы AIR_CIRCULATION_* Z-Mod (на AD5X они пустые): внутренний и внешний
   // вентиляторы и заслонка AD5M Pro, вентиляторы камеры C5 Pro. Тогда её
-  // кнопки на экране вентиляторов, а не на экране Pro.
+  // кнопки на экране вентиляторов.
   json objs = State::get_instance()->get_data("/printer_objs/objects"_json_pointer);
   auto has = [&objs](std::initializer_list<const char *> names) {
     for (const char *n : names) {
@@ -154,10 +154,8 @@ void MainPanel::init(json &j) {
   bool air = has({"servo my_servo", "fan_generic internal", "fan_generic external"})
       || has({"fan_generic chamber_heat_fan", "fan_generic chamber_loop_fan", "fan_generic chamber_cool_fan"});
   fan_panel.show_air_circulation(air);
-  // Калибровки Z-Mod определяет на C5 Pro с выключенным экраном.
-  bool pro = print_status_panel.get_pro_panel().configure(!air, has({"gcode_macro CALIBRATE_EXTRUDERS"}),
-                                                          has({"gcode_macro CALIBRATE_VFA"}));
-  printertune_panel.show_pro(pro);
+  printertune_panel.show_calibrations(has({"gcode_macro CALIBRATE_EXTRUDERS"}),
+                                      has({"gcode_macro CALIBRATE_VFA"}));
 #endif
 //  print_status_panel.get_exclude_panel().init(j);
   print_status_panel.get_retract_panel().init(j);

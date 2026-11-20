@@ -234,7 +234,7 @@ TEST_CASE("no screen has a Back button") {
   CHECK_MESSAGE(ui::find_label("Back") == nullptr, ui::dump_screen());
   CHECK(ui::find_label("Status") == nullptr);
   ui::tap_tab(Nav::TUNE);
-  for (const char *open : {"Limits", "Retract", "Input Shaper", "Belts/Shake", "Pro", "PID"}) {
+  for (const char *open : {"Limits", "Retract", "Input Shaper", "Belts/Shake", "PID"}) {
     if (ui::find_label(open) == nullptr) continue;  // not on this printer
     ui::tap_label(open);
     app::pump(100);

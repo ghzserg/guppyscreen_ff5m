@@ -13,7 +13,9 @@ LV_IMG_DECLARE(limit_img);
 LV_IMG_DECLARE(retract);
 LV_IMG_DECLARE(motor_img);
 LV_IMG_DECLARE(chart_img);
-LV_IMG_DECLARE(pro_img);
+#ifdef GUPPY_FF5M
+LV_IMG_DECLARE(code_img);
+#endif
 LV_IMG_DECLARE(pid_img);
 
 #ifndef ZBOLT
@@ -25,13 +27,13 @@ LV_IMG_DECLARE(power_devices_img);
 LV_IMG_DECLARE(print);
 #endif
 
-PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, FineTunePanel &finetune, RetractPanel &retract_p, ProPanel &pro_p, PidPanel &pid_p, PromptPanel &p)
-  : cont(lv_obj_create(parent))
+PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, FineTunePanel &finetune, RetractPanel &retract_p, PidPanel &pid_p, PromptPanel &p)
+  : ws(c)
+  , cont(lv_obj_create(parent))
   , bedmesh_panel(c, l)
   , finetune_panel(finetune)
   , limits_panel(c, l)
   , retract_panel(retract_p)
-  , pro_panel(pro_p)
   , pid_panel(pid_p)
   , inputshaper_panel(c, l, p)
   , belts_calibration_panel(c, l)
@@ -54,8 +56,11 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
 #else
   , belts_calibration_btn(cont, &inputshaper_img, _("Belts/Shake") /* "Ремни/Тряска" */, &PrinterTunePanel::_handle_callback, this)
 #endif
-  , pro_btn(cont, &pro_img, "Pro", &PrinterTunePanel::_handle_callback, this)
   , pid_btn(cont, &pid_img, "PID", &PrinterTunePanel::_handle_callback, this)
+#ifdef GUPPY_FF5M
+  , calibrate_extruders_btn(cont, &code_img, _("Calibrate extruders") /* "Калибровка экструдеров" */, &PrinterTunePanel::_handle_callback, this)
+  , calibrate_vfa_btn(cont, &code_img, _("Calibrate VFA") /* "Калибровка VFA" */, &PrinterTunePanel::_handle_callback, this)
+#endif
 #ifndef GUPPY_FF5M
   , tmc_tune_btn(cont, &motor_img, "TMC Autotune", &PrinterTunePanel::_handle_callback, this)
   , tmc_status_btn(cont, &chart_img, "TMC Metrics", &PrinterTunePanel::_handle_callback, this)
@@ -89,8 +94,11 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   lv_obj_set_grid_cell(belts_calibration_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
 
   // row 2
-  lv_obj_set_grid_cell(pro_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(pid_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(pid_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(calibrate_extruders_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(calibrate_vfa_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_add_flag(calibrate_extruders_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(calibrate_vfa_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 #else
   // row 1
   lv_obj_set_grid_cell(finetune_btn.get_container(),          LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
@@ -101,8 +109,7 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   // row 2
   lv_obj_set_grid_cell(inputshaper_btn.get_container(),       LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(belts_calibration_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(pro_btn.get_container(),               LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(pid_btn.get_container(),               LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(pid_btn.get_container(),               LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(tmc_tune_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(tmc_status_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(power_devices_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
@@ -160,13 +167,11 @@ void PrinterTunePanel::init(json &j) {
 }
 
 #ifdef GUPPY_FF5M
-void PrinterTunePanel::show_pro(bool show) {
-  if (show) {
-    lv_obj_clear_flag(pro_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-  } else {
-    lv_obj_add_flag(pro_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-  }
-  lv_obj_set_grid_cell(pid_btn.get_container(), LV_GRID_ALIGN_CENTER, show ? 1 : 0, 1, LV_GRID_ALIGN_START, 2, 1);
+void PrinterTunePanel::show_calibrations(bool extruders, bool vfa) {
+  if (extruders) lv_obj_clear_flag(calibrate_extruders_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  else lv_obj_add_flag(calibrate_extruders_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  if (vfa) lv_obj_clear_flag(calibrate_vfa_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  else lv_obj_add_flag(calibrate_vfa_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 }
 #endif
 
@@ -195,12 +200,15 @@ void PrinterTunePanel::handle_callback(lv_event_t *event) {
     } else if (btn == retract_btn.get_container()) {
       spdlog::trace("retract pressed");
       retract_panel.foreground();
-    } else if (btn == pro_btn.get_container()) {
-      spdlog::trace("pro pressed");
-      pro_panel.foreground();
     } else if (btn == pid_btn.get_container()) {
       spdlog::trace("pid pressed");
       pid_panel.foreground();
+#ifdef GUPPY_FF5M
+    } else if (btn == calibrate_extruders_btn.get_container()) {
+      ws.gcode_script("CALIBRATE_EXTRUDERS");
+    } else if (btn == calibrate_vfa_btn.get_container()) {
+      ws.gcode_script("CALIBRATE_VFA");
+#endif
 #ifndef GUPPY_FF5M
     } else if (btn == tmc_tune_btn.get_container()) {
       spdlog::trace("tmc auto tune pressed");

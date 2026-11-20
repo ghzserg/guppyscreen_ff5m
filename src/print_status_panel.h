@@ -8,7 +8,6 @@
 #include "finetune_panel.h"
 #include "retract_panel.h"
 #include "exclude_panel.h"
-#include "pro_panel.h"
 #include "pid_panel.h"
 #include "mini_print_status.h"
 #include "lvgl/lvgl.h"
@@ -54,7 +53,6 @@ class PrintStatusPanel : public NotifyConsumer {
   FineTunePanel &get_finetune_panel();
   RetractPanel &get_retract_panel();
   ExcludePanel &get_exclude_panel();
-  ProPanel &get_pro_panel();
   PidPanel &get_pid_panel();
   MiniPrintStatus &get_mini_print_status() { return mini_print_status; }
 
@@ -70,7 +68,6 @@ class PrintStatusPanel : public NotifyConsumer {
   FineTunePanel finetune_panel;
   RetractPanel retract_panel;
   ExcludePanel exclude_panel;
-  ProPanel pro_panel;
   PidPanel pid_panel;
   MiniPrintStatus mini_print_status;
   lv_obj_t *status_cont;

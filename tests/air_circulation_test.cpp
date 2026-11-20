@@ -1,9 +1,7 @@
 // Air circulation (zMod's AIR_CIRCULATION_* macros) on a printer with the
 // fans they move, the AD5M Pro's internal and external fans and vent servo or
 // the C5 Pro's chamber fans: three buttons in a column right of the fans.
-// Other printers keep them on the Pro screen. The Pro screen's calibrations
-// show where Klipper has their macros (zMod's C5 Pro with the screen off);
-// the Pro button only when its screen has something.
+// The calibration macros appear directly in Tune when available.
 
 #include "doctest/doctest.h"
 
@@ -100,9 +98,8 @@ void start_c5pro(FakeMoonraker &moonraker, bool calibrations, bool lower_case = 
   app::wait_ready(moonraker);
 }
 
-void open_pro(FakeMoonraker &moonraker) {
+void open_tune(FakeMoonraker &moonraker) {
   ui::tap_tab(Nav::TUNE);
-  ui::tap_label("Pro");
   app::settle(moonraker);
 }
 
@@ -139,59 +136,62 @@ TEST_CASE("the AD5M Pro's four fans fit the fan screen without scrolling") {
   CHECK_FALSE(lv_obj_has_flag(lv_obj_get_parent(last), LV_OBJ_FLAG_SCROLLABLE));  // no scrollbar
 }
 
-TEST_CASE("the AD5M Pro's Tune screen has no Pro button") {
+TEST_CASE("the AD5M Pro has no Pro button or unavailable calibrations") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   start_ad5m_pro(moonraker);
-  ui::tap_tab(Nav::TUNE);
-  app::settle(moonraker);
-
+  open_tune(moonraker);
   CHECK(ui::find_label("PID") != nullptr);
-  CHECK_MESSAGE(ui::find_label("Pro") == nullptr, ui::dump_screen());
+  CHECK(ui::find_label("Pro") == nullptr);
+  for (const char *c : CALIBRATIONS) CHECK(ui::find_label(c) == nullptr);
 }
 
-TEST_CASE("the AD5M keeps air circulation on the Pro screen and not on the fan screen") {
+TEST_CASE("the AD5M has no unsupported circulation buttons") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker);
   app::wait_ready(moonraker);
   open_fans(moonraker);
   CHECK_FALSE(any_button_shown());
-
-  open_pro(moonraker);
-  CHECK_MESSAGE(ui::find_label("Internal circulation") != nullptr, ui::dump_screen());
-  for (const char *c : CALIBRATIONS) CHECK_MESSAGE(ui::find_label(c) == nullptr, c);  // no macros
+  open_tune(moonraker);
+  CHECK(ui::find_label("Pro") == nullptr);
+  for (const char *c : CALIBRATIONS) CHECK(ui::find_label(c) == nullptr);
 }
 
-TEST_CASE("the C5 Pro without the calibration macros has no Pro button") {
+TEST_CASE("the C5 Pro without calibration macros hides their Tune buttons") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   start_c5pro(moonraker, false);
-  ui::tap_tab(Nav::TUNE);
-  app::settle(moonraker);
+  open_tune(moonraker);
   CHECK(ui::find_label("PID") != nullptr);
-  CHECK_MESSAGE(ui::find_label("Pro") == nullptr, ui::dump_screen());
+  CHECK(ui::find_label("Pro") == nullptr);
+  for (const char *c : CALIBRATIONS) CHECK(ui::find_label(c) == nullptr);
 }
 
-TEST_CASE("the C5 Pro's Pro screen has the calibrations in its first row") {
+TEST_CASE("the C5 Pro's Tune screen has both calibrations beside PID") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   start_c5pro(moonraker, true);
-  open_pro(moonraker);
-
-  CHECK_MESSAGE(ui::find_label("Internal circulation") == nullptr, "on the fan screen: " << ui::dump_screen());
+  open_tune(moonraker);
+  lv_obj_t *pid = ui::label_container("PID");
   lv_obj_t *extruders = ui::label_container(CALIBRATIONS[0]);
   lv_obj_t *vfa = ui::label_container(CALIBRATIONS[1]);
-  REQUIRE_MESSAGE(extruders != nullptr, ui::dump_screen());
+  REQUIRE(pid != nullptr);
+  REQUIRE(extruders != nullptr);
   REQUIRE(vfa != nullptr);
-  lv_area_t e = ui::coords(extruders), v = ui::coords(vfa);
+  lv_area_t p = ui::coords(pid), e = ui::coords(extruders), v = ui::coords(vfa);
+  CHECK(p.y1 == e.y1);
   CHECK(e.y1 == v.y1);
-  CHECK(e.y1 < 240);  // the first row, not under an empty one
+  CHECK(p.x1 < e.x1);
+  CHECK(e.x1 < v.x1);
+  CHECK(ui::find_label("Pro") == nullptr);
 
+  ui::tap_label(CALIBRATIONS[0]);
+  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty() && moonraker.gcodes().back() == "CALIBRATE_EXTRUDERS"; }));
   ui::tap_label(CALIBRATIONS[1]);
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty() && moonraker.gcodes().back() == "CALIBRATE_VFA"; }));
 }
 
-TEST_CASE("the C5 Pro's calibrations show with their macros named in lower case") {
+TEST_CASE("the C5 Pro's Tune calibrations accept lower-case macro names") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   start_c5pro(moonraker, true, true);
-  open_pro(moonraker);
+  open_tune(moonraker);
   CHECK_MESSAGE(ui::find_label(CALIBRATIONS[0]) != nullptr, ui::dump_screen());
   CHECK(ui::find_label(CALIBRATIONS[1]) != nullptr);
 }
