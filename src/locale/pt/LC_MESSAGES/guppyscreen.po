@@ -542,3 +542,16 @@ msgstr "s"
 
 #~ msgid "Status"
 #~ msgstr "Estado"
+
+#: ../print_panel.cpp
+msgid "Delete"
+msgstr "Excluir"
+
+#: ../print_panel.cpp
+#, c++-format
+msgid "Delete file \"{}\"?"
+msgstr "Excluir o arquivo «{}»?"
+
+#: ../print_panel.cpp
+msgid "Could not delete the file."
+msgstr "Não foi possível excluir o arquivo."

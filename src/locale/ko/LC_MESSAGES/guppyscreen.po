@@ -542,3 +542,16 @@ msgstr "s"
 
 #~ msgid "Status"
 #~ msgstr "상태"
+
+#: ../print_panel.cpp
+msgid "Delete"
+msgstr "삭제"
+
+#: ../print_panel.cpp
+#, c++-format
+msgid "Delete file \"{}\"?"
+msgstr "파일 \"{}\"을(를) 삭제하시겠습니까?"
+
+#: ../print_panel.cpp
+msgid "Could not delete the file."
+msgstr "파일을 삭제할 수 없습니다."
