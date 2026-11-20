@@ -14,7 +14,7 @@ msgstr ""
 
 #: ../print_panel.cpp:73
 msgid " A-Z"
-msgstr " A–Z"
+msgstr " A-Z"
 
 #: ../print_panel.cpp:69
 msgid " Changed"
@@ -541,3 +541,16 @@ msgstr "s"
 
 #~ msgid "Status"
 #~ msgstr "Stav"
+
+#: ../print_panel.cpp
+msgid "Delete"
+msgstr "Smazat"
+
+#: ../print_panel.cpp
+#, c++-format
+msgid "Delete file \"{}\"?"
+msgstr "Smazat soubor „{}“?"
+
+#: ../print_panel.cpp
+msgid "Could not delete the file."
+msgstr "Soubor se nepodařilo smazat."
