@@ -277,7 +277,7 @@ msgid "Motor off"
 msgstr "Moteur éteint"
 
 #: ../finetune_panel.cpp:40
-msgid "Multipler Step"
+msgid "Multiplier Step"
 msgstr "Pas multiplicateur"
 
 #: ../spoolman_panel.cpp:140
@@ -295,6 +295,10 @@ msgstr "Réseau"
 #: ../fan_panel.cpp:73 ../led_panel.cpp:77
 msgid "Off"
 msgstr "Éteint"
+
+#: ../finetune_panel.cpp:29
+msgid "PA Reset"
+msgstr "Réinitialiser PA"
 
 #: ../pid_panel.cpp:34
 msgid "PID Bed"
@@ -353,14 +357,6 @@ msgstr ""
 #: ../retract_panel.cpp:15 ../retract_panel.cpp:16
 msgid "Reset"
 msgstr "Réinitialiser"
-
-#: ../finetune_panel.cpp:29
-msgid "Reset PA"
-msgstr "Réinitialiser PA"
-
-#: ../finetune_panel.cpp:26
-msgid "Reset Z"
-msgstr "Réinitialiser Z"
 
 #: ../setting_panel.cpp:60
 msgid "Restore Print"
@@ -483,6 +479,19 @@ msgstr "Réponse en fréquence X"
 #: ../inputshaper_panel.cpp:98
 msgid "Y Frequency Response"
 msgstr "Réponse en fréquence Y"
+
+#: ../finetune_panel.cpp:26
+msgid "Z Reset"
+msgstr "Réinitialiser Z"
+
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
+#: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
+msgid "mm"
+msgstr "mm"
+
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
+msgid "s"
+msgstr "s"
 
 #: ../utils.cpp:262
 msgid "д "

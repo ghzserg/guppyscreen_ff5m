@@ -5,14 +5,13 @@
 #include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
-#include "config.h"
 
 #include <algorithm>
 #include <cmath>
 
 LV_IMG_DECLARE(home_z);
-LV_IMG_DECLARE(z_closer);
-LV_IMG_DECLARE(z_farther);
+LV_IMG_DECLARE(zoffset_thicker_img);
+LV_IMG_DECLARE(zoffset_thinner_img);
 LV_IMG_DECLARE(pa_plus_img);
 LV_IMG_DECLARE(pa_minus_img);
 LV_IMG_DECLARE(refresh_img);
@@ -35,19 +34,19 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , ws(websocket_client)
   , panel_cont(lv_obj_create(Nav::get().content()))
   , values_cont(lv_obj_create(panel_cont))
-  , zreset_btn(panel_cont, &refresh_img, _("Reset Z") /* "Сброс Z" */, &FineTunePanel::_handle_zoffset, this)
-  , zup_btn(panel_cont, &z_farther, "Z+", &FineTunePanel::_handle_zoffset, this)
-  , zdown_btn(panel_cont, &z_closer, "Z-", &FineTunePanel::_handle_zoffset, this)
-  , pareset_btn(panel_cont, &refresh_img, _("Reset PA") /* "Сброс PA" */, &FineTunePanel::_handle_pa, this)
+  , zreset_btn(panel_cont, &refresh_img, _("Z Reset") /* "Сброс Z" */, &FineTunePanel::_handle_zoffset, this)
+  , zup_btn(panel_cont, &zoffset_thicker_img, "Z+", &FineTunePanel::_handle_zoffset, this)
+  , zdown_btn(panel_cont, &zoffset_thinner_img, "Z-", &FineTunePanel::_handle_zoffset, this)
+  , pareset_btn(panel_cont, &refresh_img, _("PA Reset") /* "Сброс PA" */, &FineTunePanel::_handle_pa, this)
   , paup_btn(panel_cont, &pa_plus_img, "PA+", &FineTunePanel::_handle_pa, this)
   , padown_btn(panel_cont, &pa_minus_img, "PA-", &FineTunePanel::_handle_pa, this)
-  , speed_reset_btn(panel_cont, &refresh_img, _("Speed Reset") /* "Сброс скорость" */, &FineTunePanel::_handle_speed, this)
+  , speed_reset_btn(panel_cont, &refresh_img, _("Speed Reset") /* "Сброс скорости" */, &FineTunePanel::_handle_speed, this)
   , speed_up_btn(panel_cont, &speed_up_img, _("Speed+") /* "Скор+" */, &FineTunePanel::_handle_speed, this)
   , speed_down_btn(panel_cont, &speed_down_img, _("Speed-") /* "Скор-" */, &FineTunePanel::_handle_speed, this)
-  , flow_reset_btn(panel_cont, &refresh_img, _("Flow Reset") /* "Сброс поток" */, &FineTunePanel::_handle_flow, this)
+  , flow_reset_btn(panel_cont, &refresh_img, _("Flow Reset") /* "Сброс потока" */, &FineTunePanel::_handle_flow, this)
   , flow_up_btn(panel_cont, &flow_up_img, _("Flow+") /* "Поток+" */, &FineTunePanel::_handle_flow, this)
   , flow_down_btn(panel_cont, &flow_down_img, _("Flow-") /* "Поток-" */, &FineTunePanel::_handle_flow, this)
-  , zoffset_selector(panel_cont, ("Z ("+ std::string(_("мм")) +") - PA ("+ std::string(_("мм")) +"/"+ _("с") +")").c_str(),
+  , zoffset_selector(panel_cont, ("Z ("+ std::string(_("mm")) +") - PA ("+ std::string(_("mm")) +"/"+ _("s") +")").c_str(),
 #ifdef GUPPY_FF5M
                      {".005", ".01", ".05", ".10", ""},  // no leading zero: fits the bigger digits
                      0, 40, 15,  // as wide as the multiplier's
@@ -56,10 +55,10 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
                      0, 30, 15,
 #endif
                      &FineTunePanel::_handle_callback, this)
-  , multipler_selector(panel_cont, _("Multipler Step") /* "Множитель шага (%)" */,
+  , multipler_selector(panel_cont, _("Multiplier Step") /* "Множитель шага (%)" */,
                        {"1", "5", "10", "25", ""}, 0, 40, 15, &FineTunePanel::_handle_callback, this)
-  , z_offset(values_cont, &home_z, 150, 100, 15, ("0.0 "+ std::string(_("мм"))).c_str() )
-  , pa(values_cont, &pa_plus_img, 150, 100, 15, ("0.0 "+ std::string(_("мм")) +"/"+ _("с")).c_str() )
+  , z_offset(values_cont, &home_z, 150, 100, 15, ("0.0 "+ std::string(_("mm"))).c_str() )
+  , pa(values_cont, &pa_plus_img, 150, 100, 15, ("0.0 "+ std::string(_("mm")) +"/"+ _("s")).c_str() )
   , speed_factor(values_cont, &speed_up_img, 150, 100, 15 ,"100%")
   , flow_factor(values_cont, &flow_up_img, 150, 100, 15, "100%")
 {
@@ -173,12 +172,12 @@ void FineTunePanel::show_values(const json &printer, bool flash_changes) {
   }
   auto v = printer.value("/gcode_move/homing_origin/2"_json_pointer, json());
   if (!v.is_null()) {
-    show(Z_OFFSET, fmt::format("{:.3f} "+ std::string(_("мм")) , v.template get<double>()), flash_changes);
+    show(Z_OFFSET, fmt::format("{:.3f} "+ std::string(_("mm")) , v.template get<double>()), flash_changes);
   }
 
   v = printer.value("/extruder/pressure_advance"_json_pointer, json());
   if (!v.is_null()) {
-    show(PA, fmt::format("{:.3f} "+ std::string(_("мм")) +"/"+ _("с") , v.template get<double>()), flash_changes);
+    show(PA, fmt::format("{:.3f} "+ std::string(_("mm")) +"/"+ _("s") , v.template get<double>()), flash_changes);
   }
 
   v = printer.value("/gcode_move/speed_factor"_json_pointer, json());
@@ -201,19 +200,6 @@ void FineTunePanel::foreground() {
     if (!v.is_null()) printer[object] = std::move(v);
   }
   show_values(printer, false);
-
-  //Set the Z axis buttons
-  auto v = Config::get_instance()->get_json("/invert_z_icon");
-  bool inverted = !v.is_null() && v.template get<bool>();
-  if (inverted) {
-    // UP arrow
-    zup_btn.set_image(&z_farther);
-    zdown_btn.set_image(&z_closer);
-  } else {
-    // DOWN arrow
-    zup_btn.set_image(&z_closer);
-    zdown_btn.set_image(&z_farther);
-  }
 
   lv_obj_move_foreground(panel_cont);
 }

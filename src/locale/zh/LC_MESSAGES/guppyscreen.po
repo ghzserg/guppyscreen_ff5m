@@ -276,7 +276,7 @@ msgid "Motor off"
 msgstr "关闭电机"
 
 #: ../finetune_panel.cpp:40
-msgid "Multipler Step"
+msgid "Multiplier Step"
 msgstr "步进倍数"
 
 #: ../spoolman_panel.cpp:140
@@ -294,6 +294,10 @@ msgstr "网络"
 #: ../fan_panel.cpp:73 ../led_panel.cpp:77
 msgid "Off"
 msgstr "关闭"
+
+#: ../finetune_panel.cpp:29
+msgid "PA Reset"
+msgstr "重置压力提前"
 
 #: ../pid_panel.cpp:34
 msgid "PID Bed"
@@ -352,14 +356,6 @@ msgstr ""
 #: ../retract_panel.cpp:15 ../retract_panel.cpp:16
 msgid "Reset"
 msgstr "重置"
-
-#: ../finetune_panel.cpp:29
-msgid "Reset PA"
-msgstr "重置压力提前"
-
-#: ../finetune_panel.cpp:26
-msgid "Reset Z"
-msgstr "重置Z轴"
 
 #: ../setting_panel.cpp:60
 msgid "Restore Print"
@@ -482,6 +478,19 @@ msgstr "X轴频率响应"
 #: ../inputshaper_panel.cpp:98
 msgid "Y Frequency Response"
 msgstr "Y轴频率响应"
+
+#: ../finetune_panel.cpp:26
+msgid "Z Reset"
+msgstr "重置Z轴"
+
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
+#: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
+msgid "mm"
+msgstr "mm"
+
+#: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
+msgid "s"
+msgstr "s"
 
 #: ../utils.cpp:262
 msgid "д "
