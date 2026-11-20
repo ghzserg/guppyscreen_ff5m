@@ -65,6 +65,7 @@ class ExtruderPanel : public NotifyConsumer {
   std::string code_macro;
   std::string cooldown_macro;
 #ifdef GUPPY_FF5M
+  ButtonContainer remove_tool_btn;
   NozzleTiles nozzle_tiles;
 #endif
   // Load, Unload and ColdPull: on with a tool in the head; on FF5M with

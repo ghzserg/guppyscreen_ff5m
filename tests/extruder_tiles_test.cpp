@@ -88,6 +88,50 @@ TEST_CASE("a tap on a C5 Pro nozzle tile selects and switches the tool immediate
   CHECK_FALSE(is_blue(tile("T2")));
 }
 
+TEST_CASE("Remove extruder parks the selected C5 Pro tool") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+
+  REQUIRE(ui::find_label("Remove extruder") != nullptr);
+  ui::tap(tile("T2"));
+  ui::tap_label("Remove extruder");
+  REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() == 2; }));
+  CHECK(moonraker.gcodes()[0] == "_T_USE T=2");
+  CHECK(moonraker.gcodes()[1] == "_T_OUT");
+
+  moonraker.push_status({{"zmod_color", {{"active_tool_id", -1}}}});
+  app::settle(moonraker);
+  CHECK_FALSE(is_blue(tile("T2")));
+  ui::tap_label("Remove extruder");
+  app::settle(moonraker);
+  CHECK(moonraker.gcodes().size() == 2);
+}
+
+TEST_CASE("Remove extruder does nothing if the C5 Pro carriage is empty") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+  moonraker.push_status({{"zmod_color", {{"active_tool_id", -1}}}});
+  app::settle(moonraker);
+
+  REQUIRE(ui::find_label("Remove extruder") != nullptr);
+  ui::tap_label("Remove extruder");
+  app::settle(moonraker);
+  CHECK(moonraker.gcodes().empty());
+}
+
+TEST_CASE("Remove extruder is blocked while the C5 Pro prints or pauses") {
+  for (const char *status : {"printing", "paused"}) {
+    FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+    open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+    moonraker.push_status({{"print_stats", {{"filename", "cube.gcode"}, {"state", status}}}});
+    app::settle(moonraker);
+
+    ui::tap_label("Remove extruder");
+    app::settle(moonraker);
+    CHECK(moonraker.gcodes().empty());
+  }
+}
+
 TEST_CASE("Load on a C5 Pro nozzle not in use changes the tool first") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
@@ -157,6 +201,7 @@ TEST_CASE("the AD5X extruder screen shows its nozzle's tile and keeps the T0-T3 
   CHECK(std::find(texts.begin(), texts.end(), "210") != texts.end());
   CHECK(std::find(texts.begin(), texts.end(), "/") == texts.end());  // a tile, not the line
   CHECK(tools_buttons_visible());
+  CHECK(ui::find_label("Remove extruder") == nullptr);
 }
 
 TEST_CASE("the AD5M nozzle tile on the extruder screen is not selectable") {
@@ -167,6 +212,7 @@ TEST_CASE("the AD5M nozzle tile on the extruder screen is not selectable") {
   CHECK(std::find(texts.begin(), texts.end(), "/") == texts.end());
   CHECK_FALSE(is_blue(tile("Extruder")));
   CHECK_FALSE(has_stripe(tile("Extruder")));
+  CHECK(ui::find_label("Remove extruder") == nullptr);
   ui::tap(tile("Extruder"));
   app::settle(moonraker);
   CHECK_FALSE(is_blue(tile("Extruder")));

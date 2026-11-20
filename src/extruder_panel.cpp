@@ -46,6 +46,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , code_macro("_GUPPY_MACRO")
   , cooldown_macro("TURN_OFF_HEATERS")
 #ifdef GUPPY_FF5M
+  , remove_tool_btn(rightside_btns_cont, &extruder, _("Remove extruder"), &ExtruderPanel::_handle_callback, this)
   , nozzle_tiles(ws, panel_cont, numpad)
 #endif
 {
@@ -106,6 +107,8 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   spoolman_btn.disable();
 #else
   lv_obj_add_flag(nozzle_tiles.get_container(), LV_OBJ_FLAG_FLOATING);
+  remove_tool_btn.hide();
+  remove_tool_btn.disable();
 #endif
 
   static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(6), LV_GRID_FR(6), LV_GRID_FR(6),
@@ -345,6 +348,14 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
       load_btn.enable();
     }
 
+#ifdef GUPPY_FF5M
+    if (btn == remove_tool_btn.get_container() && nozzle_tiles.selectable() &&
+        active_tool_id >= 0 && active_tool_id < total_tools && nozzle_tiles.has_selection()) {
+      auto state = State::get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
+      if (state != "printing" && state != "paused") ws.gcode_script("_T_OUT");
+    }
+#endif
+
     if (btn == cooldown_btn.get_container()) {
       cooldown_btn.disable();
       ws.gcode_script(cooldown_macro);
@@ -368,6 +379,10 @@ void ExtruderPanel::enable_actions(bool tool_in_head) {
   for (ButtonContainer *b : {&load_btn, &retract_btn, &coldpull_btn}) {
     if (on) b->enable(); else b->disable();
   }
+#ifdef GUPPY_FF5M
+  if (nozzle_tiles.selectable() && tool_in_head && nozzle_tiles.has_selection()) remove_tool_btn.enable();
+  else remove_tool_btn.disable();
+#endif
 }
 
 #ifdef GUPPY_FF5M
@@ -387,6 +402,12 @@ void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &
     enable_actions(active_tool_id >= 0 && active_tool_id < total_tools);  // one nozzle: the printer's tool
     return true;
   });
-  if (nozzle_tiles.selectable()) lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
+  if (nozzle_tiles.selectable()) {
+    lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(remove_tool_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  } else {
+    remove_tool_btn.hide();
+  }
+  enable_actions(active_tool_id >= 0 && active_tool_id < total_tools);
 }
 #endif

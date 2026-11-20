@@ -36,6 +36,10 @@ msgstr "%d.%m.%Y %H:%M"
 msgid "(Unknown)"
 msgstr "(Neznámé)"
 
+#: ../extruder_panel.cpp:49
+msgid "Remove extruder"
+msgstr "Odebrat extruder"
+
 #: ../limits_panel.cpp:28
 msgid "Acceleration (mm/s2)"
 msgstr "Zrychlení (mm/s²)"
