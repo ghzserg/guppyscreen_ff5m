@@ -45,6 +45,7 @@ jobs:
           mkdir -p screenshots
           cp tests/file_browser_screenshot_test.cpp /tmp/guppy-file-browser-screenshot.cpp
           GUPPY_FILES_SCREENSHOT="$PWD/screenshots/after.png" make test TEST='file browser screenshot'
+          git config --global --add safe.directory "$PWD"
           git fetch --no-tags origin "$BASE_SHA"
           git checkout --detach "$BASE_SHA"
           cp /tmp/guppy-file-browser-screenshot.cpp tests/file_browser_screenshot_test.cpp
