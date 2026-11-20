@@ -311,15 +311,29 @@ TEST_CASE("the C5 Pro lights Int or Ext by its chamber fans") {
                            {"fan_generic chamber_cool_fan", {{"speed", cool}}}});
     app::pump(50);
   };
-  speeds(0.6, 0.4, 0, 0);  // внутренняя: heat > 0.5 и loop > 0.3
+  speeds(0.9, 0.3, 0, 0);  // AIR_CIRCULATION_INTERNAL из Z-Mod
   CHECK(lit("Int"));
   CHECK_FALSE(lit("Ext"));
-  speeds(0.6, 0.3, 0, 0);  // loop не больше 0.3
+  speeds(0.5, 0.3, 0, 0);  // оба значения на пороге
+  CHECK(lit("Int"));
+  speeds(0.49, 0.3, 0, 0);  // heat ниже порога
   CHECK_FALSE(lit("Int"));
-  speeds(0, 0, 0.6, 0.6);  // внешняя: chamber > 0.5 и cool > 0.5
+  speeds(0.9, 0.29, 0, 0);  // loop ниже порога
+  CHECK_FALSE(lit("Int"));
+  speeds(0, 0, 0.5, 0.7);  // AIR_CIRCULATION_EXTERNAL из Z-Mod
   CHECK_FALSE(lit("Int"));
   CHECK(lit("Ext"));
-  speeds(0, 0, 0.6, 0.5);  // cool не больше 0.5
+  speeds(0, 0, 0.5, 0.5);  // оба значения на пороге
+  CHECK(lit("Ext"));
+  speeds(0, 0, 0.49, 0.7);  // chamber ниже порога
+  CHECK_FALSE(lit("Ext"));
+  speeds(0, 0, 0.5, 0.49);  // cool ниже порога
+  CHECK_FALSE(lit("Ext"));
+  speeds(0.9, 0.3, 0, 0);  // Ext -> Int
+  CHECK(lit("Int"));
+  CHECK_FALSE(lit("Ext"));
+  speeds(0, 0, 0, 0);  // Stop
+  CHECK_FALSE(lit("Int"));
   CHECK_FALSE(lit("Ext"));
   CHECK_FALSE(lit("Stop"));
 }
@@ -328,8 +342,8 @@ TEST_CASE("the C5 Pro shows the mode its chamber fans are in when the fan screen
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   std::ifstream f(app::fixture("c5pro_basic.json"));
   json sub = json::parse(f)["printer.objects.subscribe"];
-  sub["status"]["fan_generic chamber_fan"]["speed"] = 1.0;
-  sub["status"]["fan_generic chamber_cool_fan"]["speed"] = 1.0;
+  sub["status"]["fan_generic chamber_fan"]["speed"] = 0.5;
+  sub["status"]["fan_generic chamber_cool_fan"]["speed"] = 0.7;
   moonraker.set_result("printer.objects.subscribe", sub);
   start_c5pro(moonraker, false);
   open_fans(moonraker);

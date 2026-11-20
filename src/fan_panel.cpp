@@ -238,11 +238,11 @@ void FanPanel::show_air_circulation(bool show) {
 }
 
 void FanPanel::show_air_mode() {
-  // C5 Pro: внутренняя — chamber_heat_fan > 0.5 и chamber_loop_fan > 0.3,
-  // внешняя — chamber_fan > 0.5 и chamber_cool_fan > 0.5.
+  // C5 Pro: внутренняя — chamber_heat_fan >= 0.5 и chamber_loop_fan >= 0.3,
+  // внешняя — chamber_fan >= 0.5 и chamber_cool_fan >= 0.5.
   bool lit[2] = {
-    std::fabs(air_now[0] - air_value[0]) < air_tol || (air_now[1] > 0.5 && air_now[2] > 0.3),
-    std::fabs(air_now[0] - air_value[1]) < air_tol || (air_now[3] > 0.5 && air_now[4] > 0.5)};
+    std::fabs(air_now[0] - air_value[0]) < air_tol || (air_now[1] >= 0.5 && air_now[2] >= 0.3),
+    std::fabs(air_now[0] - air_value[1]) < air_tol || (air_now[3] >= 0.5 && air_now[4] >= 0.5)};
   ButtonContainer *btns[2] = {&air_internal_btn, &air_external_btn};
   for (int i = 0; i < 2; i++) {
     if (lit[i]) {
