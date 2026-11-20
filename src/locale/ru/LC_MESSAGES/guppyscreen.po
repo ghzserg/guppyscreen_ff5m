@@ -42,6 +42,10 @@ msgstr "%d.%m.%Y %H:%M"
 msgid "(Unknown)"
 msgstr "(Неизвестно)"
 
+#: ../extruder_panel.cpp:49
+msgid "Remove"
+msgstr "Извлечь"
+
 #: ../limits_panel.cpp:28
 msgid "Acceleration (mm/s2)"
 msgstr "Ускорение (мм/с²)"
