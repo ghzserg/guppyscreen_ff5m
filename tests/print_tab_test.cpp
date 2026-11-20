@@ -510,14 +510,14 @@ TEST_CASE("the print screen shows the acceleration above elapsed time and opens 
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   moonraker.set_result("server.files.metadata", {{"estimated_time", 1063}});
   start_plain(moonraker);
-  REQUIRE(ui::find_label("20000 мм/с2") != nullptr);
+  REQUIRE(ui::find_label("20000 mm/s2") != nullptr);
 
   moonraker.push_status({{"toolhead", {{"max_accel", 12345.0}}},
                          {"print_stats", {{"print_duration", 57}}}});
   const auto elapsed_text = KUtils::eta_string(57);
   const auto eta_text = "ETA: " + KUtils::eta_string(1006);
   REQUIRE(app::wait_until([&] { return ui::find_label(eta_text) != nullptr; }));
-  auto *acceleration = ui::find_label("12345 мм/с2");
+  auto *acceleration = ui::find_label("12345 mm/s2");
   auto *elapsed = ui::find_label(elapsed_text);
   REQUIRE(acceleration != nullptr);
   REQUIRE(elapsed != nullptr);
@@ -554,7 +554,7 @@ uint32_t missing_glyph(const lv_font_t *font, const std::string &text) {
 // scrolls.
 std::vector<lv_obj_t *> detail_values() {
   std::vector<lv_obj_t *> found;
-  for (const char *text : {"T0: ", "мм/с", "мм3/с", " мм", " / ", "%, "}) {  // "%, ": the fans, not the bar
+  for (const char *text : {"T0: ", "mm/s", "mm3/s", " mm", " / ", "%, "}) {  // "%, ": the fans, not the bar
     lv_obj_t *l = ui::find_label(text, ui::Match::Contains);
     if (l != nullptr) found.push_back(l);
   }
@@ -838,4 +838,16 @@ TEST_CASE("the details' font has the letters of every translation of the ETA") {
     uint32_t missing = missing_glyph(font, text);
     CHECK_MESSAGE(missing == 0, std::string(lang) << ": U+" << std::hex << missing);
   }
+}
+
+TEST_CASE("the print screen writes its units and time in English without a Russian translation") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_plain(moonraker);
+  moonraker.push_status({{"print_stats", {{"print_duration", 3725}}}});
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("1h 2min 5s") != nullptr; }), ui::dump_screen());
+  std::string screen = ui::dump_screen();
+  CHECK_MESSAGE(ui::find_label(" mm/s", ui::Match::Contains) != nullptr, screen);
+  CHECK_MESSAGE(ui::find_label(" mm3/s", ui::Match::Contains) != nullptr, screen);
+  CHECK_MESSAGE(ui::find_label("0 m") != nullptr, screen);
+  CHECK_MESSAGE(screen.find(" м") == std::string::npos, screen);
 }

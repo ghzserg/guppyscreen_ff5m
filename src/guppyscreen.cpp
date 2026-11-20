@@ -281,7 +281,7 @@ std::mutex &GuppyScreen::get_lock() {
 
 void GuppyScreen::connect_ws(const std::string &url) {
   up(true);
-  init_panel.set_message(_(LV_SYMBOL_WARNING" Waiting for the Klipper launch..."));
+  init_panel.set_message((LV_SYMBOL_WARNING + std::string(_(" Waiting for the Klipper launch..."))).c_str());
   ws.connect(url.c_str(),
    [this]() { init_panel.connected(ws); },
    [this]() { init_panel.disconnected(ws); });

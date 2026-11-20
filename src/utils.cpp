@@ -270,15 +270,15 @@ std::string end_time(int64_t seconds_to_add) {
     std::ostringstream os;
 
     if (p.tm_yday > 0)
-      os << p.tm_yday << _("д ");
+      os << p.tm_yday << _("d ");
 
     if (p.tm_hour > 0)
-      os << p.tm_hour << _("ч ");
+      os << p.tm_hour << _("h ");
 
     if (p.tm_min > 0)
-      os << p.tm_min << _("м ");
+      os << p.tm_min << _("min ");
 
-    os << p.tm_sec << _("с");
+    os << p.tm_sec << _("s");
 
     return os.str();
   }

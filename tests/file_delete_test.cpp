@@ -71,9 +71,9 @@ TEST_CASE("file deletion error is visible and does not remove the row") {
 TEST_CASE("file deletion is allowed during printing") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   open_file(moonraker);
+  ui::tap_label("Delete");
   moonraker.push_status({{"print_stats", {{"state", "printing"}}}});
   app::pump(100);
-  ui::tap_label("Delete");
   confirm(true);
   CHECK(app::wait_until([&] {
     return moonraker.request_count("server.files.delete_file") == 1;

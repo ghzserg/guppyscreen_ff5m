@@ -41,13 +41,13 @@ void Config::init(std::string config_path, const std::string thumbdir) {
   json sensors_conf = {
     {
       {"id", "extruder"},
-      {"display_name", "Экструдер"},
+      {"display_name", "Extruder"},
       {"controllable", true},
       {"color", "red"}
     },
     {
       {"id", "heater_bed"},
-      {"display_name", "Стол"},
+      {"display_name", "Bed"},
       {"controllable", true},
       {"color", "purple"}
     },
