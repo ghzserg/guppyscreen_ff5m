@@ -13,7 +13,6 @@ Tree(const std::string &filename, const std::string &path, uint32_t modified)
     : name(filename)
     , full_path(path)
     , date_modified(modified)
-    , has_metadata(false)
     , parent(this) {
     // spdlog::debug("creating new node {}, {}", name, path);
   }
@@ -105,32 +104,13 @@ Tree(const std::string &filename, const std::string &path, uint32_t modified)
     }
   }
 
-  bool contains_metadata() {
-    return has_metadata;
-  }
-
-  void set_metadata(json &j) {
-    has_metadata = true;
-    metadata = j;
-  }
-
   void clear() {
     children.clear();
-  }
-
-  const char* get_thumbpath() {
-    if (metadata.contains("result") && metadata["result"].contains("thumbnails")) {
-      // XXX: fix my index
-      return metadata["result"]["thumbnails"][1]["relative_path"].template get<std::string>().c_str();
-    }
-    return NULL;
   }
 
   std::string name;
   std::string full_path;
   uint32_t date_modified;
-  json metadata;
-  bool has_metadata;
   Tree *parent;
   std::map<std::string, Tree> children;
 };

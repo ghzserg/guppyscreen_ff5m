@@ -1,5 +1,4 @@
 #include "console_panel.h"
-#include "state.h"
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
@@ -203,7 +202,6 @@ void ConsolePanel::load_history() {
   }
   ws.send_jsonrpc("server.database.get_item", {{"namespace", "fluidd"}, {"key", "console"}}, [this](json &j) {
     if (j.contains("error") && j["error"].value("code", 0) != 404) return;
-    State::get_instance()->set_data("console", j, "/result/value");
     const auto &saved = j["/result/value/commandHistory"_json_pointer];
     if (!saved.is_null() && !saved.is_array()) return;
 
@@ -212,7 +210,7 @@ void ConsolePanel::load_history() {
     const bool pending = !history.empty();
     auto first = saved.begin();
     if (pending && first != saved.end() && *first == history.back()) ++first;
-    for (; first != saved.end() && (!pending || history.size() < 20); ++first) {
+    for (; first != saved.end() && history.size() < 20; ++first) {
       if (first->is_string()) history.push_back(first->get<std::string>());
     }
     history_loaded = true;

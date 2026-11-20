@@ -345,15 +345,20 @@ TEST_CASE("a late metadata reply does not replace the file selected since") {
   app::wait_ready(moonraker);
 
   ui::tap_tab(Nav::PRINT);
-  ui::tap_table_row("part1.gcode");  // its metadata is cached from now on
-  REQUIRE(app::wait_until([] { return ui::find_label("part1.gcode") != nullptr; }));
+  ui::tap_table_row("part1.gcode");
+  REQUIRE(app::wait_until([&] { return shown_thumbnail() == "A:" + gcodes + "/.thumbs/part1.png"; }));
   slow_part0 = true;
   ui::tap_table_row("part0.gcode");  // its reply comes in a second
   app::pump(100);
-  ui::tap_table_row("part1.gcode");  // shown at once from the cache
+  ui::tap_table_row("part1.gcode");
   REQUIRE(ui::find_label("part1.gcode") != nullptr);
 
-  app::pump(1500);  // part0's reply has come
+  REQUIRE(app::wait_until([&] { return shown_thumbnail() == "A:" + gcodes + "/.thumbs/part1.png"; }));
+  int part1_requests = 0;
+  for (const auto &request : moonraker.requests("server.files.metadata")) {
+    if (request.at("filename") == "part1.gcode") ++part1_requests;
+  }
+  CHECK(part1_requests == 2);
   CHECK_MESSAGE(ui::find_label("part1.gcode") != nullptr, ui::dump_screen());
   CHECK(ui::find_label("part0.gcode") == nullptr);
   CHECK(shown_thumbnail() == "A:" + gcodes + "/.thumbs/part1.png");

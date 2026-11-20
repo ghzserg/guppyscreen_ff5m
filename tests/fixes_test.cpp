@@ -190,8 +190,7 @@ TEST_CASE("an empty console history saves the first command across reconnect") {
   REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.objects.subscribe") > 0; }, 10000));
   app::wait_ready(moonraker);
   open_console();
-  const auto restored = State::get_instance()->get_data_copy("/console/commandHistory"_json_pointer);
-  CHECK(restored == expected);
+  CHECK(State::get_instance()->get_data_copy("/console"_json_pointer).is_null());
   auto *table = ui::find_shown(&lv_table_class);
   REQUIRE(table != nullptr);
   {

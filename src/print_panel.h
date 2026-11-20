@@ -72,6 +72,7 @@ class PrintPanel : public NotifyConsumer {
   Sort sorted_by = SortByModified;
   bool reverse_sort = false;
   uint32_t metadata_request_id = 0;
+  bool metadata_loaded = false;
 };
 
 #endif // __PRINT_PANEL_H__

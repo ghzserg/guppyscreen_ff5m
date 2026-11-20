@@ -107,6 +107,10 @@ void InitPanel::connected(KWebSocketClient &ws) {
           spdlog::debug("subcribing to {}", subs.dump());
           ws.send_jsonrpc("printer.objects.subscribe", subs,
                           [this](json &data) {
+                            if (!data.contains("/result/status"_json_pointer)) {
+                              spdlog::warn("printer.objects.subscribe failed: {}", data.dump());
+                              return;
+                            }
                             State::get_instance()->set_data("printer_state",
                                                             data, "/result/status");
                             this->main_panel.init(data);

@@ -14,13 +14,15 @@
 #include <mutex>
 #include <vector>
 #include <atomic>
+#include <chrono>
 #include <functional>
 
 using json = nlohmann::json;
 
 class KWebSocketClient : public hv::WebSocketClient {
  public:
-  KWebSocketClient(hv::EventLoopPtr loop);
+  explicit KWebSocketClient(hv::EventLoopPtr loop,
+                            std::chrono::milliseconds reply_timeout = std::chrono::seconds(30));
   ~KWebSocketClient();
 
   int connect(const char* url,
@@ -57,9 +59,14 @@ class KWebSocketClient : public hv::WebSocketClient {
   struct PendingReply {
     std::function<void(json&)> callback;
     bool keep_macros;
+    std::chrono::steady_clock::time_point expires;
   };
   int send_request(const std::string &method, const json *params,
                    std::function<void(json&)> cb = {}, bool keep_macros = false);
+  void expire_pending();
+  void stop_expiry_timer();
+  const std::chrono::milliseconds reply_timeout;
+  std::atomic<hv::TimerID> expiry_timer{INVALID_TIMER_ID};
   std::map<uint64_t, PendingReply> pending;
   WebSocketChannelPtr active_channel;
   std::mutex pending_lock;

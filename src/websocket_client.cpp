@@ -19,14 +19,41 @@
 using namespace hv;
 using json = nlohmann::json;
 
-KWebSocketClient::KWebSocketClient(EventLoopPtr loop)
+KWebSocketClient::KWebSocketClient(EventLoopPtr loop, std::chrono::milliseconds reply_timeout)
   : WebSocketClient(loop)
+  , reply_timeout(std::max(reply_timeout, std::chrono::milliseconds(1)))
   , id(0)
 {
 }
 
 KWebSocketClient::~KWebSocketClient() {
+  stop_expiry_timer();
   stop();
+}
+
+void KWebSocketClient::stop_expiry_timer() {
+  const auto timer = expiry_timer.exchange(INVALID_TIMER_ID);
+  if (timer != INVALID_TIMER_ID) loop()->killTimer(timer);
+}
+
+void KWebSocketClient::expire_pending() {
+  const auto now = std::chrono::steady_clock::now();
+  std::vector<std::function<void(json&)>> expired;
+  {
+    std::lock_guard<std::mutex> lock(pending_lock);
+    for (auto it = pending.begin(); it != pending.end();) {
+      if (it->second.expires > now) {
+        ++it;
+        continue;
+      }
+      expired.push_back(std::move(it->second.callback));
+      it = pending.erase(it);
+    }
+  }
+  for (auto &callback : expired) {
+    json error = {{"error", {{"code", -32000}, {"message", "Moonraker request timed out"}}}};
+    callback(error);
+  }
 }
 
 // The configfile sections the app reads; everything else in configfile's
@@ -103,6 +130,9 @@ int KWebSocketClient::connect(const char* url,
       std::lock_guard<std::mutex> lock(pending_lock);
       active_channel = channel;
     }
+    stop_expiry_timer();
+    const auto interval = std::min(reply_timeout, std::chrono::milliseconds(5000)).count();
+    expiry_timer = loop()->setInterval(interval, [this](TimerID) { expire_pending(); });
     const HttpResponsePtr& resp = getHttpResponse();
     spdlog::debug("onopen {}", resp->body.c_str());
     connected();
@@ -171,6 +201,7 @@ int KWebSocketClient::connect(const char* url,
 
   onclose = [this, disconnected]() {
     spdlog::debug("onclose");
+    stop_expiry_timer();
     // libhv запускает переподключение после возврата из onclose.
     decltype(pending) abandoned;
     {
@@ -246,7 +277,10 @@ int KWebSocketClient::send_request(const std::string &method, const json *params
     std::lock_guard<std::mutex> lock(pending_lock);
     destination = active_channel;
     if (!destination) return -1;
-    if (cb) pending.emplace(request_id, PendingReply{std::move(cb), keep_macros});
+    if (cb) {
+      const auto expires = std::chrono::steady_clock::now() + reply_timeout;
+      pending.emplace(request_id, PendingReply{std::move(cb), keep_macros, expires});
+    }
   }
   const int result = destination->send(message);
   if (result < 0) {
