@@ -321,7 +321,9 @@ TEST_CASE("the C5 Pro PID bed tile opens temperature input after nozzle selectio
   ui::enter_on_numpad("230");
   ui::tap(ui::tile("Bed"));
   REQUIRE_MESSAGE(ui::find_shown(&lv_textarea_class) != nullptr, "Bed did not open PID temperature input");
+  CHECK(ui::has_bg(ui::tile("Bed"), LV_PALETTE_BLUE));
   ui::enter_on_numpad("90");
+  CHECK_FALSE(ui::has_bg(ui::tile("Bed"), LV_PALETTE_BLUE));
   ui::tap_label("PID Bed");
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
   CHECK(moonraker.gcodes().back() == "PID_TUNE_BED TEMPERATURE=90");
@@ -338,7 +340,9 @@ TEST_CASE("the AD5M PID bed tile accepts its calibration temperature") {
 
   ui::tap(ui::tile("Bed"));
   REQUIRE(ui::find_shown(&lv_textarea_class) != nullptr);
+  CHECK(ui::has_bg(ui::tile("Bed"), LV_PALETTE_BLUE));
   ui::enter_on_numpad("95");
+  CHECK_FALSE(ui::has_bg(ui::tile("Bed"), LV_PALETTE_BLUE));
   ui::tap_label("PID Bed");
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
   CHECK(moonraker.gcodes().back() == "PID_TUNE_BED TEMPERATURE=95");
