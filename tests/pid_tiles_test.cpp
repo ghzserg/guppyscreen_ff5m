@@ -254,10 +254,7 @@ TEST_CASE("the C5 Pro PID screen keeps weight controls and colours when weightVa
   json objects = moonraker.result("printer.objects.list");
   objects["objects"].push_back("temperature_sensor weightValue");
   moonraker.set_result("printer.objects.list", objects);
-  json config = app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro");
-  config["default_printer"] = "C5Pro";
-  config["printers"]["C5Pro"] = config["printers"]["FF5M"];
-  app::start(moonraker, config);
+  app::start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
   app::wait_ready(moonraker);
   std::vector<uint32_t> home;
   for (const char *name : {"T0", "T1", "T2", "T3", "Bed", "Chamber"}) home.push_back(stripe_of(tile(name)));
@@ -290,7 +287,7 @@ TEST_CASE("the AD5M PID screen keeps the weight orange and the bed as on Home") 
   CHECK(stripe_of(tile("Weight")) == lv_color_to32(lv_palette_main(LV_PALETTE_ORANGE)));
 }
 
-TEST_CASE("the C5 Pro PID screen hides unsupported weight, nozzle cleaning and load cell") {
+TEST_CASE("the C5 Pro PID screen hides unsupported weight controls") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   app::start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
   app::wait_ready(moonraker);
@@ -301,7 +298,7 @@ TEST_CASE("the C5 Pro PID screen hides unsupported weight, nozzle cleaning and l
   CHECK(ui::find_label("PID Bed") != nullptr);
 }
 
-TEST_CASE("the AD5M PID screen keeps weight, nozzle cleaning and load cell") {
+TEST_CASE("the AD5M PID screen keeps weight controls") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker);
   app::wait_ready(moonraker);
