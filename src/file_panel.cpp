@@ -68,7 +68,7 @@ void FilePanel::refresh_view(json &j, const std::string &gcode_path) {
 
   v = j["/result/size"_json_pointer];
   std::string detail;
-  detail = fmt::format(_("Weight: {} г|{}\nTime: {}\nSize: {} MB"),
+  detail = fmt::format(_("Weight: {} g|{}\nTime: {}\nSize: {} MB"),
                            fweight > 0 ? std::to_string(fweight) : _("(Unknown)"),
                            time_stream.str(),
                            eta > 0 ? KUtils::eta_string(eta) : _("(Unknown)"),

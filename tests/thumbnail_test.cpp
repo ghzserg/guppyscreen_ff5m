@@ -378,6 +378,18 @@ TEST_CASE("file browser requests metadata for filenames with quotes and backslas
   CHECK(app::wait_until([] { return ui::find_label("Size: 2 MB", ui::Match::Contains) != nullptr; }));
 }
 
+TEST_CASE("file browser writes the filament weight in grams in English") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_result("server.files.list", json::array({{{"path", "part.gcode"}, {"modified", 1000}}}));
+  moonraker.set_result("server.files.metadata", {{"size", 2097152}, {"filament_weight_total", 12}});
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_tab(Nav::PRINT);
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Weight: 12 g|", ui::Match::Contains) != nullptr; }),
+                ui::dump_screen());
+}
+
 TEST_CASE("file browser keeps the file list when refresh fails") {
   const std::string filename = "existing.gcode";
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
