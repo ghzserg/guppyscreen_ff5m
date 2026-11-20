@@ -37,6 +37,26 @@ jobs:
       - name: Run tests (ASan/UBSan)
         run: make test SANITIZE=1
 
+      - name: Capture Files screen before and after
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mkdir -p screenshots
+          cp tests/file_browser_screenshot_test.cpp /tmp/guppy-file-browser-screenshot.cpp
+          GUPPY_FILES_SCREENSHOT="$PWD/screenshots/after.png" make test TEST='file browser screenshot'
+          git fetch --no-tags origin "$BASE_SHA"
+          git checkout --detach "$BASE_SHA"
+          cp /tmp/guppy-file-browser-screenshot.cpp tests/file_browser_screenshot_test.cpp
+          GUPPY_FILES_SCREENSHOT="$PWD/screenshots/before.png" make test TEST='file browser screenshot'
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          name: files-screen-before-after
+          path: screenshots/*.png
+          if-no-files-found: error
+
   build:
     needs: test
     runs-on: ubuntu-22.04
