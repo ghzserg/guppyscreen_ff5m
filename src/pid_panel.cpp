@@ -1,4 +1,5 @@
 #include "pid_panel.h"
+#include "config.h"
 #include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -120,6 +121,14 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_grid_cell(clear_nozzle_btn.get_container(),          LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(bed_level_screws_tune_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
   lv_obj_set_grid_cell(load_cell_tare_btn.get_container(),        LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+#ifdef GUPPY_FF5M
+  const json &printer = Config::get_instance()->get_json("/default_printer");
+  if (printer.is_string() && printer.get_ref<const std::string &>().rfind("C5", 0) == 0) {
+    lv_obj_add_flag(weight_temp.get_sensor(), LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(clear_nozzle_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(load_cell_tare_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  }
+#endif
   ws.register_notify_update(this);
 }
 

@@ -282,3 +282,57 @@ TEST_CASE("the AD5M PID screen keeps the weight orange and the bed as on Home") 
   CHECK(stripe_of(tile("Bed")) == home_bed);
   CHECK(stripe_of(tile("Weight")) == lv_color_to32(lv_palette_main(LV_PALETTE_ORANGE)));
 }
+
+TEST_CASE("the C5 Pro PID screen hides unsupported weight, nozzle cleaning and load cell") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  app::start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+  app::wait_ready(moonraker);
+  open_pid(moonraker);
+  CHECK(ui::find_label("Weight") == nullptr);
+  CHECK(ui::find_label("Clear nozzle") == nullptr);
+  CHECK(ui::find_label("Load Cell") == nullptr);
+  CHECK(ui::find_label("PID Bed") != nullptr);
+}
+
+TEST_CASE("the AD5M PID screen keeps weight, nozzle cleaning and load cell") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  open_pid(moonraker);
+  CHECK(ui::find_label("Weight") != nullptr);
+  CHECK(ui::find_label("Clear nozzle") != nullptr);
+  CHECK(ui::find_label("Load Cell") != nullptr);
+}
+
+TEST_CASE("the C5 Pro PID bed tile opens temperature input after nozzle selection") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  app::start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+  app::wait_ready(moonraker);
+  open_pid(moonraker);
+
+  ui::tap(ui::tile("T2"));
+  ui::enter_on_numpad("230");
+  ui::tap(ui::tile("Bed"));
+  REQUIRE_MESSAGE(ui::find_shown(&lv_textarea_class) != nullptr, "Bed did not open PID temperature input");
+  ui::enter_on_numpad("90");
+  ui::tap_label("PID Bed");
+  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
+  CHECK(moonraker.gcodes().back() == "PID_TUNE_BED TEMPERATURE=90");
+  ui::tap_label("PID Extruder");
+  REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() >= 2; }));
+  CHECK(moonraker.gcodes().back() == "PID_TUNE_EXTRUDER T=2 TEMPERATURE=230");
+}
+
+TEST_CASE("the AD5M PID bed tile accepts its calibration temperature") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  open_pid(moonraker);
+
+  ui::tap(ui::tile("Bed"));
+  REQUIRE(ui::find_shown(&lv_textarea_class) != nullptr);
+  ui::enter_on_numpad("95");
+  ui::tap_label("PID Bed");
+  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
+  CHECK(moonraker.gcodes().back() == "PID_TUNE_BED TEMPERATURE=95");
+}
