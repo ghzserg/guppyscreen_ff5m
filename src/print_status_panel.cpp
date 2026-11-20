@@ -84,15 +84,15 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , detail_cont(lv_obj_create(status_cont))
   , extruder_temp(detail_cont, &extruder, 100, "20")
   , bed_temp(detail_cont, &bed, 100, "...")
-  , print_speed(detail_cont, &speed_up_img, 100, ("0 "+ std::string(_("мм")) +"/"+ _("с")).c_str())
-  , z_offset(detail_cont, &home_z, 100, ("0.0 "+ std::string(_("мм"))).c_str())
-  , flow_rate(detail_cont, &extrude, 100, ("0.0 "+ std::string(_("мм")) +"3/"+ _("с")).c_str())
+  , print_speed(detail_cont, &speed_up_img, 100, ("0 "+ std::string(_("mm")) +"/"+ _("s")).c_str())
+  , z_offset(detail_cont, &home_z, 100, ("0.0 "+ std::string(_("mm"))).c_str())
+  , flow_rate(detail_cont, &extrude, 100, ("0.0 "+ std::string(_("mm")) +"3/"+ _("s")).c_str())
   , layers(detail_cont, &layers_img, 100, "...")
   , fan0(detail_cont, &fan, 100, "0%")
 #ifdef GUPPY_FF5M
   , print_acceleration(detail_cont, &limit_img, 100, "...")
 #endif
-  , elapsed(detail_cont, &clock_img, 100, ("0 "+ std::string(_("с"))).c_str())
+  , elapsed(detail_cont, &clock_img, 100, ("0 "+ std::string(_("s"))).c_str())
 #ifndef GUPPY_FF5M
   , time_left(detail_cont, &hourglass, 100, "...")
 #endif
@@ -371,9 +371,9 @@ void PrintStatusPanel::reset() {
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
   lv_label_set_text(progress_label, "0%");
   lv_label_set_text(progress_end, "00:00");
-  print_speed.update_label(("0 "+ std::string(_("мм")) +"/"+ _("с")).c_str());
-  flow_rate.update_label(("0.0 "+ std::string(_("мм")) +"3/"+ _("с")).c_str());
-  elapsed.update_label(("0 "+ std::string(_("с"))).c_str());
+  print_speed.update_label(("0 "+ std::string(_("mm")) +"/"+ _("s")).c_str());
+  flow_rate.update_label(("0.0 "+ std::string(_("mm")) +"3/"+ _("s")).c_str());
+  elapsed.update_label(("0 "+ std::string(_("s"))).c_str());
   show_time_left("...");
   filament.update_label("0 м");
   filament_m = 0;
@@ -415,7 +415,7 @@ void PrintStatusPanel::update_bed_temperature() {
 #ifdef GUPPY_FF5M
 void PrintStatusPanel::update_acceleration(const json &value) {
   if (value.is_number()) {
-    print_acceleration.update_label(fmt::format("{} {}/{}2", value.get<int>(), _("мм"), _("с")).c_str());
+    print_acceleration.update_label(fmt::format("{} {}/{}2", value.get<int>(), _("mm"), _("s")).c_str());
   } else {
     print_acceleration.update_label("...");
   }
@@ -519,7 +519,7 @@ void PrintStatusPanel::populate() {
   v = s->get_data(
       "/printer_state/gcode_move/homing_origin/2"_json_pointer);
   if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.3f} " + std::string(_("мм")), v.template get<double>()).c_str());
+    z_offset.update_label(fmt::format("{:.3f} " + std::string(_("mm")), v.template get<double>()).c_str());
   }
 }
 
@@ -692,13 +692,13 @@ void PrintStatusPanel::consume(json &j) {
   auto speed = j["/params/0/motion_report/live_velocity"_json_pointer];
   if (!speed.is_null()) {
     int s = static_cast<int>(speed.template get<double>());
-    print_speed.update_label((std::to_string(s) + " "+ std::string(_("мм")) +"/"+ _("с")).c_str());
+    print_speed.update_label((std::to_string(s) + " "+ std::string(_("mm")) +"/"+ _("s")).c_str());
   }
 
   // zoffset
   v = j["/params/0/gcode_move/homing_origin/2"_json_pointer];
   if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.3f} " + std::string(_("мм")), v.template get<double>()).c_str());
+    z_offset.update_label(fmt::format("{:.3f} " + std::string(_("mm")), v.template get<double>()).c_str());
   }
 
   std::vector<std::string> values;
@@ -752,7 +752,7 @@ void PrintStatusPanel::consume(json &j) {
   v = j["/params/0/motion_report/live_extruder_velocity"_json_pointer];
   if (!v.is_null()) {
     double flow = pi() / 4 * std::pow(filament_diameter, 2) * v.template get<double>();
-    flow_rate.update_label(fmt::format("{:.1f} "+ std::string(_("мм")) +"3/"+ _("с"), flow > 0.0 ? flow : 0.0).c_str());
+    flow_rate.update_label(fmt::format("{:.1f} "+ std::string(_("mm")) +"3/"+ _("s"), flow > 0.0 ? flow : 0.0).c_str());
   }
 
   // layers

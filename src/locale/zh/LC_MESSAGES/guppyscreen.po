@@ -483,46 +483,36 @@ msgstr "Y轴频率响应"
 msgid "Z Reset"
 msgstr "重置Z轴"
 
+#: ../utils.cpp:273
+msgid "d "
+msgstr "d "
+
+#: ../utils.cpp:276
+msgid "h "
+msgstr "h "
+
+#: ../utils.cpp:279
+msgid "min "
+msgstr "min "
+
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
 #: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
+#: ../print_status_panel.cpp:87 ../print_status_panel.cpp:88
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:374
+#: ../print_status_panel.cpp:375 ../print_status_panel.cpp:418
+#: ../print_status_panel.cpp:522 ../print_status_panel.cpp:695
+#: ../print_status_panel.cpp:701 ../print_status_panel.cpp:755
 msgid "mm"
 msgstr "mm"
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
+#: ../print_status_panel.cpp:87 ../print_status_panel.cpp:89
+#: ../print_status_panel.cpp:95 ../print_status_panel.cpp:374
+#: ../print_status_panel.cpp:375 ../print_status_panel.cpp:376
+#: ../print_status_panel.cpp:418 ../print_status_panel.cpp:695
+#: ../print_status_panel.cpp:755 ../utils.cpp:281
 msgid "s"
 msgstr "s"
-
-#: ../utils.cpp:262
-msgid "д "
-msgstr "d "
-
-#: ../utils.cpp:268
-msgid "м "
-msgstr "min "
-
-#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:42 ../finetune_panel.cpp:43
-#: ../finetune_panel.cpp:104 ../finetune_panel.cpp:110
-#: ../finetune_panel.cpp:147 ../finetune_panel.cpp:152
-#: ../print_status_panel.cpp:71 ../print_status_panel.cpp:72
-#: ../print_status_panel.cpp:73 ../print_status_panel.cpp:227
-#: ../print_status_panel.cpp:228 ../print_status_panel.cpp:341
-#: ../print_status_panel.cpp:484 ../print_status_panel.cpp:490
-#: ../print_status_panel.cpp:544
-msgid "мм"
-msgstr "mm"
-
-#: ../finetune_panel.cpp:38 ../finetune_panel.cpp:43 ../finetune_panel.cpp:110
-#: ../finetune_panel.cpp:152 ../print_status_panel.cpp:71
-#: ../print_status_panel.cpp:73 ../print_status_panel.cpp:76
-#: ../print_status_panel.cpp:227 ../print_status_panel.cpp:228
-#: ../print_status_panel.cpp:229 ../print_status_panel.cpp:484
-#: ../print_status_panel.cpp:544 ../utils.cpp:270
-msgid "с"
-msgstr "s"
-
-#: ../utils.cpp:265
-msgid "ч "
-msgstr "h "
 
 #~ msgid "Back"
 #~ msgstr "返回"
