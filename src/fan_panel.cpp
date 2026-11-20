@@ -13,6 +13,14 @@ LV_IMG_DECLARE(fan_on);
 LV_IMG_DECLARE(air_circulation_internal_img);
 LV_IMG_DECLARE(air_circulation_external_img);
 LV_IMG_DECLARE(air_circulation_stop_img);
+
+// Поля Klipper, по которым виден режим циркуляции (FanPanel::air_now).
+static const char *const AIR_FIELDS[5] = {
+  "servo my_servo/value",
+  "fan_generic chamber_heat_fan/speed", "fan_generic chamber_loop_fan/speed",
+  "fan_generic chamber_fan/speed", "fan_generic chamber_cool_fan/speed"};
+
+static double number(const json &v) { return v.is_number() ? v.get<double>() : NAN; }
 #endif
 
 FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
@@ -88,8 +96,19 @@ void FanPanel::consume(json &j) {
     }
   }
 #ifdef GUPPY_FF5M
-  static const json::json_pointer servo("/params/0/servo my_servo/value");
-  if (j.contains(servo)) show_air_mode(j[servo]);
+  static const std::vector<json::json_pointer> fields = [] {
+    std::vector<json::json_pointer> v;
+    for (const char *f : AIR_FIELDS) v.emplace_back(std::string("/params/0/") + f);
+    return v;
+  }();
+  bool changed = false;
+  for (size_t i = 0; i < fields.size(); i++) {
+    if (j.contains(fields[i])) {
+      air_now[i] = number(j[fields[i]]);
+      changed = true;
+    }
+  }
+  if (changed) show_air_mode();
 #endif
 }
 
@@ -207,7 +226,10 @@ void FanPanel::show_air_circulation(bool show) {
       angle = std::min(std::max(angle, 0.0), range);  // Klipper ставит угол в этих пределах
       air_value[i] = (min + angle / range * (max - min)) / 0.020;
     }
-    show_air_mode(State::get_instance()->get_data_copy("/printer_state/servo my_servo/value"_json_pointer));
+    for (int i = 0; i < 5; i++) {
+      air_now[i] = number(state->get_data_copy(json::json_pointer(std::string("/printer_state/") + AIR_FIELDS[i])));
+    }
+    show_air_mode();
   } else {
     lv_obj_add_flag(air_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_set_width(fans_cont, LV_PCT(80));
@@ -215,11 +237,15 @@ void FanPanel::show_air_circulation(bool show) {
   }
 }
 
-void FanPanel::show_air_mode(const json &value) {
-  double v = value.is_number() ? value.get<double>() : NAN;
+void FanPanel::show_air_mode() {
+  // C5 Pro: внутренняя — chamber_heat_fan > 0.5 и chamber_loop_fan > 0.3,
+  // внешняя — chamber_fan > 0.5 и chamber_cool_fan > 0.5.
+  bool lit[2] = {
+    std::fabs(air_now[0] - air_value[0]) < air_tol || (air_now[1] > 0.5 && air_now[2] > 0.3),
+    std::fabs(air_now[0] - air_value[1]) < air_tol || (air_now[3] > 0.5 && air_now[4] > 0.5)};
   ButtonContainer *btns[2] = {&air_internal_btn, &air_external_btn};
   for (int i = 0; i < 2; i++) {
-    if (std::fabs(v - air_value[i]) < air_tol) {
+    if (lit[i]) {
       lv_obj_add_state(btns[i]->get_container(), LV_STATE_CHECKED);
     } else {
       lv_obj_clear_state(btns[i]->get_container(), LV_STATE_CHECKED);

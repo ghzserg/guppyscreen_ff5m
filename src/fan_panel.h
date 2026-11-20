@@ -27,9 +27,9 @@ class FanPanel : public NotifyConsumer {
 #ifdef GUPPY_FF5M
   // Кнопки циркуляции воздуха (AD5M Pro, C5 Pro) столбцом справа от вентиляторов.
   void show_air_circulation(bool show);
-  // Подсвечивает Int или Ext, если заслонка стоит на угле из их макроса;
-  // value — поле value у servo my_servo.
-  void show_air_mode(const json &value);
+  // Подсвечивает Int или Ext по последним значениям от Klipper: у AD5M Pro —
+  // заслонка на угле из их макроса, у C5 Pro — скорости вентиляторов камеры.
+  void show_air_mode();
   void handle_air_circulation(lv_event_t *event);
   static void _handle_air_circulation(lv_event_t *event) {
     ((FanPanel *)event->user_data)->handle_air_circulation(event);
@@ -70,6 +70,9 @@ class FanPanel : public NotifyConsumer {
   // value заслонки в AIR_CIRCULATION_INTERNAL и _EXTERNAL и допуск сравнения с ним (1°)
   double air_value[2] = {NAN, NAN};
   double air_tol = 0;
+  // Последние от Klipper: value заслонки (AD5M Pro), speed у chamber_heat_fan,
+  // chamber_loop_fan, chamber_fan, chamber_cool_fan (C5 Pro)
+  double air_now[5] = {NAN, NAN, NAN, NAN, NAN};
 #endif
   /* SliderContainer fan0; */
   /* SliderContainer fan1; */
