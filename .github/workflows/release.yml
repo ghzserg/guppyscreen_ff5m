@@ -35,7 +35,7 @@ jobs:
         run: make test
 
       - name: Run tests (ASan/UBSan)
-        run: make test SANITIZE=1
+        run: TEST_JOBS=4 make test SANITIZE=1
 
       - name: Capture Files screen before and after
         if: ${{ github.event_name == 'pull_request' }}

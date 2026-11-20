@@ -21,8 +21,9 @@ void open_file(FakeMoonraker &moonraker) {
 }
 
 void confirm(bool yes) {
+  REQUIRE_MESSAGE(app::wait_until([] { return ui::find_shown(&lv_btnmatrix_class) != nullptr; }),
+                  "confirmation did not open: " << ui::dump_screen());
   lv_obj_t *buttons = ui::find_shown(&lv_btnmatrix_class);
-  REQUIRE_MESSAGE(buttons != nullptr, ui::dump_screen());
   lv_area_t area = ui::coords(buttons);
   ui::tap_at(area.x1 + lv_area_get_width(&area) * (yes ? 1 : 3) / 4,
              (area.y1 + area.y2) / 2);
