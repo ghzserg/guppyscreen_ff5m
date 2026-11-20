@@ -155,6 +155,10 @@ msgstr "Emergency stop confirmation"
 msgid "Excitate"
 msgstr "Excitate"
 
+#: ../fan_panel.cpp:26
+msgid "Ext"
+msgstr ""
+
 #: ../pro_panel.cpp:17
 msgid "External circulation"
 msgstr "Externalcirculation"
@@ -226,6 +230,10 @@ msgstr "Home"
 #: ../main_panel.cpp:50
 msgid "Homing"
 msgstr "Homing"
+
+#: ../fan_panel.cpp:24
+msgid "Int"
+msgstr ""
 
 #: ../pro_panel.cpp:16
 msgid "Internal circulation"
@@ -422,6 +430,10 @@ msgstr "Speed-"
 msgid "Square Corner Velocity (mm/s)"
 msgstr "Square Corner Velocity (mm/s)"
 
+#: ../fan_panel.cpp:28
+msgid "Stop"
+msgstr "Stop"
+
 #: ../pro_panel.cpp:18
 msgid "Stop circulation"
 msgstr "Stop circulation"
@@ -515,6 +527,3 @@ msgstr "h "
 
 #~ msgid "Status"
 #~ msgstr "Status"
-
-#~ msgid "Stop"
-#~ msgstr "Stop"

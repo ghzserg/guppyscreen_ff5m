@@ -3,6 +3,8 @@
 #include "lvgl/lvgl.h"
 #include "spdlog/spdlog.h"
 
+#include <algorithm>
+#include <strings.h>
 #include <string>
 #include <map>
 #include <optional>
@@ -56,7 +58,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , print_panel(ws, lock, print_status_panel)
   , extruder_panel(ws, lock, numpad, sm)
   , prompt_panel(websocket, lock, main_cont, extruder_panel)
-  , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel(), print_status_panel.get_retract_panel(), print_status_panel.get_pro_panel(), print_status_panel.get_pid_panel(), prompt_panel)
+  , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel(), print_status_panel.get_retract_panel(), print_status_panel.get_pid_panel(), prompt_panel)
   , numpad(Numpad(main_cont))
   , spoolman_panel(sm)
   , temp_cont(lv_obj_create(main_cont))
@@ -136,17 +138,25 @@ void MainPanel::init(json &j) {
   print_status_panel.init(fans);
   printertune_panel.init(j);
 #ifdef GUPPY_FF5M
-  const json objects = State::get_instance()->get_data("/printer_objs/objects"_json_pointer);
-  bool has_weight = false;
-  if (objects.is_array()) {
-    for (const auto &obj : objects) {
-      if (obj == PidPanel::WEIGHT) {
-        has_weight = true;
-        break;
-      }
+  // Циркуляция воздуха там, где у Klipper есть вентиляторы, которыми управляют
+  // макросы AIR_CIRCULATION_* Z-Mod (на AD5X они пустые): внутренний и внешний
+  // вентиляторы и заслонка AD5M Pro, вентиляторы камеры C5 Pro. Тогда её
+  // кнопки на экране вентиляторов.
+  json objs = State::get_instance()->get_data("/printer_objs/objects"_json_pointer);
+  auto has = [&objs](std::initializer_list<const char *> names) {
+    for (const char *n : names) {
+      // Без учёта регистра: Klipper отдаёт имя макроса так, как оно записано в конфиге.
+      auto same = [n](const json &o) { return o.is_string() && strcasecmp(o.get_ref<const std::string &>().c_str(), n) == 0; };
+      if (!objs.is_array() || std::none_of(objs.begin(), objs.end(), same)) return false;
     }
-  }
-  print_status_panel.get_pid_panel().show_weight_controls(has_weight);
+    return true;
+  };
+  bool air = has({"servo my_servo", "fan_generic internal", "fan_generic external"})
+      || has({"fan_generic chamber_heat_fan", "fan_generic chamber_loop_fan", "fan_generic chamber_cool_fan"});
+  fan_panel.show_air_circulation(air);
+  print_status_panel.get_pid_panel().show_weight_controls(has({PidPanel::WEIGHT}));
+  printertune_panel.show_calibrations(has({"gcode_macro CALIBRATE_EXTRUDERS"}),
+                                      has({"gcode_macro CALIBRATE_VFA"}));
 #endif
 //  print_status_panel.get_exclude_panel().init(j);
   print_status_panel.get_retract_panel().init(j);

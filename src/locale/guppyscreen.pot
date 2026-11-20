@@ -153,6 +153,10 @@ msgstr ""
 msgid "Excitate"
 msgstr ""
 
+#: ../fan_panel.cpp:26
+msgid "Ext"
+msgstr ""
+
 #: ../pro_panel.cpp:17
 msgid "External circulation"
 msgstr ""
@@ -223,6 +227,10 @@ msgstr ""
 
 #: ../main_panel.cpp:50
 msgid "Homing"
+msgstr ""
+
+#: ../fan_panel.cpp:24
+msgid "Int"
 msgstr ""
 
 #: ../pro_panel.cpp:16
@@ -413,6 +421,10 @@ msgstr ""
 
 #: ../limits_panel.cpp:29
 msgid "Square Corner Velocity (mm/s)"
+msgstr ""
+
+#: ../fan_panel.cpp:28
+msgid "Stop"
 msgstr ""
 
 #: ../pro_panel.cpp:18

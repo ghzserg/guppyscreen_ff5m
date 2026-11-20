@@ -4,7 +4,6 @@
 #include "finetune_panel.h"
 #include "limits_panel.h"
 #include "retract_panel.h"
-#include "pro_panel.h"
 #include "pid_panel.h"
 #include "bedmesh_panel.h"
 #include "inputshaper_panel.h"
@@ -21,7 +20,7 @@
 #include <mutex>
 class PrinterTunePanel {
  public:
-  PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, FineTunePanel &, RetractPanel &, ProPanel &, PidPanel &, PromptPanel &);
+  PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, FineTunePanel &, RetractPanel &, PidPanel &, PromptPanel &);
   ~PrinterTunePanel();
 
   lv_obj_t *get_container();
@@ -33,6 +32,9 @@ class PrinterTunePanel {
   PowerPanel &get_power_panel();
 #endif
   void init(json &j);
+#ifdef GUPPY_FF5M
+  void show_calibrations(bool extruders, bool vfa);
+#endif
   void handle_callback(lv_event_t *event);
 
   static void _handle_callback(lv_event_t *event) {
@@ -41,12 +43,12 @@ class PrinterTunePanel {
   };
 
  private:
+  KWebSocketClient &ws;
   lv_obj_t *cont;
   BedMeshPanel bedmesh_panel;
   FineTunePanel &finetune_panel;
   LimitsPanel limits_panel;
   RetractPanel &retract_panel;  // owned by the print status panel
-  ProPanel &pro_panel;  // owned by the print status panel
   PidPanel &pid_panel;  // owned by the print status panel
   InputShaperPanel inputshaper_panel;
   BeltsCalibrationPanel belts_calibration_panel;
@@ -65,8 +67,11 @@ class PrinterTunePanel {
 #endif
   ButtonContainer inputshaper_btn;
   ButtonContainer belts_calibration_btn;
-  ButtonContainer pro_btn;
   ButtonContainer pid_btn;
+#ifdef GUPPY_FF5M
+  ButtonContainer calibrate_extruders_btn;
+  ButtonContainer calibrate_vfa_btn;
+#endif
 #ifndef GUPPY_FF5M
   ButtonContainer tmc_tune_btn;
   ButtonContainer tmc_status_btn;

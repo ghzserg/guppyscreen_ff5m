@@ -150,6 +150,10 @@ msgstr "Potvrzení nouzového zastavení"
 msgid "Excitate"
 msgstr "Excitovat"
 
+#: ../fan_panel.cpp:26
+msgid "Ext"
+msgstr ""
+
 #: ../pro_panel.cpp:17
 msgid "External circulation"
 msgstr "Vnitřní cirkulace"
@@ -221,6 +225,10 @@ msgstr "Domů"
 #: ../main_panel.cpp:50
 msgid "Homing"
 msgstr "Homing"
+
+#: ../fan_panel.cpp:24
+msgid "Int"
+msgstr ""
 
 #: ../pro_panel.cpp:16
 msgid "Internal circulation"
@@ -417,6 +425,10 @@ msgstr "Rychlost-"
 msgid "Square Corner Velocity (mm/s)"
 msgstr "Rychlost v rozích (mm/s)"
 
+#: ../fan_panel.cpp:28
+msgid "Stop"
+msgstr "Zastavit"
+
 #: ../pro_panel.cpp:18
 msgid "Stop circulation"
 msgstr "Zastavit cirkulaci"
@@ -510,6 +522,3 @@ msgstr "h "
 
 #~ msgid "Status"
 #~ msgstr "Stav"
-
-#~ msgid "Stop"
-#~ msgstr "Zastavit"
