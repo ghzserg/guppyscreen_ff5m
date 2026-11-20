@@ -273,7 +273,7 @@ void FineTunePanel::handle_zoffset(lv_event_t *e) {
 
     if (btn == zreset_btn.get_container()) {
       spdlog::trace("clicked zoffset reset");
-      ws.gcode_script("_G28\nSET_GCODE_OFFSET FROM=guppy Z=0 MOVE=1");
+      ws.gcode_script("_G28\n_RESET_Z_OFFSET");
     } else {
       const char * step = lv_btnmatrix_get_btn_text(zoffset_selector.get_selector(),
                                                     zoffset_selector.get_selected_idx());
