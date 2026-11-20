@@ -62,7 +62,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     const lv_font_t *font = lv_obj_get_style_text_font(label, LV_PART_MAIN);
     lv_font_glyph_dsc_t glyph;
     for (uint32_t i = 0; text[i];) {
-      if (!lv_font_get_glyph_dsc(font, &glyph, lv_txt_encoded_next(text, &i), 0)) {
+      if (!lv_font_get_glyph_dsc(font, &glyph, _lv_txt_encoded_next(text, &i), 0)) {
         text = key;
         break;
       }
