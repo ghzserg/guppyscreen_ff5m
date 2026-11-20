@@ -514,3 +514,16 @@ msgstr ""
 #: ../utils.cpp:265
 msgid "ч "
 msgstr ""
+
+#: ../print_panel.cpp
+msgid "Delete"
+msgstr ""
+
+#: ../print_panel.cpp
+#, c++-format
+msgid "Delete file \"{}\"?"
+msgstr ""
+
+#: ../print_panel.cpp
+msgid "Could not delete the file."
+msgstr ""

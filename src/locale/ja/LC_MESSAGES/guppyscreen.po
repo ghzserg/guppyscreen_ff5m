@@ -536,3 +536,16 @@ msgstr "h "
 
 #~ msgid "Status"
 #~ msgstr "状態"
+
+#: ../print_panel.cpp
+msgid "Delete"
+msgstr "削除"
+
+#: ../print_panel.cpp
+#, c++-format
+msgid "Delete file \"{}\"?"
+msgstr "ファイル「{}」を削除しますか？"
+
+#: ../print_panel.cpp
+msgid "Could not delete the file."
+msgstr "ファイルを削除できませんでした。"
