@@ -19,6 +19,7 @@ class PrintPanel : public NotifyConsumer {
   void handle_callback(lv_event_t *event);
   void handle_metadata(const std::string &path, uint32_t request_id, json &data);
   void handle_print_callback(lv_event_t *event);
+  void handle_delete_callback(lv_event_t *event);
   void handle_btns(lv_event_t *event);
 
   static void _handle_callback(lv_event_t *event) {
@@ -31,6 +32,11 @@ class PrintPanel : public NotifyConsumer {
     panel->handle_print_callback(event);
   };
 
+
+  static void _handle_delete_callback(lv_event_t *event) {
+    PrintPanel *panel = (PrintPanel*)event->user_data;
+    panel->handle_delete_callback(event);
+  };
 
   static void _handle_btns(lv_event_t *event) {
     PrintPanel *panel = (PrintPanel*)event->user_data;
@@ -63,6 +69,7 @@ class PrintPanel : public NotifyConsumer {
   lv_obj_t *file_table;
   lv_obj_t *file_view;
   ButtonContainer print_btn;
+  ButtonContainer delete_btn;
   Tree root;
   Tree *cur_dir;
   Tree *cur_file;
@@ -73,6 +80,7 @@ class PrintPanel : public NotifyConsumer {
   bool reverse_sort = false;
   uint32_t metadata_request_id = 0;
   bool metadata_loaded = false;
+  bool delete_pending = false;
 };
 
 #endif // __PRINT_PANEL_H__
