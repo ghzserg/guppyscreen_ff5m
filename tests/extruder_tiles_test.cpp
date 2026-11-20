@@ -120,10 +120,14 @@ TEST_CASE("Remove extruder does nothing if the C5 Pro carriage is empty") {
 }
 
 TEST_CASE("Remove extruder is blocked while the C5 Pro prints or pauses") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+
   for (const char *status : {"printing", "paused"}) {
-    FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
-    open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
     moonraker.push_status({{"print_stats", {{"filename", "cube.gcode"}, {"state", status}}}});
+    app::settle(moonraker);
+    ui::tap_tab(Nav::HOME);
+    ui::tap_label("Extrude");
     app::settle(moonraker);
 
     ui::tap_label("Remove extruder");
