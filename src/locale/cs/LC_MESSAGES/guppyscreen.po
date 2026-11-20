@@ -537,3 +537,16 @@ msgstr "s"
 
 #~ msgid "Status"
 #~ msgstr "Stav"
+
+#: ../print_panel.cpp
+msgid "Delete"
+msgstr "Smazat"
+
+#: ../print_panel.cpp
+#, c++-format
+msgid "Delete file \"{}\"?"
+msgstr "Smazat soubor „{}“?"
+
+#: ../print_panel.cpp
+msgid "Could not delete the file."
+msgstr "Soubor se nepodařilo smazat."
