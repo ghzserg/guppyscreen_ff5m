@@ -90,6 +90,8 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_obj_t *progress_end;
 #ifdef GUPPY_FF5M
   lv_obj_t *progress_eta;  // at the bar's left: "ETA: 23м 18с"
+  lv_obj_t *clock_label;
+  lv_timer_t *clock_timer;
 #endif
   lv_obj_t *filename_label;
   lv_obj_t *detail_cont;

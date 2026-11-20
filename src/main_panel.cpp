@@ -117,6 +117,7 @@ PrinterTunePanel& MainPanel::get_tune_panel() {
 
 void MainPanel::init(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
+  homing_panel.update_motion_status();
   for (const auto &el : sensors) {
     auto target_value = j[json::json_pointer(fmt::format("/result/status/{}/target", el.first))];
     if (!target_value.is_null()) {

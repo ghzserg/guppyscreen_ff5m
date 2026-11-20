@@ -17,6 +17,7 @@
 #include "utils.h"
 
 #include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <functional>
 #include <mutex>
@@ -636,6 +637,27 @@ TEST_CASE("the print screen's thumbnail column fits above the progress bar") {
   REQUIRE(app::wait_until(print_screen_shown));
   app::settle(moonraker);
 
+  lv_obj_t *clock = nullptr;
+  std::string first_time;
+  REQUIRE(app::wait_until([&] {
+    const auto now = std::time(nullptr);
+    for (auto stamp : {now, now - 1}) {
+      std::tm local;
+      char text[9];
+      REQUIRE(localtime_r(&stamp, &local) != nullptr);
+      REQUIRE(std::strftime(text, sizeof(text), "%H:%M:%S", &local) == 8);
+      if ((clock = ui::find_label(text)) != nullptr) {
+        first_time = text;
+        return true;
+      }
+    }
+    return false;
+  }));
+  REQUIRE(app::wait_until([&] {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return first_time != lv_label_get_text(clock);
+  }));
+
   // Not find_label(): the bug put the name off the screen.
   lv_obj_t *name = nullptr;
   lv_obj_t *limits = ui::label_container("Limits");
@@ -649,14 +671,16 @@ TEST_CASE("the print screen's thumbnail column fits above the progress bar") {
   REQUIRE(name != nullptr);
   REQUIRE(bar != nullptr);
   lv_obj_t *column = lv_obj_get_parent(name);
-  lv_area_t n, b, c, f;
+  lv_area_t n, b, c, f, t;
+  lv_obj_get_coords(clock, &t);
   lv_obj_get_coords(name, &n);
   lv_obj_get_coords(bar, &b);
   lv_obj_get_coords(column, &c);
   lv_obj_get_coords(limits, &f);
   INFO("name y " << n.y1 << "; bar " << b.x1 << "," << b.y1 << ".." << b.x2 << "," << b.y2 << "; column x " << c.x1
        << ".." << c.x2 << "; Limits y " << f.y1);
-  CHECK(n.y1 >= 0);
+  CHECK(t.y1 >= 0);
+  CHECK(t.y2 < n.y1);
   CHECK(c.y2 < b.y1);
   CHECK(b.y2 < f.y1);
 }

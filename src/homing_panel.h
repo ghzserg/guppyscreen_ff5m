@@ -17,6 +17,7 @@ class HomingPanel : public NotifyConsumer {
   void consume(json &data);
   lv_obj_t * get_container();
   void foreground();
+  void update_motion_status();
   void handle_callback(lv_event_t *event);
   void handle_selector_cb(lv_event_t *event);
 
@@ -31,6 +32,8 @@ class HomingPanel : public NotifyConsumer {
   };
 
  private:
+  void update_motion_status(const json &move, bool partial);
+
   KWebSocketClient &ws;
   lv_obj_t *homing_cont;
   ButtonContainer home_all_btn;
@@ -43,6 +46,8 @@ class HomingPanel : public NotifyConsumer {
   ButtonContainer z_down_btn;
   ButtonContainer motoroff_btn;
   Selector distance_selector;
+  lv_obj_t *motion_status;
+  lv_obj_t *motion_labels[5];
 };
 
 #endif // __HOMING_PANEL_H__

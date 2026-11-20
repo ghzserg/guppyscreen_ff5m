@@ -196,9 +196,8 @@ TEST_CASE("print thumbnail is outlined when objects can be excluded") {
   lv_obj_t *thumbnail;
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    thumbnail = lv_obj_get_child(lv_obj_get_parent(name), 1);
+    thumbnail = ui::find_in(lv_obj_get_parent(name), &lv_img_class);
     REQUIRE(thumbnail != nullptr);
-    REQUIRE(lv_obj_check_type(thumbnail, &lv_img_class));
     CHECK(lv_obj_get_style_outline_width(thumbnail, 0) == 1);
   }
 

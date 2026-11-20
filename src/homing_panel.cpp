@@ -1,6 +1,7 @@
 #include "homing_panel.h"
 #include "nav.h"
 #include "state.h"
+#include "utils.h"
 #include "spdlog/spdlog.h"
 #include "config.h"
 
@@ -30,6 +31,7 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   , motoroff_btn(homing_cont, &motor_off_img, _("Motor off") /* "Мотор выкл" */, &HomingPanel::_handle_callback, this)
   , distance_selector(homing_cont, _("Travel distance (mm)") /* "Расстояние перемещения (мм)" */,
                      {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
+  , motion_status(lv_obj_create(homing_cont))
 {
   lv_obj_clear_flag(homing_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_height(homing_cont, lv_pct(100));
@@ -55,7 +57,25 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_grid_cell(motoroff_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
   lv_obj_set_grid_cell(distance_selector.get_container(), LV_GRID_ALIGN_CENTER, 0, 5, LV_GRID_ALIGN_CENTER, 2, 1);
+  lv_obj_remove_style_all(motion_status);
+  lv_obj_add_flag(motion_status, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
+  lv_obj_clear_flag(motion_status, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_grid_cell(motion_status, LV_GRID_ALIGN_STRETCH, 4, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
+  const int rows[] = {0, 1, 2, 4, 6};
+  const auto line_height = lv_font_get_line_height(lv_obj_get_style_text_font(motion_status, 0));
+  lv_obj_set_height(motion_status, 7 * line_height);
+  for (size_t i = 0; i < 5; ++i) {
+    auto *label = lv_label_create(motion_status);
+    lv_obj_set_y(label, rows[i] * line_height);
+    // У этих надписей нет выносных элементов за границами строки.
+    // Иначе запас LVGL захватывает соседнюю строку при перерисовке.
+    lv_obj_add_event_cb(label, [](lv_event_t *event) {
+      *static_cast<lv_coord_t *>(lv_event_get_param(event)) = 0;
+    }, LV_EVENT_REFR_EXT_DRAW_SIZE, nullptr);
+    lv_obj_refresh_ext_draw_size(label);
+    motion_labels[i] = label;
+  }
 
   ws.register_notify_update(this);
 }
@@ -64,6 +84,18 @@ HomingPanel::~HomingPanel() {
 }
 
 void HomingPanel::consume(json &j) {
+  static const auto move_path = "/params/0/gcode_move"_json_pointer;
+  if (j.contains(move_path)) {
+    const auto &move = j.at(move_path);
+    if (move.contains("gcode_position") || move.contains("homing_origin") ||
+        move.contains("absolute_coordinates")) {
+      std::lock_guard<std::mutex> lock(lv_lock);
+      if (lv_obj_get_child(lv_obj_get_parent(homing_cont), -1) == homing_cont) {
+        update_motion_status(move, true);
+      }
+    }
+  }
+
   auto v = j["/params/0/toolhead/homed_axes"_json_pointer];
   if (!v.is_null()) {
     std::string homed_axes = v.template get<std::string>();
@@ -146,7 +178,47 @@ void HomingPanel::foreground() {
     z_down_btn.set_image(&z_farther);
   }
 
+  update_motion_status();
   lv_obj_move_foreground(homing_cont);
+  lv_obj_update_layout(homing_cont);
+  const auto button_height = lv_obj_get_height(z_up_btn.get_container());
+  lv_obj_set_style_translate_y(motion_status, (lv_obj_get_height(motion_status) - button_height) / 2, 0);
+}
+
+void HomingPanel::update_motion_status() {
+  static const auto move_path = "/printer_state/gcode_move"_json_pointer;
+  update_motion_status(State::get_instance()->get_data_copy(move_path), false);
+}
+
+void HomingPanel::update_motion_status(const json &move, bool partial) {
+  const auto set_coordinate = [&move](lv_obj_t *label, const char *name,
+                                      json::const_iterator values, size_t index, int precision) {
+    const bool valid = values != move.end() && values->is_array() &&
+                       index < values->size() && (*values)[index].is_number();
+    const auto text = valid ? fmt::format("{}: {:.{}f}", name, (*values)[index].get<double>(), precision)
+                            : fmt::format("{}: —", name);
+    KUtils::set_label_text(label, text.c_str());
+  };
+
+  const auto position = move.find("gcode_position");
+  if (!partial || position != move.end()) {
+    const char *axes[] = {"X", "Y", "Z"};
+    for (size_t i = 0; i < 3; ++i) {
+      set_coordinate(motion_labels[i], axes[i], position, i, 2);
+    }
+  }
+  const auto offset = move.find("homing_origin");
+  if (!partial || offset != move.end()) {
+    set_coordinate(motion_labels[3], "Z-offset", offset, 2, 3);
+  }
+  const auto xyz = move.find("absolute_coordinates");
+  if (!partial || xyz != move.end()) {
+    const char *text = "XYZ: —";
+    if (xyz != move.end() && xyz->is_boolean()) {
+      text = xyz->get<bool>() ? "XYZ: G90" : "XYZ: G91";
+    }
+    KUtils::set_label_text(motion_labels[4], text);
+  }
 }
 
 void HomingPanel::handle_callback(lv_event_t *event) {

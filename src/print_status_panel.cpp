@@ -257,6 +257,25 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 #endif
 
   lv_obj_move_to_index(filename_label, 0);
+#ifdef GUPPY_FF5M
+  lv_obj_set_style_pad_row(thumbnail_cont, 8, 0);
+  clock_label = lv_label_create(thumbnail_cont);
+  lv_obj_move_to_index(clock_label, 0);
+  lv_obj_set_style_text_font(clock_label, SensorContainer::temperature_font(), 0);
+  lv_label_set_text(clock_label, "--:--:--");
+  clock_timer = lv_timer_create([](lv_timer_t *timer) {
+    auto *panel = static_cast<PrintStatusPanel *>(timer->user_data);
+    if (lv_obj_get_child(lv_obj_get_parent(panel->status_cont), -1) != panel->status_cont) {
+      return;
+    }
+    const auto now = std::time(nullptr);
+    std::tm local;
+    char time_text[9];
+    if (localtime_r(&now, &local) && std::strftime(time_text, sizeof(time_text), "%H:%M:%S", &local)) {
+      KUtils::set_label_text(panel->clock_label, time_text);
+    }
+  }, 1000, this);
+#endif
   lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
 #ifdef GUPPY_FF5M
   // Laid out at its zoomed size (192 px), not the file's (often 300 px): else
@@ -305,6 +324,9 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 }
 
 PrintStatusPanel::~PrintStatusPanel() {
+#ifdef GUPPY_FF5M
+  lv_timer_del(clock_timer);
+#endif
   if (status_cont != NULL) {
     lv_obj_del(status_cont);
     status_cont = NULL;
@@ -320,6 +342,9 @@ void PrintStatusPanel::set_idle_screen(lv_obj_t *screen) {
 // The Print tab shows this screen while printing or paused.
 void PrintStatusPanel::show_status() {
   Nav::get().set_root(Nav::PRINT, status_cont);
+#ifdef GUPPY_FF5M
+  lv_timer_ready(clock_timer);
+#endif
 }
 
 // Shows the Print tab: the print status while printing or paused, the
