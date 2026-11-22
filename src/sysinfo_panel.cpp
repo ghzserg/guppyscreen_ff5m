@@ -85,6 +85,8 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
     // estop prompt
   , estop_toggle_cont(lv_obj_create(left_cont))
   , prompt_estop_toggle(lv_switch_create(estop_toggle_cont))
+  , exclude_toggle_cont(lv_obj_create(left_cont))
+  , prompt_exclude_toggle(lv_switch_create(exclude_toggle_cont))
 #ifdef GUPPY_FF5M
   , clock_toggle_cont(lv_obj_create(left_cont))
   , clock_toggle(lv_switch_create(clock_toggle_cont))
@@ -221,6 +223,17 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   lv_obj_add_event_cb(prompt_estop_toggle, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
 
+  lv_obj_set_size(exclude_toggle_cont, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(exclude_toggle_cont, 0, 0);
+  l = lv_label_create(exclude_toggle_cont);
+  lv_label_set_text(l, _("Object exclusion confirmation"));
+  lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_align(prompt_exclude_toggle, LV_ALIGN_RIGHT_MID, 0, 0);
+  if (conf->get<bool>("/prompt_exclude_object"))
+    lv_obj_add_state(prompt_exclude_toggle, LV_STATE_CHECKED);
+  lv_obj_add_event_cb(prompt_exclude_toggle, &SysInfoPanel::_handle_callback,
+                      LV_EVENT_VALUE_CHANGED, this);
+
 #ifdef GUPPY_FF5M
   lv_obj_set_size(clock_toggle_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(clock_toggle_cont, 0, 0);
@@ -330,6 +343,10 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
     else if (obj == prompt_estop_toggle) {
       bool should_prompt = lv_obj_has_state(prompt_estop_toggle, LV_STATE_CHECKED);
       conf->set<bool>("/prompt_emergency_stop", should_prompt);
+      conf->save();
+    }
+    else if (obj == prompt_exclude_toggle) {
+      conf->set<bool>("/prompt_exclude_object", lv_obj_has_state(prompt_exclude_toggle, LV_STATE_CHECKED));
       conf->save();
     }
 #ifdef GUPPY_FF5M

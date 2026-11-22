@@ -122,10 +122,10 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_align(job_btn, LV_ALIGN_BOTTOM_MID, 0, 0);
 
   lv_obj_add_event_cb(cancel_btn, &PrintPanel::_handle_btns, LV_EVENT_SHORT_CLICKED, this);
-  lv_obj_align(cancel_btn, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+  lv_obj_align(cancel_btn, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 
   lv_obj_add_event_cb(queue_btn, &PrintPanel::_handle_btns, LV_EVENT_SHORT_CLICKED, this);
-  lv_obj_align(queue_btn, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+  lv_obj_align(queue_btn, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
 
   label = lv_label_create(job_btn);
   lv_label_set_text(label, _("Show task") /* "Показать задание" */);

@@ -149,6 +149,9 @@ void Config::init(std::string config_path, const std::string thumbdir) {
     data["/prompt_emergency_stop"_json_pointer] = true;
   }
 
+  auto &exclude_prompt = data["/prompt_exclude_object"_json_pointer];
+  if (exclude_prompt.is_null()) exclude_prompt = true;
+
 #ifdef GUPPY_FF5M
   auto &show_clock = data["/show_clock"_json_pointer];
   if (show_clock.is_null()) show_clock = true;

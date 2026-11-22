@@ -2,6 +2,7 @@
 #include "app.h"
 #include "fake_moonraker.h"
 #include "ui.h"
+#include "guppyscreen.h"
 
 namespace {
 
@@ -24,8 +25,13 @@ void confirm(bool yes) {
   REQUIRE_MESSAGE(app::wait_until([] { return ui::find_shown(&lv_btnmatrix_class) != nullptr; }),
                   "confirmation did not open: " << ui::dump_screen());
   lv_obj_t *buttons = ui::find_shown(&lv_btnmatrix_class);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(std::string(lv_btnmatrix_get_btn_text(buttons, 0)) == "Cancel");
+    CHECK(std::string(lv_btnmatrix_get_btn_text(buttons, 1)) == "OK");
+  }
   lv_area_t area = ui::coords(buttons);
-  ui::tap_at(area.x1 + lv_area_get_width(&area) * (yes ? 1 : 3) / 4,
+  ui::tap_at(area.x1 + lv_area_get_width(&area) * (yes ? 3 : 1) / 4,
              (area.y1 + area.y2) / 2);
 }
 
