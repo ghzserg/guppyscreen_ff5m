@@ -33,7 +33,7 @@ diff --git a/evpp/EventLoop.h b/evpp/EventLoop.h
              is_loop_owner = true;
          }
          connectionNum = 0;
-@@ -41,45 +41,65 @@
+@@ -41,45 +41,71 @@
          stop();
      }
  
@@ -99,7 +99,13 @@ diff --git a/evpp/EventLoop.h b/evpp/EventLoop.h
 +            if (loop_ == NULL || status() >= kStopping) return;
 +            loop = loop_;
 +            if (status() >= kRunning) {
++                const bool paused = isPause();
 +                setStatus(kStopping);
++                // На паузе очередь не обрабатывается.
++                if (paused) {
++                    hloop_stop(loop);
++                    return;
++                }
 +                // Остановка после уже поставленных в очередь событий.
 +                hevent_t ev = {};
 +                ev.cb = [](hevent_t* e) { hloop_stop(hevent_loop(e)); };
@@ -131,7 +137,7 @@ diff --git a/evpp/EventLoop.h b/evpp/EventLoop.h
          if (isPause()) {
              hloop_resume(loop_);
              setStatus(kRunning);
-@@ -88,9 +108,10 @@
+@@ -88,9 +114,10 @@
  
      // Timer interfaces: setTimer, killTimer, resetTimer
      TimerID setTimer(int timeout_ms, TimerCallback cb, uint32_t repeat = INFINITE, TimerID timerID = INVALID_TIMER_ID) {
@@ -145,7 +151,7 @@ diff --git a/evpp/EventLoop.h b/evpp/EventLoop.h
          assert(htimer != NULL);
          if (timerID == INVALID_TIMER_ID) {
              timerID = generateTimerID();
-@@ -145,13 +166,15 @@
+@@ -145,13 +172,15 @@
          });
      }
  
@@ -165,7 +171,7 @@ diff --git a/evpp/EventLoop.h b/evpp/EventLoop.h
          return hv_gettid() == hloop_tid(loop_);
      }
  
-@@ -173,19 +196,17 @@
+@@ -173,19 +202,17 @@
          });
      }
  

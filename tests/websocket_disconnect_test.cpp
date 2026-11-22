@@ -1,6 +1,7 @@
 #include "doctest/doctest.h"
 #include "app.h"
 #include "websocket_client.h"
+#include "hv/EventLoopThread.h"
 
 #include <atomic>
 #include <chrono>
@@ -47,4 +48,22 @@ TEST_CASE("disconnect releases unanswered requests and reconnect keeps new repli
   CHECK(pending.expired());
   CHECK_FALSE(old_callback_ran);
   client.stop();
+}
+
+TEST_CASE("a paused event loop can be stopped and joined") {
+  using namespace std::chrono_literals;
+  std::promise<void> running;
+  auto ready = running.get_future();
+  hv::EventLoopThread thread;
+  thread.start();
+  const auto &loop = thread.loop();
+  loop->queueInLoop([&] { running.set_value(); });
+  REQUIRE(ready.wait_for(5s) == std::future_status::ready);
+
+  loop->pause();
+  REQUIRE(loop->isPause());
+  REQUIRE(hloop_status(loop->loop()) == HLOOP_STATUS_PAUSE);
+  thread.stop(true);
+  CHECK(loop->isStopped());
+  CHECK(loop->loop() == nullptr);
 }
