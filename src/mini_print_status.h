@@ -14,8 +14,7 @@ class MiniPrintStatus {
 
   ~MiniPrintStatus();
 
-  void show();
-  void hide();
+  void set_printing(bool printing);
   lv_obj_t *get_container();
 
   void update_eta(const std::string &eta_str);

@@ -466,20 +466,20 @@ void PrintStatusPanel::init(json &fans) {
     auto pstatus = pstat_state.template get<std::string>();
     running = pstatus == "printing" || pstatus == "paused";
     Nav::get().set_attention(Nav::PRINT, running);
+    mini_print_status.set_printing(running);
     if (!running) {
       file_loaded = false;
-      mini_print_status.hide();
       background();
     } else {
-      mini_print_status.show();
       foreground();  // connected during a print
     }
     mini_print_status.update_status(pstatus);
   } else {
 #ifdef GUPPY_FF5M
-    mini_print_status.hide();
+    running = false;
+    mini_print_status.set_printing(false);
 #else
-    mini_print_status.show();
+    mini_print_status.set_printing(true);
 #endif
   }
 #ifdef GUPPY_FF5M
@@ -507,7 +507,7 @@ void PrintStatusPanel::populate() {
                       });
 
 #ifndef GUPPY_FF5M
-      mini_print_status.show();
+      mini_print_status.set_printing(true);
 #endif
       exclude_panel.init();
     }
@@ -607,15 +607,8 @@ void PrintStatusPanel::consume(json &j) {
     running = print_status == "printing" || print_status == "paused";
     Nav::get().set_attention(Nav::PRINT, running);
     if (!running) {
-      mini_print_status.hide();
       background();
       reset();
-      if (print_status == "complete") {
-        background();
-        mini_print_status.hide();
-//        ws.send_jsonrpc("printer.gcode.script",
-//            json::parse(R"({"script":"G4 P5000\nSDCARD_RESET_FILE"})"));
-      }
     } else {
       if (!file_loaded && printfile.is_null()) {
         reset();
@@ -628,9 +621,9 @@ void PrintStatusPanel::consume(json &j) {
         // opened meanwhile (e.g. Extruder for a filament change) stays.
         Nav::get().activate(Nav::PRINT);
       }
-      mini_print_status.show();
     }
 
+    mini_print_status.set_printing(running);
     mini_print_status.update_status(print_status);
 #ifdef GUPPY_FF5M
     lv_timer_ready(clock_timer);

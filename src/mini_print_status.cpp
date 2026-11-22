@@ -31,7 +31,6 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   , eta("...")
   , ws(c)
 {
-  lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
   lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
   lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
                                   cur_bg, LV_OPA_10);
@@ -80,7 +79,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   // leaves and is cut there.
   lv_obj_set_flex_grow(status_label, 1);
   lv_label_set_long_mode(status_label, LV_LABEL_LONG_CLIP);
-  lv_obj_add_flag(clock_label, LV_OBJ_FLAG_FLOATING | LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(clock_label, LV_OBJ_FLAG_FLOATING);
   lv_obj_set_style_text_font(clock_label, &lv_font_montserrat_48, 0);
   lv_label_set_text_static(clock_label, "--:--:--");
   lv_obj_center(clock_label);
@@ -101,6 +100,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 #endif
 //  lv_obj_align(cont, LV_ALIGN_TOP_RIGHT, 30, -14 * scale);
   lv_obj_align(cont, LV_ALIGN_TOP_RIGHT, 0, 0);
+  set_printing(false);
 }
 
 MiniPrintStatus::~MiniPrintStatus() {
@@ -111,25 +111,25 @@ MiniPrintStatus::~MiniPrintStatus() {
 }
 
 
-void MiniPrintStatus::show() {
+void MiniPrintStatus::set_printing(bool printing) {
 #ifdef GUPPY_FF5M
-  lv_obj_add_flag(clock_label, LV_OBJ_FLAG_HIDDEN);
-  for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
-#endif
-  lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_move_foreground(cont);
-}
-
-void MiniPrintStatus::hide() {
-#ifdef GUPPY_FF5M
-  for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_clear_flag(clock_label, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN | LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_move_foreground(cont);
+  if (printing) {
+    lv_obj_add_flag(clock_label, LV_OBJ_FLAG_HIDDEN);
+    for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
+  } else {
+    for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(clock_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(cont, LV_OBJ_FLAG_CLICKABLE);
+  }
 #else
-  lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_move_background(cont);
+  if (printing) {
+    lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(cont);
+  } else {
+    lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_background(cont);
+  }
 #endif
 }
 
