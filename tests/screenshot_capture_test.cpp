@@ -1,6 +1,7 @@
 #include "doctest/doctest.h"
 #include "app.h"
 #include "fake_moonraker.h"
+#include "fake_printer.h"
 #include "screenshot.h"
 #include "ui.h"
 
@@ -25,6 +26,9 @@ TEST_CASE("Screenshot: scripted") {
   if (const char *config = std::getenv("GUPPY_SCREENSHOT_CONFIG"))
     settings = json::parse(config);
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  PrintFile sample;
+  sample.path = "cube.gcode";
+  FakePrinter printer(moonraker, {sample}, FakePrinter::Options{});
   app::start(moonraker, settings);
   app::wait_ready(moonraker);
 
@@ -66,6 +70,10 @@ TEST_CASE("Screenshot: scripted") {
       std::istringstream xy(arg);
       REQUIRE_MESSAGE(bool(xy >> x >> y), "Expected x y");
       ui::tap_at(x, y);
+    } else if (command == "table_row") {
+      REQUIRE_MESSAGE(app::wait_until([&] { return ui::table_has_row(arg); }), "File not found: " << arg);
+      ui::tap_table_row(arg);
+      app::settle(moonraker);
     } else if (command == "status") {
       moonraker.push_status(json::parse(arg));
       app::settle(moonraker);
