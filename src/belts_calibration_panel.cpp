@@ -117,7 +117,7 @@ void BeltsCalibrationPanel::foreground() {
 }
 
 void BeltsCalibrationPanel::handle_callback(lv_event_t *event) {
-  if (State::print_active(true)) return;
+  if (State::print_pause_active()) return;
   lv_obj_t *btn = lv_event_get_current_target(event);
   if (btn == calibrate_btn.get_container()) {
     auto config_root = KUtils::get_root_path("config");

@@ -158,7 +158,7 @@ void PromptPanel::consume(json &j) {
     if (!j.contains(pending) && !(j.contains(print_state) && j.at(print_state).is_string())) return;
     std::lock_guard<std::mutex> lock(lv_lock);
     const auto v = j.contains(pending) ? j.at(pending) : json();
-    const bool busy = State::print_active(true);
+    const bool busy = State::print_pause_active();
     if (busy && config_prompt_visible) {
         background();
         config_deferred = true;
@@ -303,7 +303,7 @@ void PromptPanel::handle_callback_close_filament(lv_event_t *event) {
 }
 
 void PromptPanel::handle_callback_save(lv_event_t *event) {
-    if (State::print_active(true)) return;
+    if (State::print_pause_active()) return;
     background();
 
     // remove buttons

@@ -157,14 +157,14 @@ void SettingPanel::handle_callback(lv_event_t *event) {
       spdlog::trace("power pressed");
       ws.gcode_script("_SHUTDOWN");
     } else if (btn == display_on_btn.get_container()) {
-      if (State::print_active(true)) return;
+      if (State::print_pause_active()) return;
       spdlog::trace("display_on pressed");
       ws.gcode_script("DISPLAY_ON");
     } else if (btn == web_btn.get_container()) {
       spdlog::trace("web pressed");
       ws.gcode_script("WEB");
     } else if (btn == zrestore_btn.get_container()) {
-      if (State::print_active(true)) return;
+      if (State::print_pause_active()) return;
       spdlog::trace("zrestore");
       ws.gcode_script("_ZRESTORE");
 //    } else if (btn == spoolman_btn.get_container()) {

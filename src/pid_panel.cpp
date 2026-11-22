@@ -266,7 +266,7 @@ void PidPanel::handle_callback(lv_event_t *e) {
 
   lv_obj_t *btn = lv_event_get_current_target(e);
 
-  if (btn != load_cell_tare_btn.get_container() && State::print_active(true)) return;
+  if (btn != load_cell_tare_btn.get_container() && State::print_pause_active()) return;
   if (btn == pid_extruder_btn.get_container()) {
     pid_extruder_btn.disable();
 
