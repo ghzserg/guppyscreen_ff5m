@@ -83,6 +83,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_table_set_col_width(profile_table, 1, 50 * scale);
   lv_table_set_col_width(profile_table, 2, 50 * scale);
   lv_obj_set_height(profile_table, 200 * hscale);
+  lv_obj_set_style_opa(profile_table, LV_OPA_50, LV_STATE_DISABLED);
 
   // profile info
   lv_table_set_col_width(profile_info, 0, 240 * scale);
@@ -179,7 +180,6 @@ void BedMeshPanel::refresh_views_with_lock(json &bm) {
 }
 
 void BedMeshPanel::getCoordinates(int row, int col) {
-    if (State::print_pause_active()) return;
     // Проверка валидности индексов
     if (row < 0 || row >= y_count || col < 0 || col >= x_count) {
         return;
@@ -198,6 +198,7 @@ void BedMeshPanel::getCoordinates(int row, int col) {
 
 
 void BedMeshPanel::table_event_cb(lv_event_t* e) {
+    if (State::print_pause_active()) return;
     lv_obj_t* obj = lv_event_get_target(e); // Получаем объект, который вызвал событие
     lv_event_code_t code = lv_event_get_code(e); // Получаем код события
 
