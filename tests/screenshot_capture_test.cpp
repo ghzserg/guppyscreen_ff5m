@@ -16,7 +16,8 @@ TEST_CASE("Screenshot: scripted") {
   const char *script_path = std::getenv("GUPPY_SCREENSHOT_SCRIPT");
   if (!script_path || !*script_path) return;
   const char *dir = std::getenv("GUPPY_SCREENSHOT_DIR");
-  REQUIRE_MESSAGE(dir && *dir, "GUPPY_SCREENSHOT_DIR is not set");
+  const bool has_dir = dir != nullptr && *dir != 0;
+  REQUIRE_MESSAGE(has_dir, "GUPPY_SCREENSHOT_DIR is not set");
   std::ifstream script(script_path);
   REQUIRE_MESSAGE(script.good(), "Cannot open screenshot scenario: " << script_path);
 
