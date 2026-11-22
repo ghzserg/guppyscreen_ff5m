@@ -206,7 +206,7 @@ TEST_CASE("Resume blocks repeated clicks until printing resumes or 20 seconds pa
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     CHECK_FALSE(lv_obj_has_state(button, LV_STATE_DISABLED));
     for (auto *timer = lv_timer_get_next(nullptr); timer; timer = lv_timer_get_next(timer)) {
-      CHECK_FALSE(timer->period == 20000 && timer->repeat_count == 1);
+      CHECK_FALSE((timer->period == 20000 && timer->repeat_count == 1));
     }
   }
   ui::tap_label("Resume");
