@@ -259,6 +259,7 @@ TEST_CASE("Clock disabled in configuration stays hidden on startup") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker, {{"show_clock", false}});
   app::wait_ready(moonraker);
+  CHECK_FALSE(Config::get_instance()->get<bool>("/show_clock"));
 
   lv_obj_t *home_clock = nullptr;
   {
