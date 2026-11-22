@@ -5,7 +5,8 @@ Integration (smoke) tests that run the real guppyscreen on your PC. They are a s
 ```sh
 make test                         # build and run all tests
 make test TEST='*homing*'         # run matching test cases (doctest name filter)
-make test SANITIZE=1              # AddressSanitizer + UBSan build (separate output dir)
+make test SANITIZE=1              # AddressSanitizer + UBSan build
+make test SANITIZE=thread         # ThreadSanitizer build
 make -f tests/Makefile clean      # remove build-test/
 ```
 
@@ -28,7 +29,7 @@ Everything in `src/` is real: `GuppyScreen`, all panels and widgets, `State`, `C
 
 ## How a test runs
 
-guppyscreen is built from process-wide singletons (`GuppyScreen`, `State`, `Config`, the static `ws`), so **each test case runs in its own process**. `tests/run_tests.sh` lists the test cases and runs them in parallel (`TEST_JOBS`, default: the number of CPUs; `TEST_TIMEOUT` per test, default 60 s), then prints the results in order with the output of failing ones, and keeps every log in `build-test/<default|asan>/logs/`. The processes are independent: each gets its own temp dir and a free port for the fake Moonraker. Don't make a test depend on wall-clock speed: several run at once, so prefer `app::wait_until(condition)` over a fixed `app::pump(ms)`.
+guppyscreen is built from process-wide singletons (`GuppyScreen`, `State`, `Config`, the static `ws`), so **each test case runs in its own process**. `tests/run_tests.sh` lists the test cases and runs them in parallel (`TEST_JOBS`, default: the number of CPUs; `TEST_TIMEOUT` per test, default 60 s), then prints the results in order with the output of failing ones, and keeps every log in `build-test/<default|asan|tsan>/logs/`. The processes are independent: each gets its own temp dir and a free port for the fake Moonraker. Don't make a test depend on wall-clock speed: several run at once, so prefer `app::wait_until(condition)` over a fixed `app::pump(ms)`.
 
 Inside a test, the test thread is the LVGL thread: nothing on screen changes unless the test calls `app::pump()` or `app::wait_until()`. The WebSocket client and the fake server run on their own libhv threads, as on the printer.
 
@@ -108,3 +109,5 @@ To cover other printers (e.g. AD5X with `zmod_color` and four extruders), add an
 ## Sanitizers
 
 `SANITIZE=1` builds into `build-test/asan/`. Memory errors (use-after-free, buffer overflow) abort the test and fail it. UBSan reports are only logged. Today the logs contain three reports, all inside LVGL: an integer overflow in `lv_chart.c:929/954` and a negative shift in `lv_font_fmt_txt.c:506`. Leak checking is off in practice, because the test binary exits with `_Exit` to skip the app's static destructors.
+
+`SANITIZE=thread` builds into `build-test/tsan/` and checks for data races. `halt_on_error=1` makes a sanitizer report fail the test immediately, even though the test binary exits with `_Exit`. ASan and TSan cannot be combined. Each mode builds its own instrumented libhv and spdlog under its output directory. If switching from the old layout, clean `build-test/` first. The TSan GitHub Actions job uses a native runner with a compatible `vm.mmap_rnd_bits` setting; printer release builds are unchanged.

@@ -37,8 +37,33 @@ jobs:
       - name: Run tests (ASan/UBSan)
         run: make test SANITIZE=1
 
+  tsan:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install host test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates git make cmake gcc g++ pkg-config
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply build patches (AD5M)
+        run: bash ci/apply-patches.sh ad5m
+
+      - name: Configure address space for ThreadSanitizer
+        run: |
+          if [ "$(sysctl -n vm.mmap_rnd_bits)" -gt 28 ]; then
+            sudo sysctl -w vm.mmap_rnd_bits=28
+          fi
+
+      - name: Run tests (TSan)
+        run: make test SANITIZE=thread
+
   build:
-    needs: test
+    needs: [test, tsan]
     runs-on: ubuntu-22.04
     container: debian:13
     defaults:

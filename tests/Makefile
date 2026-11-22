@@ -5,7 +5,8 @@
 #
 #   make test                     # build and run all tests (each in its own process)
 #   make test TEST='*homing*'     # run matching test cases only
-#   make test SANITIZE=1          # with AddressSanitizer + UBSan (separate build dir)
+#   make test SANITIZE=1          # with AddressSanitizer + UBSan
+#   make test SANITIZE=thread     # with ThreadSanitizer
 #   make -f tests/Makefile clean  # remove build-test/
 #
 # See docs/testing.md.
@@ -17,14 +18,21 @@ override SYSROOT :=
 HOST_CC  ?= gcc
 HOST_CXX ?= g++
 
-ifdef SANITIZE
+ifeq ($(SANITIZE),thread)
+OUT      := build-test/tsan
+SAN      := -fsanitize=thread -fno-omit-frame-pointer
+export TSAN_OPTIONS := $(if $(TSAN_OPTIONS),$(TSAN_OPTIONS):)halt_on_error=1
+else ifeq ($(SANITIZE),1)
 OUT      := build-test/asan
 SAN      := -fsanitize=address,undefined -fno-omit-frame-pointer
-else
+else ifeq ($(SANITIZE),)
 OUT      := build-test/default
 SAN      :=
+else
+$(error Unsupported SANITIZE=$(SANITIZE); use 1 or thread)
 endif
-DEPS_OUT := build-test/deps
+DEPS_OUT := $(OUT)/deps
+DEP_FLAGS := $(if $(SAN),-O1 -g $(SAN),-O2)
 
 LIBHV_SRC := $(DEPS_OUT)/libhv
 LIBHV_A   := $(LIBHV_SRC)/lib/libhv.a
@@ -83,11 +91,14 @@ $(LIBHV_A):
 	@rm -rf $(LIBHV_SRC) && mkdir -p $(DEPS_OUT)
 	cp -a libhv $(LIBHV_SRC)
 	$(MAKE) -C $(LIBHV_SRC) clean >/dev/null
-	$(MAKE) -C $(LIBHV_SRC) -j$$(nproc) libhv CC=$(HOST_CC) CXX=$(HOST_CXX)
+	LDFLAGS="$(SAN)" $(MAKE) -C $(LIBHV_SRC) -j$(nproc) libhv CC=$(HOST_CC) CXX=$(HOST_CXX) \
+	      CFLAGS="$(DEP_FLAGS)" CXXFLAGS="$(DEP_FLAGS)"
 
 $(SPDLOG_A):
 	cmake -S spdlog -B $(DEPS_OUT)/spdlog -DCMAKE_BUILD_TYPE=Release \
-	      -DCMAKE_C_COMPILER=$(HOST_CC) -DCMAKE_CXX_COMPILER=$(HOST_CXX)
+	      -DCMAKE_C_COMPILER=$(HOST_CC) -DCMAKE_CXX_COMPILER=$(HOST_CXX) \
+	      -DCMAKE_C_FLAGS="$(SAN)" -DCMAKE_CXX_FLAGS="$(SAN)" \
+	      $(if $(SAN),-DCMAKE_C_FLAGS_RELEASE="-O1 -g -DNDEBUG" -DCMAKE_CXX_FLAGS_RELEASE="-O1 -g -DNDEBUG",)
 	$(MAKE) -C $(DEPS_OUT)/spdlog -j$$(nproc)
 
 clean:
