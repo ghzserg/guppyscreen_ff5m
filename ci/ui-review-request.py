@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Формирует сценарий LVGL из списка экранов PR или команды /ui-review."""
+"""Формирует сценарий LVGL по строке UI-Review в описании PR."""
 import json
 import os
 import re
 import sys
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 # Постоянно доступные окна AD5M: открытие без реальных действий над принтером.
@@ -34,8 +32,6 @@ SCREENS = {
     'home-printing': 'status {"print_stats":{"state":"printing","filename":"cube.gcode"}}\ntab home',
     'home-paused': 'status {"print_stats":{"state":"paused","filename":"cube.gcode"}}\ntab home',
 }
-DEFAULT = 'home, print, tune, settings'
-
 
 def scenario(command):
     if not command.startswith('/ui-review '):
@@ -73,78 +69,25 @@ def scenario(command):
     return '\n'.join(lines) + '\n'
 
 
-def api(path, method='GET', body=None):
-    request = urllib.request.Request(
-        f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/{path}",
-        data=json.dumps(body).encode() if body is not None else None,
-        headers={'Accept': 'application/vnd.github+json',
-                 'Authorization': f"Bearer {os.environ['GITHUB_TOKEN']}",
-                 'Content-Type': 'application/json'},
-        method=method)
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.load(response)
-
-
-def hint(event):
-    pr = event['pull_request']
-    if pr['head']['repo']['full_name'] != os.environ['GITHUB_REPOSITORY']:
-        return
-    try:
-        api('labels/ui-review')
-    except urllib.error.HTTPError as exc:
-        if exc.code != 404:
-            raise
-        try:
-            api('labels', 'POST', {'name': 'ui-review', 'color': 'd4c5f9',
-                                   'description': 'Снимки и замеры памяти для PR'})
-        except urllib.error.HTTPError as create_error:
-            if create_error.code != 422:
-                raise
-    comment = (
-        '### Снимки интерфейса и память\n\n'
-        'Чтобы добавить изображения до/после и замеры памяти x86 прямо в описание PR, '
-        'укажите в описании строку:\n\n'
-        'UI-Review: home, pid, system\n\n'
-        'Затем поставьте метку ui-review. Если строка отсутствует, снимутся '
-        'home, print, tune, settings.\n\n'
-        'Доступные окна AD5M: ' + ', '.join(SCREENS) + '. '
-        'Дополнительно можно указывать путь по кнопкам (settings/System), '
-        'задержку (home@1200). Не более 8 снимков за запуск. '
-        'Никаких новых сценариев или PNG в PR добавлять не нужно. '
-        'Для повторного запуска снимите и верните метку.'
-    )
-    api(f"issues/{pr['number']}/comments", 'POST', {'body': comment})
-
-
 def main():
-    if sys.argv[1] == '--hint':
-        hint(json.loads(Path(sys.argv[2]).read_text()))
-        return
     event = json.loads(Path(sys.argv[1]).read_text())
-    repo = os.environ['GITHUB_REPOSITORY']
-    if 'comment' in event:
-        if 'pull_request' not in event['issue'] or event['comment']['author_association'] not in ('OWNER', 'MEMBER', 'COLLABORATOR'):
-            raise ValueError('Only collaborators can request PR UI reviews')
-        command = event['comment']['body'].strip().splitlines()[0]
-        pr = api(f"pulls/{event['issue']['number']}")
-    elif os.environ.get('GITHUB_EVENT_NAME') == 'pull_request_target':
-        pr = event['pull_request']
-        line = next((m.group(1) for text in (pr.get('body') or '').splitlines()
-                     if (m := re.fullmatch(r'\s*UI-Review:\s*(.+?)\s*', text, re.I))), DEFAULT)
-        command = '/ui-review ' + line
-    else:
-        # Smoke-test текущего PR: одинаковый SHA, без права записи.
-        pr = event['pull_request']
-        command = '/ui-review home, file-preview, tune/PID, settings/System'
-    if pr['state'] != 'open' or pr['head']['repo']['full_name'] != repo:
-        raise ValueError('Only open same-repository PRs are supported')
-    number, head_sha = pr['number'], pr['head']['sha']
-    base_sha = head_sha if os.environ.get('GITHUB_EVENT_NAME') == 'pull_request' else pr['base']['sha']
-    generated = scenario(command)
-    Path(sys.argv[2]).write_text(generated)
-    with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-        output.write(f'pr_number={number}\nbase_sha={base_sha}\nhead_sha={head_sha}\n')
-    print(f'PR #{number}: {base_sha} -> {head_sha}\n{generated}')
+    pr = event['pull_request']
+    if pr['state'] != 'open' or pr['head']['repo']['full_name'] != os.environ['GITHUB_REPOSITORY']:
+        raise ValueError('Only open PRs from this repository are supported')
+
+    screens = next(
+        (match.group(1) for line in (pr.get('body') or '').splitlines()
+         if (match := re.fullmatch(r'\s*UI-Review:\s*(.+?)\s*', line, re.I))),
+        None)
+    if not screens:
+        raise ValueError('No valid UI-Review: screens line found in PR description')
+
+    script = scenario('/ui-review ' + screens)
+    Path(sys.argv[2]).write_text(script)
+    with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+        out.write(f"pr_number={pr['number']}\nbase_sha={pr['base']['sha']}\n"
+                  f"head_sha={pr['head']['sha']}\n")
+    print(f"PR #{pr['number']}: {pr['base']['sha']} -> {pr['head']['sha']}\n{script}")
 
 
 if __name__ == '__main__':
