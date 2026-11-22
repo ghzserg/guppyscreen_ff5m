@@ -31,9 +31,6 @@ jobs:
       - name: Apply build patches (AD5M)
         run: bash ci/apply-patches.sh ad5m
 
-      - name: Run tests
-        run: make test
-
       - name: Run tests (ASan/UBSan)
         run: make test SANITIZE=1
 

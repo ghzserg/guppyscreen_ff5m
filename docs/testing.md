@@ -108,6 +108,8 @@ To cover other printers (e.g. AD5X with `zmod_color` and four extruders), add an
 
 ## Sanitizers
 
+GitHub Actions runs the full functional test suite twice, with ASan/UBSan and with TSan. The ordinary `make test` remains available for local development and memory regression checks without sanitizer overhead.
+
 `SANITIZE=1` builds into `build-test/asan/`. Memory errors (use-after-free, buffer overflow) abort the test and fail it. UBSan reports are only logged. Today the logs contain three reports, all inside LVGL: an integer overflow in `lv_chart.c:929/954` and a negative shift in `lv_font_fmt_txt.c:506`. Leak checking is off in practice, because the test binary exits with `_Exit` to skip the app's static destructors.
 
 `SANITIZE=thread` builds into `build-test/tsan/` and checks for data races. `halt_on_error=1` makes a sanitizer report fail the test immediately, even though the test binary exits with `_Exit`. ASan and TSan cannot be combined. Each mode builds its own instrumented libhv and spdlog under its output directory. If switching from the old layout, clean `build-test/` first. The TSan GitHub Actions job uses a native runner with a compatible `vm.mmap_rnd_bits` setting; printer release builds are unchanged.
