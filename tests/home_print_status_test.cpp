@@ -121,7 +121,6 @@ TEST_CASE("Home shows a large clock only when not printing or paused") {
     CHECK_FALSE(lv_obj_has_flag(minutes, LV_OBJ_FLAG_HIDDEN));
     CHECK(lv_obj_has_flag(colon, LV_OBJ_FLAG_FLOATING));
   }
-  bool first_hidden = false;
   REQUIRE(app::wait_until([&] {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     const auto now = std::time(nullptr);
@@ -131,20 +130,24 @@ TEST_CASE("Home shows a large clock only when not printing or paused") {
       if (localtime_r(&stamp, &local) && std::strftime(expected, sizeof(expected), "%H:%M", &local) == 5 &&
           !strncmp(lv_label_get_text(hours), expected, 2) && !strcmp(lv_label_get_text(minutes), expected + 3) &&
           strlen(lv_label_get_text(hours)) == 2) {
-        first_hidden = lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN);
         return true;
       }
     }
     return false;
   }));
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK_FALSE(lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN));
+  }
   lv_area_t idle = ui::coords(line);
   lv_area_t left = ui::coords(hours);
   lv_area_t right = ui::coords(minutes);
   lv_area_t separator = ui::coords(colon);
-  REQUIRE(app::wait_until([&] {
+  for (int i = 0; i < 2; ++i) {
+    app::pump(1100);
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    return first_hidden != lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN);
-  }));
+    CHECK_FALSE(lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN));
+  }
   for (auto *obj : {hours, minutes, colon}) {
     lv_area_t digits = ui::coords(obj);
     lv_area_t before = obj == hours ? left : obj == minutes ? right : separator;
@@ -171,7 +174,7 @@ TEST_CASE("Home shows a large clock only when not printing or paused") {
       std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
       CHECK(lv_obj_has_flag(hours, LV_OBJ_FLAG_HIDDEN) == printing);
       CHECK(lv_obj_has_flag(minutes, LV_OBJ_FLAG_HIDDEN) == printing);
-      if (printing) CHECK(lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN));
+      CHECK(lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN) == printing);
       CHECK(lv_obj_has_flag(line, LV_OBJ_FLAG_CLICKABLE) == printing);
       CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_HIDDEN));
     }
