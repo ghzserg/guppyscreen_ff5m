@@ -198,10 +198,27 @@ TEST_CASE("a C5 Pro nozzle can't be picked during a print") {
   ui::tap_label("Extrude");
   app::settle(moonraker);
 
+  for (const char *name : {"T0", "T1", "T2", "T3", "Remove"}) {
+    auto *obj = tile(name);
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_state(obj, LV_STATE_DISABLED));
+    lv_event_send(obj, LV_EVENT_SHORT_CLICKED, nullptr);
+  }
   ui::tap(tile("T2"));
   app::settle(moonraker);
   CHECK(is_blue(tile("T0")));
   CHECK_FALSE(is_blue(tile("T2")));
+  CHECK(moonraker.gcodes().empty());
+  for (const char *name : {"Load", "Unload", "Cool down", "ColdPull"}) {
+    auto *obj = ui::label_container(name);
+    REQUIRE(obj != nullptr);
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_state(obj, LV_STATE_DISABLED));
+  }
+
+  moonraker.push_status({{"zmod_color", {{"active_tool_id", 3}}}});
+  CHECK(app::wait_until([&] { return is_blue(tile("T3")); }));
+  CHECK_FALSE(is_blue(tile("T0")));
   CHECK(moonraker.gcodes().empty());
 }
 

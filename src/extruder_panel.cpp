@@ -439,6 +439,6 @@ void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_add_event_cb(remove_tool_tile, &ExtruderPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
   }
-  enable_actions(active_tool_id >= 0 && active_tool_id < total_tools);
+  set_print_locked(State::print_active());
 }
 #endif

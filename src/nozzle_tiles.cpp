@@ -140,7 +140,9 @@ void NozzleTiles::update(const json &j, bool targets) {
 
 void NozzleTiles::_handle_tap(lv_event_t *event) {
   NozzleTiles *self = (NozzleTiles *)lv_event_get_user_data(event);
-  size_t i = (size_t)(intptr_t)lv_obj_get_user_data(lv_event_get_current_target(event));
+  lv_obj_t *obj = lv_event_get_current_target(event);
+  if (lv_obj_has_state(obj, LV_STATE_DISABLED)) return;
+  size_t i = (size_t)(intptr_t)lv_obj_get_user_data(obj);
   int tool = self->nozzles[i].tool;
   if (!self->on_tap || self->on_tap(tool)) self->show_selected(tool);
 }
