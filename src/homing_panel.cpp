@@ -62,12 +62,13 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_clear_flag(motion_status, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
   lv_obj_set_grid_cell(motion_status, LV_GRID_ALIGN_STRETCH, 4, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
-  const int rows[] = {0, 1, 2, 4, 6};
+  const int rows[] = {0, 1, 2, 4};
   const auto line_height = lv_font_get_line_height(lv_obj_get_style_text_font(motion_status, 0));
   lv_obj_set_height(motion_status, 7 * line_height);
   for (size_t i = 0; i < 5; ++i) {
-    auto *label = lv_label_create(motion_status);
-    lv_obj_set_y(label, rows[i] * line_height);
+    auto *label = lv_label_create(i == 4 ? homing_cont : motion_status);
+    if (i < 4) lv_obj_set_y(label, rows[i] * line_height);
+    else lv_obj_add_flag(label, LV_OBJ_FLAG_IGNORE_LAYOUT);
     // У этих надписей нет выносных элементов за границами строки.
     // Иначе запас LVGL захватывает соседнюю строку при перерисовке.
     lv_obj_add_event_cb(label, [](lv_event_t *event) {
@@ -183,6 +184,7 @@ void HomingPanel::foreground() {
   lv_obj_update_layout(homing_cont);
   const auto button_height = lv_obj_get_height(z_up_btn.get_container());
   lv_obj_set_style_translate_y(motion_status, (lv_obj_get_height(motion_status) - button_height) / 2, 0);
+  lv_obj_align_to(motion_labels[4], motoroff_btn.get_container(), LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
 }
 
 void HomingPanel::update_motion_status() {
