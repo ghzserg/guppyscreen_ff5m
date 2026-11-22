@@ -59,7 +59,11 @@ static std::map<std::string, uint32_t> sleep_label_to_sec = {
   {"5h", 18000} // 5 hour
 };
 
-SysInfoPanel::SysInfoPanel(KWebSocketClient &c)
+SysInfoPanel::SysInfoPanel(KWebSocketClient &c
+#ifdef GUPPY_FF5M
+                            , std::function<void(bool)> clock_changed_cb
+#endif
+                            )
   : ws(c)
   , cont(lv_obj_create(Nav::get().content()))
   , left_cont(lv_obj_create(cont))
@@ -81,6 +85,11 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c)
     // estop prompt
   , estop_toggle_cont(lv_obj_create(left_cont))
   , prompt_estop_toggle(lv_switch_create(estop_toggle_cont))
+#ifdef GUPPY_FF5M
+  , clock_toggle_cont(lv_obj_create(left_cont))
+  , clock_toggle(lv_switch_create(clock_toggle_cont))
+  , clock_changed(std::move(clock_changed_cb))
+#endif
 
 #ifndef GUPPY_FF5M
     // Z axis icons
@@ -212,6 +221,18 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c)
   lv_obj_add_event_cb(prompt_estop_toggle, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
 
+#ifdef GUPPY_FF5M
+  lv_obj_set_size(clock_toggle_cont, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(clock_toggle_cont, 0, 0);
+  l = lv_label_create(clock_toggle_cont);
+  lv_label_set_text(l, _("Clock") /* "Часы" */);
+  lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_align(clock_toggle, LV_ALIGN_RIGHT_MID, 0, 0);
+  if (conf->get<bool>("/show_clock")) lv_obj_add_state(clock_toggle, LV_STATE_CHECKED);
+  lv_obj_add_event_cb(clock_toggle, &SysInfoPanel::_handle_callback,
+                      LV_EVENT_VALUE_CHANGED, this);
+#endif
+
 #ifndef GUPPY_FF5M
     /* Z icon selection */
   lv_obj_set_size(z_icon_toggle_cont, LV_PCT(100), LV_SIZE_CONTENT);
@@ -311,6 +332,14 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       conf->set<bool>("/prompt_emergency_stop", should_prompt);
       conf->save();
     }
+#ifdef GUPPY_FF5M
+    else if (obj == clock_toggle) {
+      const bool enabled = lv_obj_has_state(clock_toggle, LV_STATE_CHECKED);
+      conf->set<bool>("/show_clock", enabled);
+      conf->save();
+      clock_changed(enabled);
+    }
+#endif
     else if (obj == display_sleep_dd) {
       char buf[64];
       lv_dropdown_get_selected_str(display_sleep_dd, buf, sizeof(buf));

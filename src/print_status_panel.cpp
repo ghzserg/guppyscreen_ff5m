@@ -6,6 +6,7 @@
 #include "exclude_panel.h"
 #include "pid_panel.h"
 #include "state.h"
+#include "config.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
 #include <algorithm>
@@ -281,6 +282,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
       }
     }
   }, 1000, this);
+  set_clock_enabled(Config::get_instance()->get<bool>("/show_clock"));
 #endif
   lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
 #ifdef GUPPY_FF5M
@@ -328,6 +330,20 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   update_pause_buttons(nullptr);
   ws.register_notify_update(this);
 }
+
+#ifdef GUPPY_FF5M
+void PrintStatusPanel::set_clock_enabled(bool enabled) {
+  mini_print_status.set_clock_enabled(enabled);
+  if (enabled) {
+    lv_obj_clear_flag(clock_label, LV_OBJ_FLAG_HIDDEN);
+    lv_timer_resume(clock_timer);
+    lv_timer_ready(clock_timer);
+  } else {
+    lv_timer_pause(clock_timer);
+    lv_obj_add_flag(clock_label, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+#endif
 
 PrintStatusPanel::~PrintStatusPanel() {
   if (resume_timer) lv_timer_del(resume_timer);

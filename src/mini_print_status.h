@@ -24,6 +24,7 @@ class MiniPrintStatus {
   void reset();
 #ifdef GUPPY_FF5M
   void update_clock(int hour, int minute, bool show_colon);
+  void set_clock_enabled(bool enabled);
 #endif
 
  private:
@@ -36,6 +37,7 @@ class MiniPrintStatus {
   lv_obj_t *clock_hours;
   lv_obj_t *clock_minutes;
   lv_obj_t *clock_colon;
+  bool clock_enabled = true;
 #endif
   std::string status;
   std::string eta;

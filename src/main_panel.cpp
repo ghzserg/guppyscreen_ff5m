@@ -52,7 +52,11 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , macros_panel(ws, lock, macros_tab)
   , console_tab(Nav::get().add_screen())
   , console_panel(ws, lock, console_tab)
-  , setting_panel(websocket, lock, setting_tab, [this]() { open_macros(); }, [this]() { open_console(); }/*, sm*/)
+  , setting_panel(websocket, lock, setting_tab, [this]() { open_macros(); }, [this]() { open_console(); }
+#ifdef GUPPY_FF5M
+                  , [this](bool enabled) { print_status_panel.set_clock_enabled(enabled); }
+#endif
+                  )
   , main_cont(lv_obj_create(main_tab))
   , print_status_panel(websocket, lock, main_cont, *this)
   , print_panel(ws, lock, print_status_panel)

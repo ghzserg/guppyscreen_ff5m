@@ -138,13 +138,26 @@ MiniPrintStatus::~MiniPrintStatus() {
 
 void MiniPrintStatus::set_printing(bool printing) {
 #ifdef GUPPY_FF5M
+  if (printing != lv_obj_has_flag(cont, LV_OBJ_FLAG_CLICKABLE)) {
+    if (printing) {
+      lv_color_t bg = lv_obj_get_style_bg_color(cont, 0);
+      lv_obj_set_style_bg_color(cont, lv_color_mix(lv_palette_main(LV_PALETTE_GREY), bg, LV_OPA_10), 0);
+      lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
+    } else {
+      lv_obj_remove_local_style_prop(cont, LV_STYLE_BG_COLOR, 0);
+      lv_obj_remove_local_style_prop(cont, LV_STYLE_BG_OPA, 0);
+    }
+  }
   if (printing) {
+    lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
     for (auto *obj : {clock_hours, clock_minutes, clock_colon}) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
     for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
   } else {
     for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
     for (auto *obj : {clock_hours, clock_minutes}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    if (clock_enabled) lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_CLICKABLE);
   }
 #else
@@ -159,6 +172,14 @@ void MiniPrintStatus::set_printing(bool printing) {
 }
 
 #ifdef GUPPY_FF5M
+void MiniPrintStatus::set_clock_enabled(bool enabled) {
+  clock_enabled = enabled;
+  if (!lv_obj_has_flag(cont, LV_OBJ_FLAG_CLICKABLE)) {
+    if (enabled) lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
 void MiniPrintStatus::update_clock(int hour, int minute, bool show_colon) {
   char hours[] = {char('0' + hour / 10), char('0' + hour % 10), '\0'};
   char minutes[] = {char('0' + minute / 10), char('0' + minute % 10), '\0'};

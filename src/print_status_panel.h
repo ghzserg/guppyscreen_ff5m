@@ -55,6 +55,9 @@ class PrintStatusPanel : public NotifyConsumer {
   ExcludePanel &get_exclude_panel();
   PidPanel &get_pid_panel();
   MiniPrintStatus &get_mini_print_status() { return mini_print_status; }
+#ifdef GUPPY_FF5M
+  void set_clock_enabled(bool enabled);
+#endif
 
  private:
 #ifdef GUPPY_FF5M
