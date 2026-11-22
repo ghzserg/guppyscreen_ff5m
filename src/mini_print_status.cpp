@@ -24,11 +24,13 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 #endif
   , thumb(lv_img_create(cont))
   , status_label(lv_label_create(cont))
+#ifdef GUPPY_FF5M
+  , clock_label(lv_label_create(cont))
+#endif
   , status("-/-")
   , eta("...")
   , ws(c)
 {
-  lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
   lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
   lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
                                   cur_bg, LV_OPA_10);
@@ -77,6 +79,10 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   // leaves and is cut there.
   lv_obj_set_flex_grow(status_label, 1);
   lv_label_set_long_mode(status_label, LV_LABEL_LONG_CLIP);
+  lv_obj_add_flag(clock_label, LV_OBJ_FLAG_FLOATING);
+  lv_obj_set_style_text_font(clock_label, &lv_font_montserrat_48, 0);
+  lv_label_set_text_static(clock_label, "--:--:--");
+  lv_obj_center(clock_label);
 #else
   lv_arc_set_rotation(progress_bar, 270);
   lv_obj_set_size(progress_bar, 40 * scale, 40 * scale);
@@ -94,6 +100,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 #endif
 //  lv_obj_align(cont, LV_ALIGN_TOP_RIGHT, 30, -14 * scale);
   lv_obj_align(cont, LV_ALIGN_TOP_RIGHT, 0, 0);
+  set_printing(false);
 }
 
 MiniPrintStatus::~MiniPrintStatus() {
@@ -104,15 +111,33 @@ MiniPrintStatus::~MiniPrintStatus() {
 }
 
 
-void MiniPrintStatus::show() {
-  lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_move_foreground(cont);
+void MiniPrintStatus::set_printing(bool printing) {
+#ifdef GUPPY_FF5M
+  if (printing) {
+    lv_obj_add_flag(clock_label, LV_OBJ_FLAG_HIDDEN);
+    for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
+  } else {
+    for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(clock_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(cont, LV_OBJ_FLAG_CLICKABLE);
+  }
+#else
+  if (printing) {
+    lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(cont);
+  } else {
+    lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_background(cont);
+  }
+#endif
 }
 
-void MiniPrintStatus::hide() {
-  lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_move_background(cont);
+#ifdef GUPPY_FF5M
+void MiniPrintStatus::update_clock(const char *time_text) {
+  KUtils::set_label_text(clock_label, time_text);
 }
+#endif
 
 lv_obj_t *MiniPrintStatus::get_container() {
   return cont;

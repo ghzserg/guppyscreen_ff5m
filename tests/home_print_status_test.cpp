@@ -12,6 +12,8 @@
 #include "guppyscreen.h"
 
 #include <mutex>
+#include <ctime>
+#include <cstring>
 
 namespace {
 
@@ -75,4 +77,74 @@ TEST_CASE("a tap on the progress bar of Home's print status opens the print scre
   lv_area_t bar = ui::coords(found);
   ui::tap_at((bar.x1 + bar.x2) / 2, (bar.y1 + bar.y2) / 2);
   CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }), ui::dump_screen());
+}
+
+TEST_CASE("Home shows a large clock only when not printing or paused") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  lv_obj_t *clock = nullptr;
+  lv_obj_t *line = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    ui::walk(Nav::get().root(Nav::HOME), [&](lv_obj_t *obj) {
+      if (lv_obj_check_type(obj, &lv_label_class) &&
+          lv_obj_get_style_text_font(obj, 0) == &lv_font_montserrat_48) clock = obj;
+    });
+    REQUIRE(clock != nullptr);
+    line = lv_obj_get_parent(clock);
+    CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_HIDDEN));
+    CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_CLICKABLE));
+    CHECK_FALSE(lv_obj_has_flag(clock, LV_OBJ_FLAG_HIDDEN));
+  }
+  std::string first_time;
+  REQUIRE(app::wait_until([&] {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    const auto now = std::time(nullptr);
+    for (auto stamp : {now, now - 1}) {
+      std::tm local;
+      char expected[9];
+      if (localtime_r(&stamp, &local) && std::strftime(expected, sizeof(expected), "%H:%M:%S", &local) == 8 &&
+          !strcmp(lv_label_get_text(clock), expected)) {
+        first_time = expected;
+        return true;
+      }
+    }
+    return false;
+  }));
+  REQUIRE(app::wait_until([&] {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return first_time != lv_label_get_text(clock);
+  }));
+
+  lv_area_t idle = ui::coords(line);
+  lv_area_t digits = ui::coords(clock);
+  CHECK(digits.x1 >= idle.x1);
+  CHECK(digits.x2 <= idle.x2);
+  CHECK(digits.y1 >= idle.y1);
+  CHECK(digits.y2 <= idle.y2);
+  ui::tap(line);
+  CHECK(Nav::get().active() == Nav::HOME);
+
+  for (const char *state : {"printing", "paused", "complete", "error", "cancelled"}) {
+    moonraker.push_status({{"print_stats", {{"filename", "cube.gcode"}, {"state", state}}}});
+    app::settle(moonraker);
+    ui::tap_tab(Nav::HOME);
+    const bool printing = !strcmp(state, "printing") || !strcmp(state, "paused");
+    {
+      std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+      CHECK(lv_obj_has_flag(clock, LV_OBJ_FLAG_HIDDEN) == printing);
+      CHECK(lv_obj_has_flag(line, LV_OBJ_FLAG_CLICKABLE) == printing);
+      CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_HIDDEN));
+    }
+    if (printing) {
+      CHECK(status_line() == line);
+      ui::tap(line);
+      CHECK(Nav::get().active() == Nav::PRINT);
+    } else {
+      ui::tap(line);
+      CHECK(Nav::get().active() == Nav::HOME);
+    }
+  }
 }
