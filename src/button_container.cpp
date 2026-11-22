@@ -1,6 +1,7 @@
 #include "button_container.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
+#include <libintl.h>
 
 ButtonContainer::ButtonContainer(lv_obj_t *parent,
                                  const void *btn_img,
@@ -126,7 +127,7 @@ bool ButtonContainer::prompt_emergency_stop() {
 }
 
 void ButtonContainer::confirm(const std::string &text, std::function<void()> on_ok) {
-  static const char * btns[] = {_("Cancel"), "OK", ""};
+  static const char * btns[] = {gettext("Cancel"), "OK", ""};
 
   lv_obj_t *mbox1 = lv_msgbox_create(NULL, NULL, text.c_str(), btns, false);
   lv_obj_t *msg = ((lv_msgbox_t*)mbox1)->text;
