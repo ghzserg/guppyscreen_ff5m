@@ -118,7 +118,14 @@ def hint(event):
 
 def main():
     if sys.argv[1] == '--hint':
-        hint(json.loads(Path(sys.argv[2]).read_text()))
+        try:
+            hint(json.loads(Path(sys.argv[2]).read_text()))
+        except urllib.error.HTTPError as exc:
+            details = exc.read().decode('utf-8', 'replace').replace('\\n', ' ')[:400]
+            print(f'::warning title=UI review hint::GitHub API {exc.code} at {exc.url}: {details}')
+            if os.environ.get('GITHUB_STEP_SUMMARY'):
+                with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as report:
+                    report.write('Для скриншотов добавьте метку `ui-review` к PR.\\n')
         return
     event = json.loads(Path(sys.argv[1]).read_text())
     repo = os.environ['GITHUB_REPOSITORY']
