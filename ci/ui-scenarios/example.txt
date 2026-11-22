@@ -1,0 +1,5 @@
+# Пример. Для другого PR сценарий создается вне git.
+tab settings
+tap System
+save system
+memory system
