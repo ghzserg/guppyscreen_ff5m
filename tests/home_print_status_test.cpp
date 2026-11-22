@@ -90,9 +90,20 @@ TEST_CASE("Home shows a large clock only when not printing or paused") {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     ui::walk(Nav::get().root(Nav::HOME), [&](lv_obj_t *obj) {
       if (lv_obj_check_type(obj, &lv_label_class) &&
-          lv_obj_get_style_text_font(obj, 0) == &lv_font_montserrat_48) clock = obj;
+          lv_obj_get_style_text_font(obj, 0)->dsc == lv_font_montserrat_48.dsc) clock = obj;
     });
     REQUIRE(clock != nullptr);
+    const auto *font = lv_obj_get_style_text_font(clock, 0);
+    const auto width = lv_font_get_glyph_width(font, '0', 0);
+    for (uint32_t digit = '0'; digit <= '9'; ++digit) {
+      CHECK(lv_font_get_glyph_width(font, digit, 0) == width);
+      CHECK(lv_font_get_glyph_width(font, digit, ':') == width);
+      CHECK(lv_font_get_glyph_width(font, ':', digit) == lv_font_get_glyph_width(font, ':', 0));
+      for (uint32_t next = '0'; next <= '9'; ++next) {
+        CHECK(lv_font_get_glyph_width(font, digit, next) == width);
+      }
+    }
+    CHECK(lv_font_get_glyph_width(font, '-', '-') == width);
     line = lv_obj_get_parent(clock);
     CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_HIDDEN));
     CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_CLICKABLE));

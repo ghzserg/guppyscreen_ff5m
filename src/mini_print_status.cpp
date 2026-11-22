@@ -80,7 +80,21 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   lv_obj_set_flex_grow(status_label, 1);
   lv_label_set_long_mode(status_label, LV_LABEL_LONG_CLIP);
   lv_obj_add_flag(clock_label, LV_OBJ_FLAG_FLOATING);
-  lv_obj_set_style_text_font(clock_label, &lv_font_montserrat_48, 0);
+  // Одинаковый шаг цифр, без кернинга, чтобы часы не смещались.
+  static const lv_font_t clock_font = [] {
+    lv_font_t font = lv_font_montserrat_48;
+    font.get_glyph_dsc = [](const lv_font_t *f, lv_font_glyph_dsc_t *dsc,
+                            uint32_t letter, uint32_t) {
+      if (!lv_font_montserrat_48.get_glyph_dsc(f, dsc, letter, 0)) return false;
+      if ((letter >= '0' && letter <= '9') || letter == '-') {
+        dsc->adv_w = 32;
+        dsc->ofs_x = (32 - dsc->box_w) / 2;
+      }
+      return true;
+    };
+    return font;
+  }();
+  lv_obj_set_style_text_font(clock_label, &clock_font, 0);
   lv_label_set_text_static(clock_label, "--:--:--");
   lv_obj_center(clock_label);
 #else
