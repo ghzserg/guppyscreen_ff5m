@@ -16,7 +16,8 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
                                  lv_event_cb_t cb,
                                  void* user_data,
                                 KWebSocketClient &c)
-  : cont(lv_obj_create(parent))
+  : ws(c)
+  , cont(lv_obj_create(parent))
 #ifdef GUPPY_FF5M
   , progress_bar(lv_bar_create(cont))
 #else
@@ -29,7 +30,6 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 #endif
   , status("-/-")
   , eta("...")
-  , ws(c)
 {
   lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
   lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
@@ -39,8 +39,6 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-  auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
 
   lv_obj_set_size(cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
   lv_obj_set_style_pad_top(cont, 0, 0);
@@ -98,6 +96,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   lv_label_set_text_static(clock_label, "--:--:--");
   lv_obj_center(clock_label);
 #else
+  auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   lv_arc_set_rotation(progress_bar, 270);
   lv_obj_set_size(progress_bar, 40 * scale, 40 * scale);
   lv_obj_set_style_arc_width(progress_bar, 10 * scale, LV_PART_MAIN);

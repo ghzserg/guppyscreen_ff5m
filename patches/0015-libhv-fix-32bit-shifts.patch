@@ -1,0 +1,30 @@
+diff --git a/base/hbase.c b/base/hbase.c
+--- a/base/hbase.c
++++ b/base/hbase.c
+@@ -403,7 +403,7 @@
+             case 'K': case 'k': n <<= 10; break;
+             case 'M': case 'm': n <<= 20; break;
+             case 'G': case 'g': n <<= 30; break;
+-            case 'T': case 't': n <<= 40; break;
++            case 'T': case 't': n = (size_t)((uint64_t)n << 40); break;
+             default:                      break;
+             }
+             size += n;
+diff --git a/http/websocket_parser.c b/http/websocket_parser.c
+--- a/http/websocket_parser.c
++++ b/http/websocket_parser.c
+@@ -225,10 +225,10 @@
+         body_offset = 4;
+     } else {
+         frame[1] |= 127;
+-        frame[2] = (char) ((data_len >> 56) & 0xFF);
+-        frame[3] = (char) ((data_len >> 48) & 0xFF);
+-        frame[4] = (char) ((data_len >> 40) & 0xFF);
+-        frame[5] = (char) ((data_len >> 32) & 0xFF);
++        frame[2] = (char) (((uint64_t)data_len >> 56) & 0xFF);
++        frame[3] = (char) (((uint64_t)data_len >> 48) & 0xFF);
++        frame[4] = (char) (((uint64_t)data_len >> 40) & 0xFF);
++        frame[5] = (char) (((uint64_t)data_len >> 32) & 0xFF);
+         frame[6] = (char) ((data_len >> 24) & 0xFF);
+         frame[7] = (char) ((data_len >> 16) & 0xFF);
+         frame[8] = (char) ((data_len >>  8) & 0xFF);

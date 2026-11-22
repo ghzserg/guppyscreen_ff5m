@@ -17,7 +17,10 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   , ws(c)
   , cont(lv_obj_create(Nav::get().content()))
   , numpad(Numpad(cont))
+  , active_tool_id(0)
+  , total_tools(1)
   , temp_cont(lv_obj_create(cont))
+  , tools_btnmatrix(NULL)
   , extruder_temp(ws, temp_cont, &extruder, 150,
           _("Extruder") /* "Экструдер" */, lv_palette_main(LV_PALETTE_RED), true, true, numpad, "extruder", nullptr, nullptr, true)
   , heater_bed_temp(ws, temp_cont, &bed, 150,
@@ -33,9 +36,6 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
 #ifdef GUPPY_FF5M
   , nozzle_tiles(ws, temp_cont, numpad)
 #endif
-  , tools_btnmatrix(NULL)
-  , active_tool_id(0)
-  , total_tools(1)
 {
   lv_obj_move_background(cont);
 

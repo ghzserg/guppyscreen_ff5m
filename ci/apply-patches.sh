@@ -10,6 +10,7 @@ git -C libhv apply ../patches/0011-libhv-fix-data-races.patch
 git -C libhv apply ../patches/0012-libhv-fix-io-loop-time-races.patch
 git -C libhv apply ../patches/0013-libhv-fix-write-timestamp-races.patch
 git -C libhv apply ../patches/0014-libhv-fix-channel-loop-shutdown-races.patch
+git -C libhv apply ../patches/0015-libhv-fix-32bit-shifts.patch
 git -C lvgl apply ../patches/0006-lvgl-draw-indexed-8bit-decoded-images.patch
 git -C lvgl apply ../patches/0007-lvgl-draw-indexed-8bit-images-whole.patch
 git -C lvgl apply ../patches/0009-lvgl-transformed-area-margin-only-when-transformed.patch

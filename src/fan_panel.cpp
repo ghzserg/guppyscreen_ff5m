@@ -20,7 +20,7 @@ static const char *const AIR_FIELDS[5] = {
   "fan_generic chamber_heat_fan/speed", "fan_generic chamber_loop_fan/speed",
   "fan_generic chamber_fan/speed", "fan_generic chamber_cool_fan/speed"};
 
-static double number(const json &v) { return v.is_number() ? v.get<double>() : NAN; }
+static double number(const json &v) { return v.is_number() ? v.get<double>() : static_cast<double>(NAN); }
 #endif
 
 FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)

@@ -31,9 +31,9 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     , flex(lv_obj_create(prompt_cont))
     , header(lv_label_create(prompt_cont))
     , footer_cont(lv_obj_create(prompt_cont))
+    , extruder_panel(&ep)
     , i(false)
     , kamp(false)
-    , extruder_panel(&ep)
 //  , back_btn(promptpanel_cont, &back, _("Back") /* "Назад" */, &PromptPanel::_handle_callback, this)
 {
     lv_obj_set_style_pad_all(prompt_cont, 0, 0);

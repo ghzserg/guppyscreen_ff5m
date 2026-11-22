@@ -60,11 +60,11 @@ static std::map<std::string, uint32_t> sleep_label_to_sec = {
 };
 
 SysInfoPanel::SysInfoPanel(KWebSocketClient &c)
-  : cont(lv_obj_create(Nav::get().content()))
+  : ws(c)
+  , cont(lv_obj_create(Nav::get().content()))
   , left_cont(lv_obj_create(cont))
   , right_cont(lv_obj_create(cont))
   , network_label(lv_label_create(right_cont))
-  , ws(c)
     // display sleep
   , disp_sleep_cont(lv_obj_create(left_cont))
   , display_sleep_dd(lv_dropdown_create(disp_sleep_cont))

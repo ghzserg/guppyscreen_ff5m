@@ -18,15 +18,7 @@ index fe8d2ff..8439fbc 100644
  #ifndef DIV_ROUND_UP
  #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
  #endif
-@@ -75,6 +84,7 @@ static struct fb_fix_screeninfo finfo;
- static char *fbp = 0;
- static long int screensize = 0;
- static int fbfd = 0;
-+static int dispfd = 0;
- 
- /**********************
-  *      MACROS
-@@ -104,6 +114,12 @@ void fbdev_init(void)
+@@ -104,6 +113,12 @@ void fbdev_init(void)
          return;
      }
  
@@ -39,7 +31,7 @@ index fe8d2ff..8439fbc 100644
  #if USE_BSD_FBDEV
      struct fbtype fb;
      unsigned line_length;
-@@ -140,6 +156,28 @@ void fbdev_init(void)
+@@ -140,6 +155,28 @@ void fbdev_init(void)
          perror("Error reading variable information");
          return;
      }
@@ -68,7 +60,7 @@ index fe8d2ff..8439fbc 100644
  #endif /* USE_BSD_FBDEV */
  
      LV_LOG_INFO("%dx%d, %dbpp", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
-@@ -161,9 +199,62 @@ void fbdev_init(void)
+@@ -161,9 +198,62 @@ void fbdev_init(void)
  
  }
  

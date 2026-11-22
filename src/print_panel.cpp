@@ -74,8 +74,6 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   set_sort_label(modified_sort_btn, LV_SYMBOL_LIST, " Changed");
   set_sort_label(az_sort_btn, LV_SYMBOL_LIST, " A-Z");
 
-  lv_obj_t *label = NULL;
-
   lv_obj_add_event_cb(refresh_btn, &PrintPanel::_handle_btns, LV_EVENT_SHORT_CLICKED, this);
   lv_obj_add_event_cb(modified_sort_btn, &PrintPanel::_handle_btns, LV_EVENT_SHORT_CLICKED, this);
   lv_obj_add_event_cb(az_sort_btn, &PrintPanel::_handle_btns, LV_EVENT_SHORT_CLICKED, this);

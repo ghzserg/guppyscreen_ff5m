@@ -29,7 +29,7 @@ else
 CFLAGS 			?= -O3 -g0 -MD -MP -I$(LVGL_DIR)/ $(WARNINGS) --sysroot=$(SYSROOT)
 LDFLAGS 		?= --sysroot=$(SYSROOT)
 endif
-FF5M_CMAKE_FLAGS ?= -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX)
+FF5M_CMAKE_FLAGS ?= -DCMAKE_CXX_COMPILER=$(CXX)
 override CFLAGS += -O3 -g0 -MD -MP
 override LDFLAGS += -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread -lstdc++fs -l:libspdlog.a
 ifneq ($(strip $(FF5M)$(GUPPY_FF5M_SCREEN)),)
@@ -107,7 +107,7 @@ DEPS                    = $(addprefix $(BUILD_OBJ_DIR)/, $(patsubst %.o, %.d, $(
 OBJS 			= $(AOBJS) $(COBJS) $(MAINOBJ)
 TARGET 			= $(addprefix $(BUILD_OBJ_DIR)/, $(patsubst ./%, %, $(OBJS)))
 
-INC 				:= -I./ -I./lvgl/ -I./lv_touch_calibration -I./spdlog/include -Ilibhv/include
+INC 				:= -I./ -I./lvgl/ -I./lv_touch_calibration -isystem ./spdlog/include -Ilibhv/include
 LDLIBS	 			:= -lm
 
 DEFINES				+= -D _GNU_SOURCE -DSPDLOG_COMPILED_LIB
@@ -123,7 +123,7 @@ LDLIBS += -lSDL2
 endif
 
 COMPILE_CC				= $(CC) $(CFLAGS) $(INC) $(DEFINES)
-COMPILE_CXX				= $(CXX) $(CFLAGS) $(INC) $(DEFINES)
+COMPILE_CXX				= $(CXX) $(CFLAGS) $(INC) $(DEFINES) -Wno-psabi
 
 ## MAINOBJ -> OBJFILES
 
@@ -134,7 +134,7 @@ libhv.a:
 
 libspdlog.a:
 	@mkdir -p $(SPDLOG_DIR)/build
-	@cmake $(FF5M_CMAKE_FLAGS) -B $(SPDLOG_DIR)/build -S $(SPDLOG_DIR)/
+	@cmake $(filter-out -DCMAKE_C_COMPILER=%,$(FF5M_CMAKE_FLAGS)) -B $(SPDLOG_DIR)/build -S $(SPDLOG_DIR)/
 	$(MAKE) -C $(SPDLOG_DIR)/build -j$(nproc)
 
 $(BUILD_OBJ_DIR)/%.o: %.cpp
