@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Публикует только скриншоты из готового отчёта на Catbox для вставки в PR.
+# Публикует только скриншоты из готового отчёта на img402.dev для вставки в PR.
 set -euo pipefail
 if [ "$#" -ne 1 ]; then
   echo 'Usage: bash ci/publish-review.sh <review-output-dir>' >&2
@@ -14,11 +14,16 @@ images=("$output"/before/*.png)
 
 upload() {
   local file=$1 url
-  url=$(curl --fail --silent --show-error --retry 2 --connect-timeout 10 --max-time 90 \
-    -F 'reqtype=fileupload' -F "fileToUpload=@$file;type=image/png" \
-    https://catbox.moe/user/api.php)
-  if [[ ! "$url" =~ ^https://files\.catbox\.moe/[A-Za-z0-9]+\.png$ ]]; then
-    echo "Invalid Catbox response: $url" >&2
+  [ "$(wc -c < "$file")" -le 1048576 ] || {
+    echo "PNG exceeds 1 MiB (free permanent-hosting limit): $file" >&2
+    return 1
+  }
+  local response
+  response=$(curl --fail --silent --show-error --retry 2 --connect-timeout 10 --max-time 90 \
+    -F "image=@$file;type=image/png" https://img402.dev/api/free)
+  url=$(python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("expiresAt", "missing") is None, "temporary URL"; print(d["url"])' <<< "$response")
+  if [[ ! "$url" =~ ^https://i\.img402\.dev/[A-Za-z0-9_-]+\.png$ ]]; then
+    echo "Invalid image URL: $url" >&2
     return 1
   fi
   curl --fail --location --silent --show-error --max-time 30 --output /dev/null "$url"
