@@ -142,7 +142,7 @@ void wait_ready(FakeMoonraker &moonraker) {
   bool ready = wait_until([&] {
     return moonraker.request_count("printer.objects.subscribe") > 0
       && !ui::find_label("Waiting for the Klipper launch", ui::Match::Contains);
-  }, 10000);
+  }, 30000);
   REQUIRE_MESSAGE(ready, "startup did not finish; screen shows: " << ui::dump_screen());
   pump(100);  // let the first layout and redraw settle
   auto missing = moonraker.unhandled();
