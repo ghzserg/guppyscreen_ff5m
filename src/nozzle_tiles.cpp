@@ -70,6 +70,19 @@ void NozzleTiles::show_selected(int tool) {
   }
 }
 
+void NozzleTiles::set_disabled(bool disabled) {
+  for (const auto &tile : tiles) {
+    auto *obj = tile->get_sensor();
+    if (lv_obj_has_state(obj, LV_STATE_DISABLED) == disabled) continue;
+    if (disabled) {
+      lv_obj_set_style_opa(obj, LV_OPA_50, LV_STATE_DISABLED);
+      lv_obj_add_state(obj, LV_STATE_DISABLED);
+    } else {
+      lv_obj_clear_state(obj, LV_STATE_DISABLED);
+    }
+  }
+}
+
 int NozzleTiles::index_of(int tool) const {
   for (size_t i = 0; i < nozzles.size(); i++) {
     if (nozzles[i].tool == tool) return (int)i;

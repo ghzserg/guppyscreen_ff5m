@@ -22,6 +22,7 @@ class ExtruderPanel : public NotifyConsumer {
   ~ExtruderPanel();
 
   void foreground();
+  void set_print_locked(bool printing);
   void enable_spoolman();
   void consume(json &j);
   void handle_callback(lv_event_t *e);

@@ -179,6 +179,7 @@ void BedMeshPanel::refresh_views_with_lock(json &bm) {
 }
 
 void BedMeshPanel::getCoordinates(int row, int col) {
+    if (State::print_active(true)) return;
     // Проверка валидности индексов
     if (row < 0 || row >= y_count || col < 0 || col >= x_count) {
         return;
@@ -419,6 +420,7 @@ void BedMeshPanel::foreground() {
 }
 
 void BedMeshPanel::handle_callback(lv_event_t *event) {
+  if (State::print_active(true)) return;
   lv_obj_t *btn = lv_event_get_current_target(event);
   if (btn == save_btn.get_container()) {
     spdlog::trace("mesh save pressed");
@@ -468,6 +470,7 @@ void BedMeshPanel::handle_callback(lv_event_t *event) {
 }
 
 void BedMeshPanel::handle_profile_action(lv_event_t *e) {
+  if (State::print_active(true)) return;
   lv_event_code_t code = lv_event_get_code(e);
   if(code == LV_EVENT_VALUE_CHANGED) {
     uint16_t row;
@@ -499,6 +502,7 @@ void BedMeshPanel::handle_profile_action(lv_event_t *e) {
 }
 
 void BedMeshPanel::handle_prompt_save(lv_event_t *e) {
+  if (State::print_active(true)) return;
   lv_event_code_t code = lv_event_get_code(e);
   if(code == LV_EVENT_SHORT_CLICKED) {
     const char *profile_name = lv_textarea_get_text(input);
@@ -525,6 +529,7 @@ void BedMeshPanel::handle_prompt_cancel(lv_event_t *e) {
 
 void BedMeshPanel::handle_kb_input(lv_event_t *e)
 {
+  if (State::print_active(true)) return;
   const lv_event_code_t code = lv_event_get_code(e);
   if (code == LV_EVENT_READY) {
     const char *profile_name = lv_textarea_get_text(input);

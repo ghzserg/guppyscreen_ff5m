@@ -42,6 +42,7 @@ class State : public NotifyConsumer {
   json get_display_leds();
 
   static State *get_instance();
+  static bool print_active(bool include_paused = false);
 };
 
 #endif // __STATE_H__

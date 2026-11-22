@@ -29,6 +29,9 @@ class SettingPanel {
   ~SettingPanel();
 
   lv_obj_t *get_container();
+  void set_print_locked(bool locked) {
+    ButtonContainer::set_print_locked(locked, {&display_on_btn, &zrestore_btn});
+  }
 //  void enable_spoolman();
 
   void handle_callback(lv_event_t *event);

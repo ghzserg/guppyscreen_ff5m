@@ -115,6 +115,7 @@ class MainPanel : public NotifyConsumer {
 
 
  private:
+  void set_print_locked(const json &state);
   void create_main(lv_obj_t *parent);
   KWebSocketClient &ws;
   HomingPanel homing_panel;

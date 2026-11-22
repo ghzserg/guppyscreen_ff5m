@@ -268,6 +268,7 @@ void InputShaperPanel::foreground() {
 
 
 void InputShaperPanel::handle_callback(lv_event_t *event) {
+  if (State::print_active(true)) return;
   lv_obj_t *btn = lv_event_get_current_target(event);
   if (btn == calibrate_btn.get_container()) {
     bool x_requested = lv_obj_has_state(x_switch, LV_STATE_CHECKED);

@@ -155,6 +155,16 @@ ExtruderPanel::~ExtruderPanel() {
   }
 }
 
+void ExtruderPanel::set_print_locked(bool printing) {
+  ButtonContainer::set_print_locked(printing, {&load_btn, &retract_btn, &cooldown_btn, &coldpull_btn});
+  if (printing) lv_btnmatrix_set_btn_ctrl_all(tools_btnmatrix, LV_BTNMATRIX_CTRL_DISABLED);
+  else lv_btnmatrix_clear_btn_ctrl_all(tools_btnmatrix, LV_BTNMATRIX_CTRL_DISABLED);
+#ifdef GUPPY_FF5M
+  nozzle_tiles.set_disabled(printing);
+#endif
+  enable_actions(active_tool_id >= 0 && active_tool_id < total_tools);
+}
+
 void ExtruderPanel::foreground() {
   lv_obj_move_foreground(panel_cont);
 }
@@ -282,6 +292,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     const char * v = lv_btnmatrix_get_btn_text(selector, idx);
 
     if (selector == tools_btnmatrix) {
+      if (State::print_active()) return;
       active_tool_id = idx;
       ws.gcode_script(fmt::format("_T_USE T={}", active_tool_id));
       return;
@@ -305,6 +316,9 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
                   fmt::ptr(speed_selector.get_selector()));
   } else if (lv_event_get_code(e) == LV_EVENT_SHORT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(e);
+    if ((btn == load_btn.get_container() || btn == retract_btn.get_container() ||
+         btn == cooldown_btn.get_container() || btn == coldpull_btn.get_container()) &&
+        State::print_active()) return;
 
     if (btn == coldpull_btn.get_container()) {
       coldpull_btn.disable();
@@ -351,8 +365,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
 #ifdef GUPPY_FF5M
     if (btn == remove_tool_tile && nozzle_tiles.selectable() &&
         active_tool_id >= 0 && active_tool_id < total_tools && nozzle_tiles.has_selection()) {
-      auto state = State::get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
-      if (state != "printing" && state != "paused") ws.gcode_script("_T_OUT");
+      if (!State::print_active()) ws.gcode_script("_T_OUT");
     }
 #endif
 
@@ -381,8 +394,7 @@ void ExtruderPanel::enable_actions(bool tool_in_head) {
   }
 #ifdef GUPPY_FF5M
   if (remove_tool_tile) {
-    auto state = State::get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
-    if (tool_in_head && nozzle_tiles.has_selection() && state != "printing" && state != "paused")
+    if (tool_in_head && nozzle_tiles.has_selection() && !State::print_active())
       lv_obj_clear_state(remove_tool_tile, LV_STATE_DISABLED);
     else
       lv_obj_add_state(remove_tool_tile, LV_STATE_DISABLED);
@@ -401,8 +413,7 @@ void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &
   }
   nozzle_tiles.create(nozzles, extruder_temp, true, active_tool_id, [this](int tool) {
     if (!nozzle_tiles.selectable()) return false;
-    auto state = State::get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
-    if (state == "printing" || state == "paused") return false;
+    if (State::print_active()) return false;
     if (tool != active_tool_id) {
       active_tool_id = tool;
       ws.gcode_script(fmt::format("_T_USE T={}", tool));
@@ -419,6 +430,7 @@ void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &
     lv_obj_set_style_pad_all(remove_tool_tile, 0, 0);
     lv_obj_set_style_border_side(remove_tool_tile, LV_BORDER_SIDE_BOTTOM, 0);
     lv_obj_set_style_border_opa(remove_tool_tile, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_opa(remove_tool_tile, LV_OPA_50, LV_STATE_DISABLED);
     lv_obj_clear_flag(remove_tool_tile, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *label = lv_label_create(remove_tool_tile);

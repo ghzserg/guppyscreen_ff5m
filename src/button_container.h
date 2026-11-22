@@ -5,6 +5,7 @@
 
 #include <string>
 #include <functional>
+#include <initializer_list>
 
 class ButtonContainer {
  public:
@@ -21,6 +22,7 @@ class ButtonContainer {
   lv_obj_t *get_button();
   void disable();
   void enable();
+  static void set_print_locked(bool locked, std::initializer_list<ButtonContainer *> buttons);
   void hide();
 
   void set_image(const void *img);
@@ -42,6 +44,9 @@ class ButtonContainer {
   };
 
  private:
+  void refresh_enabled();
+  bool enabled = true;
+  bool print_locked = false;
   lv_obj_t *btn_cont;
   lv_obj_t *btn;
   lv_obj_t *label;
