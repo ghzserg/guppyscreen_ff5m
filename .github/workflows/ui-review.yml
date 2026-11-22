@@ -1,6 +1,8 @@
 name: UI review on request
 
 on:
+  pull_request_target:
+    types: [opened, labeled]
   issue_comment:
     types: [created]
   pull_request:
@@ -10,12 +12,31 @@ on:
       - 'ci/ui-review-post.py'
 
 jobs:
+  hint:
+    if: github.event_name == 'pull_request_target' && github.event.action == 'opened'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Explain UI review and create its label
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 ci/ui-review-request.py --hint "$GITHUB_EVENT_PATH"
+
   capture:
     if: >-
       (github.event_name == 'issue_comment' &&
        github.event.issue.pull_request != null &&
        startsWith(github.event.comment.body, '/ui-review ') &&
        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_target' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == 'ui-review' &&
+       github.event.pull_request.head.repo.full_name == github.repository) ||
       (github.event_name == 'pull_request' &&
        github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-22.04
@@ -65,7 +86,7 @@ jobs:
 
   publish:
     needs: capture
-    if: github.event_name == 'issue_comment' && needs.capture.result == 'success'
+    if: (github.event_name == 'issue_comment' || github.event_name == 'pull_request_target') && needs.capture.result == 'success'
     runs-on: ubuntu-22.04
     permissions:
       contents: read
