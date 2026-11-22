@@ -278,7 +278,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
         if (std::strftime(time_text, sizeof(time_text), "%H:%M:%S", &local))
           KUtils::set_label_text(panel->clock_label, time_text);
       } else {
-        panel->mini_print_status.update_clock(local.tm_hour, local.tm_min, local.tm_sec % 2 == 0);
+        panel->mini_print_status.update_clock(local.tm_hour, local.tm_min);
       }
     }
   }, 1000, this);

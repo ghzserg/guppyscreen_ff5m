@@ -23,7 +23,7 @@ class MiniPrintStatus {
   void update_img(const std::string &img_path, size_t twidth);
   void reset();
 #ifdef GUPPY_FF5M
-  void update_clock(int hour, int minute, bool show_colon);
+  void update_clock(int hour, int minute);
   void set_clock_enabled(bool enabled);
 #endif
 
