@@ -29,10 +29,19 @@ void check_button(const char *name, bool disabled, bool send = false) {
     if (!lv_obj_check_type(obj, &lv_label_class) || strcmp(lv_label_get_text(obj), name)) return;
     auto *parent = lv_obj_get_parent(obj);
     if (!parent) return;
+    // Z+ и Z- есть также в настройках Z-offset, которые доступны при печати.
+    if (!strcmp(name, "Z+") || !strcmp(name, "Z-")) {
+      bool homing = false;
+      ui::walk(lv_obj_get_parent(parent), [&](lv_obj_t *child) {
+        if (lv_obj_check_type(child, &lv_label_class) &&
+            !strcmp(lv_label_get_text(child), "G28")) homing = true;
+      });
+      if (!homing) return;
+    }
     auto *img = lv_obj_get_child(parent, 0);
     if (img && lv_obj_check_type(img, &lv_imgbtn_class)) labels.push_back(obj);
   });
-  INFO(name);
+  INFO(std::string(name));
   REQUIRE(!labels.empty());
   if (!strcmp(name, "Save") || !strcmp(name, "Calibrate")) CHECK(labels.size() >= 2);
   for (auto *label : labels) {
