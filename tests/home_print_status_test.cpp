@@ -273,6 +273,7 @@ TEST_CASE("Clock disabled in configuration stays hidden on startup") {
   CHECK(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_HIDDEN));
   moonraker.push_status({{"print_stats", {{"filename", "cube.gcode"}, {"state", "printing"}}}});
   app::settle(moonraker);
+  ui::tap_tab(Nav::HOME);
   CHECK_FALSE(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_HIDDEN));
   CHECK(status_line() == home_clock);
 }

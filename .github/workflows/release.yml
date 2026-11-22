@@ -133,6 +133,55 @@ jobs:
           path: guppyscreen-${{ matrix.model }}.zip
           if-no-files-found: error
 
+  screenshots:
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.body, '<!-- ui-screenshots -->')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Install screenshot test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends git make cmake gcc g++ pkg-config python3
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Capture after (PR)
+        env:
+          GUPPY_SCREENSHOT_DIR: ${{ runner.temp }}/guppy-screens/after
+        run: |
+          bash ci/apply-patches.sh ad5m
+          mkdir -p "$GUPPY_SCREENSHOT_DIR"
+          make test TEST='Screenshot: Home and System'
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: before
+          submodules: recursive
+
+      - name: Capture before (base commit)
+        env:
+          GUPPY_SCREENSHOT_DIR: ${{ runner.temp }}/guppy-screens/before
+        run: |
+          cp tests/harness/screenshot.h tests/harness/screenshot.cpp before/tests/harness/
+          cp tests/screenshot_capture_test.cpp before/tests/
+          cd before
+          bash ci/apply-patches.sh ad5m
+          mkdir -p "$GUPPY_SCREENSHOT_DIR"
+          make test TEST='Screenshot: Home and System'
+
+      - name: Convert screenshots to PNG
+        run: python3 ci/ppm_to_png.py "${{ runner.temp }}/guppy-screens"
+
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ui-screenshots
+          path: ${{ runner.temp }}/guppy-screens/**/*.png
+          if-no-files-found: error
+
   release:
     if: startsWith(github.ref, 'refs/tags/')
     needs: build
