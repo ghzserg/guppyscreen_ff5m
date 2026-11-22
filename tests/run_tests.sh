@@ -65,8 +65,13 @@ while IFS= read -r name; do
     failed=$((failed + 1))
     failed_names="$failed_names\n  $name"
     echo "FAIL  $name ($detail)"
-    echo "----- $log (last 60 lines) -----"
-    tail -n 60 "$log"
+    if grep -q '^WARNING: ThreadSanitizer:' "$log"; then
+      echo "----- $log (TSan report) -----"
+      sed -n '/^WARNING: ThreadSanitizer:/,/^SUMMARY: ThreadSanitizer:/p' "$log"
+    else
+      echo "----- $log (last 60 lines) -----"
+      tail -n 60 "$log"
+    fi
     echo "-----"
   fi
 done < "$LOGS/names.txt"

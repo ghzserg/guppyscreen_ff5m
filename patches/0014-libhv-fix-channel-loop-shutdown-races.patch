@@ -1,0 +1,204 @@
+diff --git a/evpp/Channel.h b/evpp/Channel.h
+--- a/evpp/Channel.h
++++ b/evpp/Channel.h
+@@ -3,7 +3,8 @@
+ 
+ #include <string>
+ #include <functional>
+-#include <memory>
++#include <memory>
++#include <atomic>
+ 
+ #include "hloop.h"
+ #include "hsocket.h"
+@@ -189,7 +190,8 @@
+         CONNECTED,
+         DISCONNECTED,
+         CLOSED,
+-    } status;
++    };
++    std::atomic<Status> status;
+     std::function<void(Buffer*)> onread;
+     // NOTE: Use Channel::isWriteComplete in onwrite callback to determine whether all data has been written.
+     std::function<void(Buffer*)> onwrite;
+diff --git a/evpp/EventLoop.h b/evpp/EventLoop.h
+--- a/evpp/EventLoop.h
++++ b/evpp/EventLoop.h
+@@ -29,7 +29,7 @@
+             loop_ = loop;
+             is_loop_owner = false;
+         } else {
+-            loop_ = hloop_new(HLOOP_FLAG_AUTO_FREE);
++            loop_ = hloop_new(0);
+             is_loop_owner = true;
+         }
+         connectionNum = 0;
+@@ -41,45 +41,71 @@
+         stop();
+     }
+ 
+-    hloop_t* loop() {
+-        return loop_;
+-    }
+-
+-    // @brief Run loop forever
+-    void run() {
+-        if (loop_ == NULL) return;
+-        if (status() == kRunning) return;
+-        ThreadLocalStorage::set(ThreadLocalStorage::EVENT_LOOP, this);
+-        setStatus(kRunning);
+-        hloop_run(loop_);
+-        setStatus(kStopped);
+-    }
+-
+-    // stop thread-safe
+-    void stop() {
+-        if (loop_ == NULL) return;
+-        if (status() < kRunning) {
+-            if (is_loop_owner) {
+-                hloop_free(&loop_);
+-            }
+-            loop_ = NULL;
+-            return;
+-        }
+-        setStatus(kStopping);
+-        hloop_stop(loop_);
+-        loop_ = NULL;
+-    }
++    hloop_t* loop() {
++        std::lock_guard<std::mutex> locker(mutex_);
++        return loop_;
++    }
++
++    // @brief Run loop forever
++    void run() {
++        hloop_t* loop;
++        {
++            std::lock_guard<std::mutex> locker(mutex_);
++            if (loop_ == NULL || status() >= kRunning) return;
++            loop = loop_;
++            ThreadLocalStorage::set(ThreadLocalStorage::EVENT_LOOP, this);
++            setStatus(kRunning);
++        }
++        hloop_run(loop);
++        {
++            std::lock_guard<std::mutex> locker(mutex_);
++            setStatus(kStopping);
++            loop_ = NULL;
++        }
++        // Освобождение в потоке цикла, без mutex: возможны callbacks закрытия.
++        if (is_loop_owner) hloop_free(&loop);
++        setStatus(kStopped);
++    }
++
++    // stop thread-safe
++    void stop() {
++        hloop_t* loop;
++        {
++            std::lock_guard<std::mutex> locker(mutex_);
++            if (loop_ == NULL || status() >= kStopping) return;
++            loop = loop_;
++            if (status() >= kRunning) {
++                const bool paused = isPause();
++                setStatus(kStopping);
++                // На паузе очередь не обрабатывается.
++                if (paused) {
++                    hloop_stop(loop);
++                    return;
++                }
++                // Остановка после уже поставленных в очередь событий.
++                hevent_t ev = {};
++                ev.cb = [](hevent_t* e) { hloop_stop(hevent_loop(e)); };
++                hloop_post_event(loop, &ev);
++                return;
++            }
++            setStatus(kStopped);
++            loop_ = NULL;
++        }
++        if (is_loop_owner) hloop_free(&loop);
++    }
+ 
+-    void pause() {
+-        if (loop_ == NULL) return;
++    void pause() {
++        std::lock_guard<std::mutex> locker(mutex_);
++        if (loop_ == NULL) return;
+         if (isRunning()) {
+             hloop_pause(loop_);
+             setStatus(kPause);
+         }
+     }
+ 
+-    void resume() {
+-        if (loop_ == NULL) return;
++    void resume() {
++        std::lock_guard<std::mutex> locker(mutex_);
++        if (loop_ == NULL) return;
+         if (isPause()) {
+             hloop_resume(loop_);
+             setStatus(kRunning);
+@@ -88,9 +114,10 @@
+ 
+     // Timer interfaces: setTimer, killTimer, resetTimer
+     TimerID setTimer(int timeout_ms, TimerCallback cb, uint32_t repeat = INFINITE, TimerID timerID = INVALID_TIMER_ID) {
+-        assertInLoopThread();
+-        if (loop_ == NULL) return INVALID_TIMER_ID;
+-        htimer_t* htimer = htimer_add(loop_, onTimer, timeout_ms, repeat);
++        hloop_t* loop = this->loop();
++        if (loop == NULL || status() >= kStopping) return INVALID_TIMER_ID;
++        assert(hv_gettid() == hloop_tid(loop));
++        htimer_t* htimer = htimer_add(loop, onTimer, timeout_ms, repeat);
+         assert(htimer != NULL);
+         if (timerID == INVALID_TIMER_ID) {
+             timerID = generateTimerID();
+@@ -145,13 +172,15 @@
+         });
+     }
+ 
+-    long tid() {
+-        if (loop_ == NULL) return hv_gettid();
++    long tid() {
++        std::lock_guard<std::mutex> locker(mutex_);
++        if (loop_ == NULL) return hv_gettid();
+         return hloop_tid(loop_);
+     }
+ 
+-    bool isInLoopThread() {
+-        if (loop_ == NULL) return false;
++    bool isInLoopThread() {
++        std::lock_guard<std::mutex> locker(mutex_);
++        if (loop_ == NULL) return false;
+         return hv_gettid() == hloop_tid(loop_);
+     }
+ 
+@@ -173,19 +202,17 @@
+         });
+     }
+ 
+-    void postEvent(EventCallback cb) {
+-        if (loop_ == NULL) return;
+-
+-        EventPtr ev = std::make_shared<Event>(cb);
+-        hevent_set_userdata(&ev->event, this);
+-        ev->event.cb = onCustomEvent;
+-
+-        mutex_.lock();
+-        customEvents.push(ev);
+-        mutex_.unlock();
+-
+-        hloop_post_event(loop_, &ev->event);
+-    }
++    void postEvent(EventCallback cb) {
++        std::lock_guard<std::mutex> locker(mutex_);
++        if (loop_ == NULL || status() >= kStopping) return;
++
++        EventPtr ev = std::make_shared<Event>(cb);
++        hevent_set_userdata(&ev->event, this);
++        ev->event.cb = onCustomEvent;
++
++        customEvents.push(ev);
++        hloop_post_event(loop_, &ev->event);
++    }
+ 
+ private:
+     TimerID generateTimerID() {

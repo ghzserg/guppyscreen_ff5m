@@ -1,0 +1,295 @@
+diff --git a/event/hevent.h b/event/hevent.h
+--- a/event/hevent.h
++++ b/event/hevent.h
+@@ -102,9 +102,9 @@
+ struct hio_s {
+     HEVENT_FIELDS
+     // flags
+-    unsigned    ready       :1;
++    uint8_t     ready;
+-    unsigned    connected   :1;
++    uint8_t     connected;
+-    unsigned    closed      :1;
++    uint8_t     closed;
+     unsigned    accept      :1;
+     unsigned    connect     :1;
+     unsigned    connectex   :1; // for ConnectEx/DisconnectEx
+diff --git a/event/hevent.c b/event/hevent.c
+--- a/event/hevent.c
++++ b/event/hevent.c
+@@ -85,11 +85,11 @@
+ }
+ 
+ void hio_ready(hio_t* io) {
+-    if (io->ready) return;
++    if (__atomic_load_n(&io->ready, __ATOMIC_RELAXED)) return;
+     // flags
+-    io->ready = 1;
++    __atomic_store_n(&io->ready, 1, __ATOMIC_RELAXED);
+-    io->connected = 0;
++    __atomic_store_n(&io->connected, 0, __ATOMIC_RELAXED);
+-    io->closed = 0;
++    __atomic_store_n(&io->closed, 0, __ATOMIC_RELAXED);
+     io->accept = io->connect = io->connectex = 0;
+     io->recv = io->send = 0;
+     io->recvfrom = io->sendto = 0;
+@@ -164,8 +164,8 @@
+ }
+ 
+ void hio_done(hio_t* io) {
+-    if (!io->ready) return;
++    if (!__atomic_load_n(&io->ready, __ATOMIC_RELAXED)) return;
+-    io->ready = 0;
++    __atomic_store_n(&io->ready, 0, __ATOMIC_RELAXED);
+ 
+     hio_del(io, HV_RDWR);
+ 
+@@ -201,17 +201,17 @@
+ 
+ bool hio_is_opened(hio_t* io) {
+     if (io == NULL) return false;
+-    return io->ready == 1 && io->closed == 0;
++    return __atomic_load_n(&io->ready, __ATOMIC_RELAXED) == 1 && __atomic_load_n(&io->closed, __ATOMIC_RELAXED) == 0;
+ }
+ 
+ bool hio_is_connected(hio_t* io) {
+     if (io == NULL) return false;
+-    return io->ready == 1 && io->connected == 1 && io->closed == 0;
++    return __atomic_load_n(&io->ready, __ATOMIC_RELAXED) == 1 && __atomic_load_n(&io->connected, __ATOMIC_RELAXED) == 1 && __atomic_load_n(&io->closed, __ATOMIC_RELAXED) == 0;
+ }
+ 
+ bool hio_is_closed(hio_t* io) {
+     if (io == NULL) return true;
+-    return io->ready == 0 && io->closed == 1;
++    return __atomic_load_n(&io->ready, __ATOMIC_RELAXED) == 0 && __atomic_load_n(&io->closed, __ATOMIC_RELAXED) == 1;
+ }
+ 
+ uint32_t hio_id (hio_t* io) {
+@@ -317,7 +317,7 @@
+             SOCKADDR_STR(io->localaddr, localaddrstr),
+             SOCKADDR_STR(io->peeraddr, peeraddrstr));
+     */
+-    io->connected = 1;
++    __atomic_store_n(&io->connected, 1, __ATOMIC_RELAXED);
+     if (io->connect_cb) {
+         // printd("connect_cb------\n");
+         io->connect_cb(io);
+@@ -425,8 +425,8 @@
+ }
+ 
+ void hio_close_cb(hio_t* io) {
+-    io->connected = 0;
++    __atomic_store_n(&io->connected, 0, __ATOMIC_RELAXED);
+-    io->closed = 1;
++    __atomic_store_n(&io->closed, 1, __ATOMIC_RELAXED);
+     if (io->close_cb) {
+         // printd("close_cb------\n");
+         io->close_cb(io);
+diff --git a/event/hloop.c b/event/hloop.c
+--- a/event/hloop.c
++++ b/event/hloop.c
+@@ -167,7 +167,7 @@
+     }
+     hloop_update_time(loop);
+     // wakeup by hloop_stop
+-    if (loop->status == HLOOP_STATUS_STOP) {
++    if (hloop_status(loop) == HLOOP_STATUS_STOP) {
+         return 0;
+     }
+ 
+@@ -317,7 +317,7 @@
+     signal(SIGPIPE, SIG_IGN);
+ #endif
+ 
+-    loop->status = HLOOP_STATUS_STOP;
++    __atomic_store_n(&loop->status, HLOOP_STATUS_STOP, __ATOMIC_RELAXED);
+     loop->pid = hv_getpid();
+     loop->tid = hv_gettid();
+ 
+@@ -431,9 +431,9 @@
+ // while (loop->status) { hloop_process_events(loop); }
+ int hloop_run(hloop_t* loop) {
+     if (loop == NULL) return -1;
+-    if (loop->status == HLOOP_STATUS_RUNNING) return -2;
++    if (hloop_status(loop) == HLOOP_STATUS_RUNNING) return -2;
+ 
+-    loop->status = HLOOP_STATUS_RUNNING;
++    __atomic_store_n(&loop->status, HLOOP_STATUS_RUNNING, __ATOMIC_RELAXED);
+     loop->pid = hv_getpid();
+     loop->tid = hv_gettid();
+ 
+@@ -450,8 +450,8 @@
+ #endif
+     }
+ 
+-    while (loop->status != HLOOP_STATUS_STOP) {
++    while (hloop_status(loop) != HLOOP_STATUS_STOP) {
+-        if (loop->status == HLOOP_STATUS_PAUSE) {
++        if (hloop_status(loop) == HLOOP_STATUS_PAUSE) {
+             hv_msleep(HLOOP_PAUSE_TIME);
+             hloop_update_time(loop);
+             continue;
+@@ -467,7 +467,7 @@
+         }
+     }
+ 
+-    loop->status = HLOOP_STATUS_STOP;
++    __atomic_store_n(&loop->status, HLOOP_STATUS_STOP, __ATOMIC_RELAXED);
+     loop->end_hrtime = gethrtime_us();
+ 
+     if (loop->flags & HLOOP_FLAG_AUTO_FREE) {
+@@ -488,26 +488,26 @@
+     if (hv_gettid() != loop->tid) {
+         hloop_wakeup(loop);
+     }
+-    loop->status = HLOOP_STATUS_STOP;
++    __atomic_store_n(&loop->status, HLOOP_STATUS_STOP, __ATOMIC_RELEASE);
+     return 0;
+ }
+ 
+ int hloop_pause(hloop_t* loop) {
+-    if (loop->status == HLOOP_STATUS_RUNNING) {
++    if (hloop_status(loop) == HLOOP_STATUS_RUNNING) {
+-        loop->status = HLOOP_STATUS_PAUSE;
++        __atomic_store_n(&loop->status, HLOOP_STATUS_PAUSE, __ATOMIC_RELAXED);
+     }
+     return 0;
+ }
+ 
+ int hloop_resume(hloop_t* loop) {
+-    if (loop->status == HLOOP_STATUS_PAUSE) {
++    if (hloop_status(loop) == HLOOP_STATUS_PAUSE) {
+-        loop->status = HLOOP_STATUS_RUNNING;
++        __atomic_store_n(&loop->status, HLOOP_STATUS_RUNNING, __ATOMIC_RELAXED);
+     }
+     return 0;
+ }
+ 
+ hloop_status_e hloop_status(hloop_t* loop) {
+-    return loop->status;
++    return __atomic_load_n(&loop->status, __ATOMIC_ACQUIRE);
+ }
+ 
+ void hloop_update_time(hloop_t* loop) {
+@@ -729,7 +729,7 @@
+         loop->ios.ptr[fd] = io;
+     }
+ 
+-    if (!io->ready) {
++    if (!__atomic_load_n(&io->ready, __ATOMIC_RELAXED)) {
+         hio_ready(io);
+     }
+ 
+@@ -777,7 +777,7 @@
+         loop->nios++;
+     }
+ 
+-    if (!io->ready) {
++    if (!__atomic_load_n(&io->ready, __ATOMIC_RELAXED)) {
+         hio_ready(io);
+     }
+ 
+diff --git a/event/nio.c b/event/nio.c
+--- a/event/nio.c
++++ b/event/nio.c
+@@ -330,7 +330,7 @@
+     }
+     io->readbuf.tail += nread;
+     __read_cb(io, buf, nread);
+-    if (nread == len && !io->closed) {
++    if (nread == len && !__atomic_load_n(&io->closed, __ATOMIC_RELAXED)) {
+         // NOTE: ssl may have own cache
+         if (io->io_type == HIO_TYPE_SSL) {
+             // read continue
+@@ -386,7 +386,7 @@
+         // HV_FREE(pbuf->base);
+         HV_FREE(base);
+         write_queue_pop_front(&io->write_queue);
+-        if (!io->closed) {
++        if (!__atomic_load_n(&io->closed, __ATOMIC_RELAXED)) {
+             // write continue
+             goto write;
+         }
+@@ -463,7 +463,7 @@
+ }
+ 
+ int hio_read (hio_t* io) {
+-    if (io->closed) {
++    if (__atomic_load_n(&io->closed, __ATOMIC_RELAXED)) {
+         hloge("hio_read called but fd[%d] already closed!", io->fd);
+         return -1;
+     }
+@@ -477,7 +477,7 @@
+ }
+ 
+ int hio_write (hio_t* io, const void* buf, size_t len) {
+-    if (io->closed) {
++    if (__atomic_load_n(&io->closed, __ATOMIC_RELAXED)) {
+         hloge("hio_write called but fd[%d] already closed!", io->fd);
+         return -1;
+     }
+@@ -561,13 +561,13 @@
+ }
+ 
+ int hio_close (hio_t* io) {
+-    if (io->closed) return 0;
++    if (__atomic_load_n(&io->closed, __ATOMIC_RELAXED)) return 0;
+     if (hv_gettid() != io->loop->tid) {
+         return hio_close_async(io);
+     }
+ 
+     hrecursive_mutex_lock(&io->write_mutex);
+-    if (io->closed) {
++    if (__atomic_load_n(&io->closed, __ATOMIC_RELAXED)) {
+         hrecursive_mutex_unlock(&io->write_mutex);
+         return 0;
+     }
+@@ -580,7 +580,7 @@
+         io->close_timer->privdata = io;
+         return 0;
+     }
+-    io->closed = 1;
++    __atomic_store_n(&io->closed, 1, __ATOMIC_RELAXED);
+     hrecursive_mutex_unlock(&io->write_mutex);
+ 
+     hio_done(io);
+diff --git a/event/overlapio.c b/event/overlapio.c
+--- a/event/overlapio.c
++++ b/event/overlapio.c
+@@ -175,7 +175,7 @@
+ 
+     if (io->io_type == HIO_TYPE_TCP) {
+         // reuse hovlp
+-        if (!io->closed) {
++        if (!__atomic_load_n(&io->closed, __ATOMIC_RELAXED)) {
+             post_recv(io, hovlp);
+         }
+     }
+@@ -376,8 +376,8 @@
+ }
+ 
+ int hio_close (hio_t* io) {
+-    if (io->closed) return 0;
++    if (__atomic_load_n(&io->closed, __ATOMIC_RELAXED)) return 0;
+-    io->closed = 1;
++    __atomic_store_n(&io->closed, 1, __ATOMIC_RELAXED);
+     hio_done(io);
+     if (io->hovlp) {
+         hoverlapped_t* hovlp = (hoverlapped_t*)io->hovlp;
+diff --git a/base/htime.c b/base/htime.c
+--- a/base/htime.c
++++ b/base/htime.c
+@@ -171,7 +171,12 @@
+ }
+ 
+ char* gmtime_fmt(time_t time, char* buf) {
+-    struct tm* tm = gmtime(&time);
++#ifdef OS_WIN
++    struct tm* tm = gmtime(&time);
++#else
++    struct tm tm_buf;
++    struct tm* tm = gmtime_r(&time, &tm_buf);
++#endif
+     //strftime(buf, GMTIME_FMT_BUFLEN, "%a, %d %b %Y %H:%M:%S GMT", tm);
+     sprintf(buf, GMTIME_FMT,
+         s_weekdays[tm->tm_wday],
