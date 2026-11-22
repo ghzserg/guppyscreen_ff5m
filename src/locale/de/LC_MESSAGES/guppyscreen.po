@@ -151,6 +151,10 @@ msgstr ""
 msgid "ETA: {}"
 msgstr "ETA: {}"
 
+#: ../sysinfo_panel.cpp
+msgid "Object exclusion confirmation"
+msgstr "Objektausschluss bestätigen"
+
 #: ../sysinfo_panel.cpp:197
 msgid "Emergency stop confirmation"
 msgstr "Bestätigung Notstopp"
