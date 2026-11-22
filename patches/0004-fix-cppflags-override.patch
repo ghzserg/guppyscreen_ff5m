@@ -2,7 +2,15 @@ diff --git a/Makefile.in b/Makefile.in
 index 0816ec6..e852c2b 100644
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -151,9 +151,9 @@ ifeq ($(USE_MULTIMAP), yes)
+@@ -75,6 +75,7 @@
+ 
+ CFLAGS ?= $(DEFAULT_CFLAGS)
+ CXXFLAGS ?= $(DEFAULT_CFLAGS)
++override CXXFLAGS += -Wno-psabi
+ 
+ ifneq ($(OS), Windows)
+ ifeq ($(findstring -fPIC, $(CFLAGS)), )
+@@ -151,9 +152,9 @@ ifeq ($(USE_MULTIMAP), yes)
  	CPPFLAGS += -DUSE_MULTIMAP
  endif
  

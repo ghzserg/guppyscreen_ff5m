@@ -175,8 +175,8 @@ static void lv_tc_screen_auto_set_points(lv_obj_t *screenObj) {
     lv_coord_t margin = (marginH < marginV) ? marginH: marginV;
 
     lv_point_t points[3] = {
-        {       margin                            ,        (float)lv_disp_get_ver_res(NULL) * 0.3   },
-        {(float)lv_disp_get_hor_res(NULL) * 0.4   ,        lv_disp_get_ver_res(NULL) - margin},
+        {       margin                            ,        (double)lv_disp_get_ver_res(NULL) * 0.3   },
+        {(double)lv_disp_get_hor_res(NULL) * 0.4   ,        lv_disp_get_ver_res(NULL) - margin},
         {       lv_disp_get_hor_res(NULL) - margin,        margin                                   }
     };
     lv_tc_screen_set_points(screenObj, points);

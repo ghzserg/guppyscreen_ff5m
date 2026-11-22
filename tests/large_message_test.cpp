@@ -4,6 +4,8 @@
 // message.
 
 #include "doctest/doctest.h"
+#include "libhv/http/websocket_parser.h"
+#include "hv/hbase.h"
 
 #include "app.h"
 #include "fake_moonraker.h"
@@ -19,6 +21,27 @@ bool contains(const std::vector<std::string> &v, const std::string &s) {
 }
 
 }  // namespace
+
+TEST_CASE("WebSocket frame uses a network-order 64-bit length") {
+  const auto flags = static_cast<websocket_flags>(WS_FIN | WS_OP_TEXT);
+  for (size_t len : {size_t(65535), size_t(65536), size_t(0x12345)}) {
+    std::string payload(len, 'a');
+    std::vector<char> frame(websocket_calc_frame_size(flags, len));
+    REQUIRE(websocket_build_frame(frame.data(), flags, nullptr, payload.data(), len) == frame.size());
+    CHECK(static_cast<uint8_t>(frame[0]) == 0x81);
+    const size_t header = len <= 65535 ? 4 : 10;
+    CHECK(static_cast<uint8_t>(frame[1]) == (header == 4 ? 126 : 127));
+    uint64_t decoded = 0;
+    for (size_t i = 2; i < header; ++i) decoded = (decoded << 8) | static_cast<uint8_t>(frame[i]);
+    CHECK(decoded == len);
+    CHECK(std::equal(payload.begin(), payload.end(), frame.begin() + header));
+  }
+}
+
+TEST_CASE("size parser handles terabyte suffix without an oversized shift") {
+  CHECK(hv_parse_size("2K") == 2048);
+  CHECK(hv_parse_size("1T") == static_cast<size_t>(uint64_t(1) << 40));
+}
 
 TEST_CASE("large subscribe reply is followed by live updates") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));

@@ -46,7 +46,7 @@ bash ci/apply-patches.sh "$model"
 make_args=(
   "CROSS_COMPILE=$CROSS_COMPILE" "CC=$CC" "CXX=$CXX" "AR=$AR"
   'GUPPY_FF5M_SCREEN=1'
-  "FF5M_CMAKE_FLAGS=-DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_SYSROOT=$SYSROOT"
+  "FF5M_CMAKE_FLAGS=-DCMAKE_CXX_COMPILER=$CXX -DCMAKE_SYSROOT=$SYSROOT"
 )
 make "${make_args[@]}" libhv.a
 make "${make_args[@]}" libspdlog.a

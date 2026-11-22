@@ -56,10 +56,10 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , main_cont(lv_obj_create(main_tab))
   , print_status_panel(websocket, lock, main_cont, *this)
   , print_panel(ws, lock, print_status_panel)
+  , numpad(Numpad(main_cont))
   , extruder_panel(ws, lock, numpad, sm)
   , prompt_panel(websocket, lock, main_cont, extruder_panel)
   , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel(), print_status_panel.get_retract_panel(), print_status_panel.get_pid_panel(), prompt_panel)
-  , numpad(Numpad(main_cont))
   , spoolman_panel(sm)
   , temp_cont(lv_obj_create(main_cont))
 #ifdef GUPPY_FF5M
