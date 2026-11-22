@@ -95,7 +95,7 @@ void map_free() {
 
 void redraw() {
   if (!map_cont || map_buf.empty()) return;
-  lv_canvas_fill_bg(map_cont, lv_color_black(), LV_OPA_COVER);
+  lv_canvas_fill_bg(map_cont, lv_color_hex(0x101820), LV_OPA_COVER);
   lv_draw_line_dsc_t dsc;
   lv_draw_line_dsc_init(&dsc);
   dsc.width = 3;
@@ -200,12 +200,22 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   // The content area beside the nav bar, less the zoom and pan buttons.
   map_w = Nav::content_width() - 140;
   map_h = lv_disp_get_ver_res(NULL) - 130;
-  map_cont = lv_canvas_create(cont);
+  lv_obj_t *map_frame = lv_obj_create(cont);
+  lv_obj_set_size(map_frame, map_w + 8, map_h + 8);
+  lv_obj_align(map_frame, LV_ALIGN_TOP_LEFT, 0, 0);
+  lv_obj_set_style_pad_all(map_frame, 2, 0);
+  lv_obj_set_style_radius(map_frame, 8, 0);
+  lv_obj_set_style_border_width(map_frame, 2, 0);
+  lv_obj_set_style_border_color(map_frame, lv_color_hex(0x607080), 0);
+  lv_obj_set_style_bg_color(map_frame, lv_color_hex(0x263442), 0);
+  lv_obj_set_style_bg_opa(map_frame, LV_OPA_COVER, 0);
+  lv_obj_clear_flag(map_frame, LV_OBJ_FLAG_SCROLLABLE);
+  map_cont = lv_canvas_create(map_frame);
   map_free();
   lv_obj_align(map_cont, LV_ALIGN_TOP_LEFT, 0, 0);
   lv_obj_add_flag(map_cont, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(map_cont, map_click_cb, LV_EVENT_CLICKED, NULL);
-  lv_obj_add_flag(map_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(map_frame, LV_OBJ_FLAG_HIDDEN);
 
   zoom_in_btn = lv_btn_create(cont);
   lv_obj_set_size(zoom_in_btn, 60, 60);
@@ -269,7 +279,7 @@ static void sync_view(lv_obj_t *exclude_cont, lv_obj_t *zin, lv_obj_t *zout) {
   if (has_polygons) {
     if (active) map_alloc();
     lv_obj_add_flag(exclude_cont, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_clear_flag(map_cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(lv_obj_get_parent(map_cont), LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(zin, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(zout, LV_OBJ_FLAG_HIDDEN);
     for (auto b : pan_btn) lv_obj_clear_flag(b, LV_OBJ_FLAG_HIDDEN);
@@ -277,7 +287,7 @@ static void sync_view(lv_obj_t *exclude_cont, lv_obj_t *zin, lv_obj_t *zout) {
     redraw();
   } else {
     lv_obj_clear_flag(exclude_cont, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(map_cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(lv_obj_get_parent(map_cont), LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(zin, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(zout, LV_OBJ_FLAG_HIDDEN);
     for (auto b : pan_btn) lv_obj_add_flag(b, LV_OBJ_FLAG_HIDDEN);

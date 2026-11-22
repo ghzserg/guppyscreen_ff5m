@@ -54,6 +54,14 @@ TEST_CASE("Screenshot: scripted") {
     } else if (command == "tap" || command == "tap_optional") {
       if (command == "tap_optional" && !ui::find_label(arg)) continue;
       ui::tap_label(arg);
+    } else if (command == "tap_parent") {
+      lv_obj_t *label = ui::find_label(arg);
+      REQUIRE_MESSAGE(label != nullptr, "Missing label: " << arg);
+      {
+        std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+        lv_event_send(lv_obj_get_parent(label), LV_EVENT_SHORT_CLICKED, nullptr);
+      }
+      app::pump(20);
     } else if (command == "switch" || command == "switch_optional") {
       lv_obj_t *label = ui::find_label(arg);
       if (!label && command == "switch_optional") continue;

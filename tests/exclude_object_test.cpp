@@ -106,6 +106,12 @@ TEST_CASE("exclude object map excludes the tapped object") {
     REQUIRE_MESSAGE(app::wait_until([&] { return (canvas = ui::find_shown(&lv_canvas_class)) != nullptr; }),
                     "object map not shown; screen: " << ui::dump_screen());
 
+    {
+      std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+      lv_obj_t *frame = lv_obj_get_parent(canvas);
+      CHECK(lv_obj_get_style_border_width(frame, 0) == 2);
+      CHECK(lv_obj_get_width(frame) == lv_obj_get_width(canvas) + 8);
+    }
     Pixels px = count_outline_pixels(canvas);
     CHECK_MESSAGE(px.green > 100, "green outline pixels: " << px.green);
 
