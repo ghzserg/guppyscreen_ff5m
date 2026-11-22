@@ -537,3 +537,7 @@ msgstr ""
 #: ../print_panel.cpp
 msgid "Could not delete the file."
 msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Clock"
+msgstr ""
