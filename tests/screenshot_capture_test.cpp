@@ -7,45 +7,76 @@
 #include "guppyscreen.h"
 
 #include <cstdlib>
+#include <fstream>
 #include <mutex>
+#include <sstream>
 #include <string>
 
-TEST_CASE("Screenshot: Home and System") {
+TEST_CASE("Screenshot: scripted") {
+  const char *script_path = std::getenv("GUPPY_SCREENSHOT_SCRIPT");
+  if (!script_path || !*script_path) return;
   const char *dir = std::getenv("GUPPY_SCREENSHOT_DIR");
-  if (!dir || !*dir) return;
+  REQUIRE_MESSAGE(dir && *dir, "GUPPY_SCREENSHOT_DIR is not set");
+  std::ifstream script(script_path);
+  REQUIRE_MESSAGE(script.good(), "Cannot open screenshot scenario: " << script_path);
 
+  json settings = json::object();
+  if (const char *config = std::getenv("GUPPY_SCREENSHOT_CONFIG"))
+    settings = json::parse(config);
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  app::start(moonraker);
+  app::start(moonraker, settings);
   app::wait_ready(moonraker);
 
-  ui::tap_tab(Nav::HOME);
-  app::pump(1100);
-  app::redraw();
-  screenshot::save(std::string(dir) + "/home.ppm");
-
-  ui::tap_tab(Nav::SETTINGS);
-  ui::tap_label("System");
-  app::redraw();
-  screenshot::save(std::string(dir) + "/system.ppm");
-
-  lv_obj_t *label = ui::find_label("Clock");
-  if (!label) return;  // В базовом main переключателя ещё нет.
-
-  lv_obj_t *toggle = nullptr;
-  {
-    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    toggle = ui::find_in(lv_obj_get_parent(label), &lv_switch_class);
+  std::string line;
+  int line_no = 0;
+  while (std::getline(script, line)) {
+    ++line_no;
+    std::istringstream input(line);
+    std::string command;
+    input >> command;
+    if (command.empty() || command[0] == '#') continue;
+    std::string arg;
+    std::getline(input, arg);
+    const auto first = arg.find_first_not_of(" \t");
+    arg = first == std::string::npos ? "" : arg.substr(first);
+    INFO("Scenario line " << line_no << ": " << line);
+    if (command == "tab") {
+      if (arg == "home") ui::tap_tab(Nav::HOME);
+      else if (arg == "print") ui::tap_tab(Nav::PRINT);
+      else if (arg == "tune") ui::tap_tab(Nav::TUNE);
+      else if (arg == "settings") ui::tap_tab(Nav::SETTINGS);
+      else FAIL("Unknown tab: " << arg);
+    } else if (command == "tap" || command == "tap_optional") {
+      if (command == "tap_optional" && !ui::find_label(arg)) continue;
+      ui::tap_label(arg);
+    } else if (command == "switch" || command == "switch_optional") {
+      lv_obj_t *label = ui::find_label(arg);
+      if (!label && command == "switch_optional") continue;
+      REQUIRE_MESSAGE(label != nullptr, "Missing switch label: " << arg);
+      lv_obj_t *toggle = nullptr;
+      {
+        std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+        toggle = ui::find_in(lv_obj_get_parent(label), &lv_switch_class);
+      }
+      REQUIRE_MESSAGE(toggle != nullptr, "Missing switch: " << arg);
+      ui::tap(toggle);
+    } else if (command == "tap_at") {
+      int x = 0, y = 0;
+      std::istringstream xy(arg);
+      REQUIRE_MESSAGE(bool(xy >> x >> y), "Expected x y");
+      ui::tap_at(x, y);
+    } else if (command == "status") {
+      moonraker.push_status(json::parse(arg));
+      app::settle(moonraker);
+    } else if (command == "sleep") {
+      app::pump(std::stoi(arg));
+    } else if (command == "save") {
+      app::redraw();
+      screenshot::save(std::string(dir) + "/" + arg + ".ppm");
+    } else if (command == "memory") {
+      screenshot::memory(std::string(dir) + "/" + arg + ".json");
+    } else {
+      FAIL("Unknown command: " << command);
+    }
   }
-  REQUIRE(toggle != nullptr);
-  ui::tap(toggle);
-
-  ui::tap_tab(Nav::HOME);
-  app::redraw();
-  screenshot::save(std::string(dir) + "/home-disabled.ppm");
-
-  moonraker.push_status({{"print_stats", {{"filename", "cube.gcode"}, {"state", "printing"}}}});
-  app::settle(moonraker);
-  ui::tap_tab(Nav::PRINT);
-  app::redraw();
-  screenshot::save(std::string(dir) + "/print-disabled.ppm");
 }

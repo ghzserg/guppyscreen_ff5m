@@ -1,0 +1,16 @@
+# Сценарий AD5M: одни и те же действия для базы и PR.
+tab home
+sleep 1100
+save home
+memory home
+tab settings
+tap System
+save system
+switch_optional Clock
+tab home
+save home-after-switch
+memory home-after-switch
+status {"print_stats":{"filename":"cube.gcode","state":"printing"}}
+tab print
+save print-after-switch
+memory print-after-switch

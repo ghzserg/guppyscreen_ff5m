@@ -4,8 +4,9 @@
 #include <string>
 
 namespace screenshot {
-// Сохраняет реальный кадровый буфер LVGL в PPM (без новых библиотек).
+// Сохраняет кадровый буфер LVGL и данные /proc/self для тестового процесса.
 void save(const std::string &path);
+void memory(const std::string &path);
 }
 
 #endif

@@ -2,9 +2,11 @@
 
 #include "fake_hw.h"
 #include "guppyscreen.h"
+#include "hv/json.hpp"
 
 #include <fstream>
 #include <mutex>
+#include <sstream>
 #include <stdexcept>
 
 namespace screenshot {
@@ -27,6 +29,37 @@ void save(const std::string &path) {
     }
   }
   if (!file) throw std::runtime_error("incomplete screenshot: " + path);
+}
+
+void memory(const std::string &path) {
+  nlohmann::json data = nlohmann::json::object();
+  std::ifstream status("/proc/self/status");
+  std::string line;
+  while (std::getline(status, line)) {
+    std::istringstream field(line);
+    std::string name;
+    long kb;
+    if (field >> name >> kb &&
+        (name == "VmRSS:" || name == "VmHWM:" || name == "RssAnon:" ||
+         name == "RssFile:" || name == "VmData:")) {
+      name.pop_back();
+      data[name] = kb;
+    }
+  }
+  std::ifstream rollup("/proc/self/smaps_rollup");
+  while (std::getline(rollup, line)) {
+    std::istringstream field(line);
+    std::string name;
+    long kb;
+    if (field >> name >> kb &&
+        (name == "Pss:" || name == "Anonymous:" || name == "Rss:")) {
+      name.pop_back();
+      data["smaps_" + name] = kb;
+    }
+  }
+  std::ofstream out(path);
+  if (!out) throw std::runtime_error("cannot write memory sample: " + path);
+  out << data.dump(2) << '\n';
 }
 
 }  // namespace screenshot
