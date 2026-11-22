@@ -1,0 +1,162 @@
+diff --git a/event/hloop.c b/event/hloop.c
+--- a/event/hloop.c
++++ b/event/hloop.c
+@@ -92,7 +92,7 @@
+ 
+ static int hloop_process_timers(hloop_t* loop) {
+     uint64_t now = hloop_now_us(loop);
+-    int ntimers = __hloop_process_timers(&loop->timers, loop->cur_hrtime);
++    int ntimers = __hloop_process_timers(&loop->timers, __atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED));
+     ntimers +=    __hloop_process_timers(&loop->realtimers, now);
+     return ntimers;
+ }
+@@ -148,7 +148,7 @@
+         hloop_update_time(loop);
+         int64_t blocktime_us = blocktime_ms * 1000;
+         if (loop->timers.root) {
+-            int64_t min_timeout = TIMER_ENTRY(loop->timers.root)->next_timeout - loop->cur_hrtime;
++            int64_t min_timeout = TIMER_ENTRY(loop->timers.root)->next_timeout - __atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED);
+             blocktime_us = MIN(blocktime_us, min_timeout);
+         }
+         if (loop->realtimers.root) {
+@@ -194,7 +194,7 @@
+     // hlog_set_level(LOG_LEVEL_DEBUG);
+     hlogd("[loop] pid=%ld tid=%ld uptime=%lluus cnt=%llu nactives=%u nios=%u ntimers=%u nidles=%u",
+         loop->pid, loop->tid,
+-        (unsigned long long)loop->cur_hrtime - loop->start_hrtime,
++        (unsigned long long)__atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED) - loop->start_hrtime,
+         (unsigned long long)loop->loop_cnt,
+         loop->nactives, loop->nios, loop->ntimers, loop->nidles);
+ }
+@@ -347,7 +347,8 @@
+ 
+     // NOTE: init start_time here, because htimer_add use it.
+     loop->start_ms = gettimeofday_ms();
+-    loop->start_hrtime = loop->cur_hrtime = gethrtime_us();
++    loop->start_hrtime = gethrtime_us();
++    __atomic_store_n(&loop->cur_hrtime, loop->start_hrtime, __ATOMIC_RELAXED);
+ }
+ 
+ static void hloop_cleanup(hloop_t* loop) {
+@@ -511,27 +512,27 @@
+ }
+ 
+ void hloop_update_time(hloop_t* loop) {
+-    loop->cur_hrtime = gethrtime_us();
++    __atomic_store_n(&loop->cur_hrtime, gethrtime_us(), __ATOMIC_RELAXED);
+     if (hloop_now(loop) != time(NULL)) {
+         // systemtime changed, we adjust start_ms
+-        loop->start_ms = gettimeofday_ms() - (loop->cur_hrtime - loop->start_hrtime) / 1000;
++        loop->start_ms = gettimeofday_ms() - (__atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED) - loop->start_hrtime) / 1000;
+     }
+ }
+ 
+ uint64_t hloop_now(hloop_t* loop) {
+-    return loop->start_ms / 1000 + (loop->cur_hrtime - loop->start_hrtime) / 1000000;
++    return loop->start_ms / 1000 + (__atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED) - loop->start_hrtime) / 1000000;
+ }
+ 
+ uint64_t hloop_now_ms(hloop_t* loop) {
+-    return loop->start_ms + (loop->cur_hrtime - loop->start_hrtime) / 1000;
++    return loop->start_ms + (__atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED) - loop->start_hrtime) / 1000;
+ }
+ 
+ uint64_t hloop_now_us(hloop_t* loop) {
+-    return loop->start_ms * 1000 + (loop->cur_hrtime - loop->start_hrtime);
++    return loop->start_ms * 1000 + (__atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED) - loop->start_hrtime);
+ }
+ 
+ uint64_t hloop_now_hrtime(hloop_t* loop) {
+-    return loop->cur_hrtime;
++    return __atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED);
+ }
+ 
+ uint64_t hio_last_read_time(hio_t* io) {
+@@ -541,7 +542,7 @@
+ 
+ uint64_t hio_last_write_time(hio_t* io) {
+     hloop_t* loop = io->loop;
+-    return loop->start_ms + (io->last_write_hrtime - loop->start_hrtime) / 1000;
++    return loop->start_ms + (__atomic_load_n(&io->last_write_hrtime, __ATOMIC_RELAXED) - loop->start_hrtime) / 1000;
+ }
+ 
+ long hloop_pid(hloop_t* loop) {
+@@ -614,7 +615,7 @@
+     timer->repeat = repeat;
+     timer->timeout = timeout_ms;
+     hloop_update_time(loop);
+-    timer->next_timeout = loop->cur_hrtime + (uint64_t)timeout_ms * 1000;
++    timer->next_timeout = __atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED) + (uint64_t)timeout_ms * 1000;
+     // NOTE: Limit granularity to 100ms
+     if (timeout_ms >= 1000 && timeout_ms % 100 == 0) {
+         timer->next_timeout = timer->next_timeout / 100000 * 100000;
+@@ -642,7 +643,7 @@
+     if (timeout_ms > 0) {
+         timeout->timeout = timeout_ms;
+     }
+-    timer->next_timeout = loop->cur_hrtime + (uint64_t)timeout->timeout * 1000;
++    timer->next_timeout = __atomic_load_n(&loop->cur_hrtime, __ATOMIC_RELAXED) + (uint64_t)timeout->timeout * 1000;
+     // NOTE: Limit granularity to 100ms
+     if (timeout->timeout >= 1000 && timeout->timeout % 100 == 0) {
+         timer->next_timeout = timer->next_timeout / 100000 * 100000;
+diff --git a/event/hevent.c b/event/hevent.c
+--- a/event/hevent.c
++++ b/event/hevent.c
+@@ -99,7 +99,8 @@
+     io->io_type = HIO_TYPE_UNKNOWN;
+     io->error = 0;
+     io->events = io->revents = 0;
+-    io->last_read_hrtime = io->last_write_hrtime = io->loop->cur_hrtime;
++    io->last_read_hrtime = __atomic_load_n(&io->loop->cur_hrtime, __ATOMIC_RELAXED);
++    __atomic_store_n(&io->last_write_hrtime, io->last_read_hrtime, __ATOMIC_RELAXED);
+     // readbuf
+     io->alloced_readbuf = 0;
+     hio_use_loop_readbuf(io);
+@@ -557,7 +558,7 @@
+ 
+ static void __read_timeout_cb(htimer_t* timer) {
+     hio_t* io = (hio_t*)timer->privdata;
+-    uint64_t inactive_ms = (io->loop->cur_hrtime - io->last_read_hrtime) / 1000;
++    uint64_t inactive_ms = (__atomic_load_n(&io->loop->cur_hrtime, __ATOMIC_RELAXED) - io->last_read_hrtime) / 1000;
+     if (inactive_ms + 100 < io->read_timeout) {
+         htimer_reset(io->read_timer, io->read_timeout - inactive_ms);
+     } else {
+@@ -593,7 +594,7 @@
+ 
+ static void __write_timeout_cb(htimer_t* timer) {
+     hio_t* io = (hio_t*)timer->privdata;
+-    uint64_t inactive_ms = (io->loop->cur_hrtime - io->last_write_hrtime) / 1000;
++    uint64_t inactive_ms = (__atomic_load_n(&io->loop->cur_hrtime, __ATOMIC_RELAXED) - __atomic_load_n(&io->last_write_hrtime, __ATOMIC_RELAXED)) / 1000;
+     if (inactive_ms + 100 < io->write_timeout) {
+         htimer_reset(io->write_timer, io->write_timeout - inactive_ms);
+     } else {
+@@ -629,8 +630,8 @@
+ 
+ static void __keepalive_timeout_cb(htimer_t* timer) {
+     hio_t* io = (hio_t*)timer->privdata;
+-    uint64_t last_rw_hrtime = MAX(io->last_read_hrtime, io->last_write_hrtime);
++    uint64_t last_rw_hrtime = MAX(io->last_read_hrtime, __atomic_load_n(&io->last_write_hrtime, __ATOMIC_RELAXED));
+-    uint64_t inactive_ms = (io->loop->cur_hrtime - last_rw_hrtime) / 1000;
++    uint64_t inactive_ms = (__atomic_load_n(&io->loop->cur_hrtime, __ATOMIC_RELAXED) - last_rw_hrtime) / 1000;
+     if (inactive_ms + 100 < io->keepalive_timeout) {
+         htimer_reset(io->keepalive_timer, io->keepalive_timeout - inactive_ms);
+     } else {
+diff --git a/event/nio.c b/event/nio.c
+--- a/event/nio.c
++++ b/event/nio.c
+@@ -44,13 +44,13 @@
+ 
+ static void __read_cb(hio_t* io, void* buf, int readbytes) {
+     // printd("> %.*s\n", readbytes, buf);
+-    io->last_read_hrtime = io->loop->cur_hrtime;
++    io->last_read_hrtime = __atomic_load_n(&io->loop->cur_hrtime, __ATOMIC_RELAXED);
+     hio_handle_read(io, buf, readbytes);
+ }
+ 
+ static void __write_cb(hio_t* io, const void* buf, int writebytes) {
+     // printd("< %.*s\n", writebytes, buf);
+-    io->last_write_hrtime = io->loop->cur_hrtime;
++    __atomic_store_n(&io->last_write_hrtime, __atomic_load_n(&io->loop->cur_hrtime, __ATOMIC_RELAXED), __ATOMIC_RELAXED);
+     hio_write_cb(io, buf, writebytes);
+ }
+ 

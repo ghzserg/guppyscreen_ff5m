@@ -143,7 +143,7 @@ diff --git a/event/hloop.c b/event/hloop.c
          hloop_wakeup(loop);
      }
 -    loop->status = HLOOP_STATUS_STOP;
-+    __atomic_store_n(&loop->status, HLOOP_STATUS_STOP, __ATOMIC_RELAXED);
++    __atomic_store_n(&loop->status, HLOOP_STATUS_STOP, __ATOMIC_RELEASE);
      return 0;
  }
  
@@ -167,7 +167,7 @@ diff --git a/event/hloop.c b/event/hloop.c
  
  hloop_status_e hloop_status(hloop_t* loop) {
 -    return loop->status;
-+    return __atomic_load_n(&loop->status, __ATOMIC_RELAXED);
++    return __atomic_load_n(&loop->status, __ATOMIC_ACQUIRE);
  }
  
  void hloop_update_time(hloop_t* loop) {
