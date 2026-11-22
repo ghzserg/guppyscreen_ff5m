@@ -276,5 +276,16 @@ TEST_CASE("Clock disabled in configuration stays hidden on startup") {
   app::settle(moonraker);
   ui::tap_tab(Nav::HOME);
   CHECK_FALSE(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_HIDDEN));
-  CHECK(status_line() == home_clock);
+  bool status_visible = false;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_CLICKABLE));
+    ui::walk(home_clock, [&](lv_obj_t *obj) {
+      if (lv_obj_check_type(obj, &lv_label_class) &&
+          strstr(lv_label_get_text(obj), "ETA:") &&
+          !lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN))
+        status_visible = true;
+    });
+  }
+  CHECK(status_visible);
 }
