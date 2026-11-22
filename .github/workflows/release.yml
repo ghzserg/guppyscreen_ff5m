@@ -59,6 +59,13 @@ jobs:
       - name: Run tests (TSan)
         run: make test SANITIZE=thread
 
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: tsan-logs
+          path: build-test/tsan/logs/
+          if-no-files-found: ignore
+
   build:
     needs: [test, tsan]
     runs-on: ubuntu-22.04
