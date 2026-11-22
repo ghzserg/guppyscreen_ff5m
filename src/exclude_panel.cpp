@@ -43,17 +43,20 @@ void compute_bounds() {
   if (mn.is_array() && mx.is_array() && mn.size() >= 2 && mx.size() >= 2) {
     min_x = mn[0].get<float>(); min_y = mn[1].get<float>();
     max_x = mx[0].get<float>(); max_y = mx[1].get<float>();
-    return;
+  } else {
+    bool first = true;
+    for (const auto &o : objs)
+      for (const auto &p : o.poly) {
+        if (first) { min_x = max_x = p.first; min_y = max_y = p.second; first = false; }
+        min_x = std::min(min_x, p.first); max_x = std::max(max_x, p.first);
+        min_y = std::min(min_y, p.second); max_y = std::max(max_y, p.second);
+      }
   }
-  bool first = true;
-  for (const auto &o : objs)
-    for (const auto &p : o.poly) {
-      if (first) { min_x = max_x = p.first; min_y = max_y = p.second; first = false; }
-      min_x = std::min(min_x, p.first); max_x = std::max(max_x, p.first);
-      min_y = std::min(min_y, p.second); max_y = std::max(max_y, p.second);
-    }
-  if (max_x - min_x < 1) max_x = min_x + 1;
-  if (max_y - min_y < 1) max_y = min_y + 1;
+  // Квадратный стол с одинаковым масштабом по обеим осям.
+  float side = std::max(1.0f, std::max(max_x - min_x, max_y - min_y));
+  float cx = (min_x + max_x) / 2, cy = (min_y + max_y) / 2;
+  min_x = cx - side / 2; max_x = cx + side / 2;
+  min_y = cy - side / 2; max_y = cy + side / 2;
 }
 
 void to_px(float x, float y, lv_point_t &p) {
@@ -98,6 +101,24 @@ void redraw() {
   lv_canvas_fill_bg(map_cont, lv_color_hex(0x101820), LV_OPA_COVER);
   lv_draw_line_dsc_t dsc;
   lv_draw_line_dsc_init(&dsc);
+  dsc.width = 1;
+  dsc.color = lv_color_hex(0x263949);
+  for (int i = 1; i < 10; ++i) {
+    float x = min_x + (max_x - min_x) * i / 10;
+    float y = min_y + (max_y - min_y) * i / 10;
+    lv_point_t line[2];
+    to_px(x, min_y, line[0]); to_px(x, max_y, line[1]);
+    lv_canvas_draw_line(map_cont, line, 2, &dsc);
+    to_px(min_x, y, line[0]); to_px(max_x, y, line[1]);
+    lv_canvas_draw_line(map_cont, line, 2, &dsc);
+  }
+  lv_point_t bed[5];
+  to_px(min_x, min_y, bed[0]); to_px(max_x, min_y, bed[1]);
+  to_px(max_x, max_y, bed[2]); to_px(min_x, max_y, bed[3]);
+  bed[4] = bed[0];
+  dsc.width = 2;
+  dsc.color = lv_color_hex(0x71889B);
+  lv_canvas_draw_line(map_cont, bed, 5, &dsc);
   dsc.width = 3;
   for (const auto &o : objs) {
     if (o.poly.size() < 3) continue;
@@ -218,21 +239,21 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_add_flag(map_frame, LV_OBJ_FLAG_HIDDEN);
 
   zoom_in_btn = lv_btn_create(cont);
-  lv_obj_set_size(zoom_in_btn, 60, 60);
+  lv_obj_set_size(zoom_in_btn, 70, 70);
   lv_obj_t *zin_lbl = lv_label_create(zoom_in_btn);
   lv_label_set_text(zin_lbl, "+");
-  lv_obj_set_style_text_font(zin_lbl, &notosemi_20, 0);
+  lv_obj_set_style_text_font(zin_lbl, &lv_font_montserrat_48, 0);
   lv_obj_center(zin_lbl);
-  lv_obj_align(zoom_in_btn, LV_ALIGN_BOTTOM_RIGHT, -260, -20);
+  lv_obj_align(zoom_in_btn, LV_ALIGN_BOTTOM_RIGHT, -270, -20);
   lv_obj_add_event_cb(zoom_in_btn, zoom_cb, LV_EVENT_CLICKED, NULL);
 
   zoom_out_btn = lv_btn_create(cont);
-  lv_obj_set_size(zoom_out_btn, 60, 60);
+  lv_obj_set_size(zoom_out_btn, 70, 70);
   lv_obj_t *zout_lbl = lv_label_create(zoom_out_btn);
   lv_label_set_text(zout_lbl, "-");
-  lv_obj_set_style_text_font(zout_lbl, &notosemi_20, 0);
+  lv_obj_set_style_text_font(zout_lbl, &lv_font_montserrat_48, 0);
   lv_obj_center(zout_lbl);
-  lv_obj_align(zoom_out_btn, LV_ALIGN_BOTTOM_RIGHT, -190, -20);
+  lv_obj_align(zoom_out_btn, LV_ALIGN_BOTTOM_RIGHT, -185, -20);
   lv_obj_add_event_cb(zoom_out_btn, zoom_cb, LV_EVENT_CLICKED, NULL);
   lv_obj_add_flag(zoom_in_btn, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(zoom_out_btn, LV_OBJ_FLAG_HIDDEN);
