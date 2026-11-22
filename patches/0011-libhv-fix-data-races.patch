@@ -1,0 +1,58 @@
+diff --git a/base/hlog.c b/base/hlog.c
+--- a/base/hlog.c
++++ b/base/hlog.c
+@@ -108,9 +108,9 @@
+     logger->handler = fn;
+ }
+ 
+ void logger_set_level(logger_t* logger, int level) {
+-    logger->level = level;
++    __atomic_store_n(&logger->level, level, __ATOMIC_RELAXED);
+ }
+ 
+ void logger_set_level_by_str(logger_t* logger, const char* szLoglevel) {
+     int loglevel = DEFAULT_LOG_LEVEL;
+@@ -131,7 +131,7 @@
+     } else {
+         loglevel = DEFAULT_LOG_LEVEL;
+     }
+-    logger->level = loglevel;
++    logger_set_level(logger, loglevel);
+ }
+ 
+ void logger_set_format(logger_t* logger, const char* format) {
+@@ -299,7 +299,7 @@
+ }
+ 
+ int logger_print(logger_t* logger, int level, const char* fmt, ...) {
+-    if (level < logger->level)
++    if (level < __atomic_load_n(&logger->level, __ATOMIC_RELAXED))
+         return -10;
+ 
+     int year,month,day,hour,min,sec,us;
+diff --git a/event/hevent.c b/event/hevent.c
+--- a/event/hevent.c
++++ b/event/hevent.c
+@@ -6,15 +6,15 @@
+ 
+ #include "unpack.h"
+ 
+ uint64_t hloop_next_event_id() {
+-    static hatomic_t s_id = HATOMIC_VAR_INIT(0);
+-    return ++s_id;
+-}
+-
+-uint32_t hio_next_id() {
+-    static hatomic_t s_id = HATOMIC_VAR_INIT(0);
+-    return ++s_id;
++    static unsigned long s_id = 0;
++    return __atomic_add_fetch(&s_id, 1, __ATOMIC_RELAXED);
++}
++
++uint32_t hio_next_id() {
++    static uint32_t s_id = 0;
++    return __atomic_add_fetch(&s_id, 1, __ATOMIC_RELAXED);
+ }
+ 
+ static void fill_io_type(hio_t* io) {
+     int type = 0;
