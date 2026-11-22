@@ -93,7 +93,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
     };
     return font;
   }();
-  // Двоеточие вне layout: мигание не сдвигает цифры.
+  // Двоеточие вне layout: обновление цифр не сдвигает часы.
   for (auto *obj : {clock_hours, clock_minutes, clock_colon}) {
     lv_obj_add_flag(obj, LV_OBJ_FLAG_FLOATING);
     lv_obj_set_style_text_font(obj, &clock_font, 0);
@@ -155,7 +155,7 @@ void MiniPrintStatus::set_printing(bool printing) {
     lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
   } else {
     for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
-    for (auto *obj : {clock_hours, clock_minutes}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    for (auto *obj : {clock_hours, clock_minutes, clock_colon}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
     if (clock_enabled) lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
     else lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_CLICKABLE);
@@ -180,15 +180,11 @@ void MiniPrintStatus::set_clock_enabled(bool enabled) {
   }
 }
 
-void MiniPrintStatus::update_clock(int hour, int minute, bool show_colon) {
+void MiniPrintStatus::update_clock(int hour, int minute) {
   char hours[] = {char('0' + hour / 10), char('0' + hour % 10), '\0'};
   char minutes[] = {char('0' + minute / 10), char('0' + minute % 10), '\0'};
   KUtils::set_label_text(clock_hours, hours);
   KUtils::set_label_text(clock_minutes, minutes);
-  if (show_colon == lv_obj_has_flag(clock_colon, LV_OBJ_FLAG_HIDDEN)) {
-    if (show_colon) lv_obj_clear_flag(clock_colon, LV_OBJ_FLAG_HIDDEN);
-    else lv_obj_add_flag(clock_colon, LV_OBJ_FLAG_HIDDEN);
-  }
 }
 #endif
 
