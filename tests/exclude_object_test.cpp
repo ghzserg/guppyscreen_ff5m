@@ -352,6 +352,7 @@ TEST_CASE("text exclusion cancel does not send gcode") {
   answer_confirmation(false);
   CHECK_FALSE(contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"));
   ui::tap_label("CENTER_CUBE");
+  REQUIRE(app::wait_until([] { return ui::find_shown(&lv_btnmatrix_class) != nullptr; }));
   answer_confirmation(true);
   CHECK(app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"); }));
 }
