@@ -326,6 +326,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 }
 
 PrintStatusPanel::~PrintStatusPanel() {
+  if (resume_timer) lv_timer_del(resume_timer);
 #ifdef GUPPY_FF5M
   lv_timer_del(clock_timer);
 #endif
@@ -770,6 +771,11 @@ void PrintStatusPanel::update_pause_buttons(const json &state) {
   if (state == "paused") {
     lv_obj_clear_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
   } else {
+    if (resume_timer) {
+      lv_timer_del(resume_timer);
+      resume_timer = nullptr;
+      resume_btn.enable();
+    }
     resume_btn.hide();
   }
   if (state == "printing") {
@@ -786,6 +792,15 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
   } else if (btn == thumbnail_cont) {
     exclude_panel.foreground();
   } else if (btn == resume_btn.get_container()) {
+    if (resume_timer || lv_obj_has_flag(btn, LV_OBJ_FLAG_HIDDEN)) return;
+    resume_timer = lv_timer_create([](lv_timer_t *timer) {
+      auto *panel = static_cast<PrintStatusPanel *>(timer->user_data);
+      panel->resume_timer = nullptr;
+      panel->resume_btn.enable();
+    }, 20000, this);
+    if (!resume_timer) return;
+    lv_timer_set_repeat_count(resume_timer, 1);
+    resume_btn.disable();
     ws.send_jsonrpc("printer.print.resume");
   } else if (btn == cancel_btn.get_container()) {
     // The Print tab goes back to the file list when Klipper reports it.

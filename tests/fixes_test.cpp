@@ -280,6 +280,22 @@ TEST_CASE("a failed resume stays retryable until the print state changes") {
 
   moonraker.set_handler("printer.print.resume", [](const json &) { return "ok"; });
   ui::tap_label("Resume");
+  app::settle(moonraker);
+  CHECK(moonraker.request_count("printer.print.resume") == 1);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_timer_t *cooldown = nullptr;
+    for (auto *timer = lv_timer_get_next(nullptr); timer; timer = lv_timer_get_next(timer)) {
+      if (timer->period == 20000 && timer->repeat_count == 1) {
+        REQUIRE(cooldown == nullptr);
+        cooldown = timer;
+      }
+    }
+    REQUIRE(cooldown != nullptr);
+    lv_timer_ready(cooldown);
+  }
+  app::redraw();
+  ui::tap_label("Resume");
   REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.print.resume") == 2; }));
   moonraker.push_status({{"print_stats", {{"state", "printing"}}}});
   REQUIRE(app::wait_until([] { return ui::find_label("Pause") != nullptr; }));

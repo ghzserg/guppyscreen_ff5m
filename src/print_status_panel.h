@@ -81,6 +81,7 @@ class PrintStatusPanel : public NotifyConsumer {
   ButtonContainer retract_btn;
   ButtonContainer pause_btn;
   ButtonContainer resume_btn;
+  lv_timer_t *resume_timer = nullptr;
   ButtonContainer cancel_btn;
   lv_obj_t *thumbnail_cont;
   lv_obj_t *thumbnail;

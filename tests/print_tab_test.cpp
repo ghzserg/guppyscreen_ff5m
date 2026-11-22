@@ -158,6 +158,71 @@ TEST_CASE("pause and resume keep the open screen") {
   CHECK(active_tab() == Nav::HOME);
 }
 
+TEST_CASE("Resume blocks repeated clicks until printing resumes or 20 seconds pass") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  moonraker.set_result("printer.print.resume", "ok");
+  start_plain(moonraker);
+  push_print(moonraker, {{"state", "paused"}});
+  auto *button = ui::label_container("Resume");
+  REQUIRE(button != nullptr);
+  ui::tap_label("Resume");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.print.resume") == 1; }));
+
+  lv_timer_t *cooldown = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_state(button, LV_STATE_DISABLED));
+    CHECK(lv_obj_has_state(lv_obj_get_child(button, 0), LV_STATE_DISABLED));
+    CHECK(lv_obj_has_state(lv_obj_get_child(button, 1), LV_STATE_DISABLED));
+    for (auto *timer = lv_timer_get_next(nullptr); timer; timer = lv_timer_get_next(timer)) {
+      if (timer->period == 20000 && timer->repeat_count == 1) {
+        REQUIRE(cooldown == nullptr);
+        cooldown = timer;
+      }
+    }
+    REQUIRE(cooldown != nullptr);
+    lv_event_send(button, LV_EVENT_SHORT_CLICKED, nullptr);
+  }
+  ui::tap(button);
+  push_print(moonraker, {{"state", "paused"}});
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_state(button, LV_STATE_DISABLED));
+    // Имитируем истечение 20 секунд без ожидания в тесте.
+    lv_timer_ready(cooldown);
+  }
+  app::redraw();
+  CHECK(moonraker.request_count("printer.print.resume") == 1);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK_FALSE(lv_obj_has_state(button, LV_STATE_DISABLED));
+  }
+  ui::tap_label("Resume");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.print.resume") == 2; }));
+
+  push_print(moonraker, {{"state", "printing"}});
+  push_print(moonraker, {{"state", "paused"}});
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK_FALSE(lv_obj_has_state(button, LV_STATE_DISABLED));
+    for (auto *timer = lv_timer_get_next(nullptr); timer; timer = lv_timer_get_next(timer)) {
+      CHECK_FALSE((timer->period == 20000 && timer->repeat_count == 1));
+    }
+  }
+  ui::tap_label("Resume");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.print.resume") == 3; }));
+
+  push_print(moonraker, {{"state", "cancelled"}});
+  push_print(moonraker, {{"state", "printing"}, {"filename", "next.gcode"}});
+  push_print(moonraker, {{"state", "paused"}});
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK_FALSE(lv_obj_has_state(button, LV_STATE_DISABLED));
+  }
+  ui::tap_label("Resume");
+  REQUIRE(app::wait_until([&] { return moonraker.request_count("printer.print.resume") == 4; }));
+}
+
 TEST_CASE("Cancel keeps the print screen until Klipper reports it") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   start_plain(moonraker);
