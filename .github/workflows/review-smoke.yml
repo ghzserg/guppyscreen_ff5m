@@ -1,0 +1,53 @@
+name: Review toolkit smoke test
+
+on:
+  pull_request:
+    paths:
+      - 'ci/ui-review.sh'
+      - 'ci/publish-review.sh'
+      - 'ci/ppm_to_png.py'
+      - 'ci/compare-ui-memory.py'
+      - 'ci/ui-scenarios/example.txt'
+      - 'tests/harness/screenshot.cpp'
+      - 'tests/harness/screenshot.h'
+      - 'tests/screenshot_capture_test.cpp'
+      - '.github/workflows/review-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-22.04
+    container: debian:13
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install test dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates curl git make cmake gcc g++ pkg-config python3
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Generate before/after evidence on the same commit
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          bash ci/ui-review.sh HEAD HEAD ci/ui-scenarios/example.txt "$RUNNER_TEMP/ui-review"
+
+      - name: Publish review screenshots to image host
+        run: |
+          bash ci/publish-review.sh "$RUNNER_TEMP/ui-review"
+          cat "$RUNNER_TEMP/ui-review/review-public.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: ui-review-smoke
+          path: ${{ runner.temp }}/ui-review/
+          if-no-files-found: warn
