@@ -562,3 +562,7 @@ msgstr "Удалить файл «{}»?"
 #: ../print_panel.cpp
 msgid "Could not delete the file."
 msgstr "Не удалось удалить файл."
+
+#: ../sysinfo_panel.cpp
+msgid "Clock"
+msgstr "Часы"

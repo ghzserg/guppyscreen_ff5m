@@ -25,7 +25,11 @@ class SettingPanel {
  public:
   // open_macros / open_console: open those screens (they live in MainPanel).
   SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
-               std::function<void()> open_macros, std::function<void()> open_console/*, SpoolmanPanel &sm*/);
+               std::function<void()> open_macros, std::function<void()> open_console
+#ifdef GUPPY_FF5M
+               , std::function<void(bool)> clock_changed
+#endif
+               );
   ~SettingPanel();
 
   lv_obj_t *get_container();

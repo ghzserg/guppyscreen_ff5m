@@ -32,7 +32,11 @@ LV_IMG_DECLARE(sysinfo_img);
 LV_IMG_DECLARE(print);
 
 SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
-                           std::function<void()> open_macros_cb, std::function<void()> open_console_cb/*, SpoolmanPanel &sm*/)
+                           std::function<void()> open_macros_cb, std::function<void()> open_console_cb
+#ifdef GUPPY_FF5M
+                           , std::function<void(bool)> clock_changed
+#endif
+                           )
   : ws(c)
   , cont(lv_obj_create(parent))
 #ifndef GUPPY_FF5M
@@ -40,7 +44,11 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , wifi_panel(l)
 #endif
 #endif
-  , sysinfo_panel(c)
+  , sysinfo_panel(c
+#ifdef GUPPY_FF5M
+                  , std::move(clock_changed)
+#endif
+                  )
 //  , spoolman_panel(sm)
 #ifndef GUPPY_FF5M
   , wifi_btn(cont, &network_img, "WiFi", &SettingPanel::_handle_callback, this)

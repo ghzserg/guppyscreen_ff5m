@@ -559,3 +559,7 @@ msgstr "«{}» dosyası silinsin mi?"
 #: ../print_panel.cpp
 msgid "Could not delete the file."
 msgstr "Dosya silinemedi."
+
+#: ../sysinfo_panel.cpp
+msgid "Clock"
+msgstr "Saat"

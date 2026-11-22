@@ -10,10 +10,12 @@
 #include "ui.h"
 
 #include "guppyscreen.h"
+#include "config.h"
 
 #include <mutex>
 #include <ctime>
 #include <cstring>
+#include <fstream>
 
 namespace {
 
@@ -182,4 +184,108 @@ TEST_CASE("Home shows a large clock only when not printing or paused") {
       CHECK(Nav::get().active() == Nav::HOME);
     }
   }
+}
+
+TEST_CASE("System Clock switch persists and hides both clocks but not print status") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  lv_obj_t *home_clock = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    ui::walk(Nav::get().root(Nav::HOME), [&](lv_obj_t *obj) {
+      if (lv_obj_check_type(obj, &lv_label_class) && !strcmp(lv_label_get_text(obj), ":") &&
+          lv_obj_get_style_text_font(obj, 0)->dsc == lv_font_montserrat_48.dsc)
+        home_clock = lv_obj_get_parent(obj);
+    });
+  }
+  REQUIRE(home_clock != nullptr);
+
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("System");
+  lv_obj_t *label = ui::find_label("Clock");
+  REQUIRE_MESSAGE(label != nullptr, ui::dump_screen());
+  lv_obj_t *toggle = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    toggle = ui::find_in(lv_obj_get_parent(label), &lv_switch_class);
+  }
+  REQUIRE(toggle != nullptr);
+  CHECK(lv_obj_has_state(toggle, LV_STATE_CHECKED));
+
+  ui::tap(toggle);
+  CHECK_FALSE(Config::get_instance()->get<bool>("/show_clock"));
+  CHECK(json::parse(std::ifstream(app::dir() + "/guppyconfig.json"))["show_clock"] == false);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_HIDDEN));
+  }
+
+  moonraker.push_status({{"print_stats", {{"filename", "cube.gcode"}, {"state", "printing"}}}});
+  app::settle(moonraker);
+  ui::tap_tab(Nav::HOME);
+  CHECK(status_line() == home_clock);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK_FALSE(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_HIDDEN));
+  }
+
+  lv_obj_t *print_clock = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    ui::walk(Nav::get().root(Nav::PRINT), [&](lv_obj_t *obj) {
+      if (lv_obj_check_type(obj, &lv_label_class) && !strcmp(lv_label_get_text(obj), "--:--:--"))
+        print_clock = obj;
+    });
+  }
+  REQUIRE(print_clock != nullptr);
+  CHECK(lv_obj_has_flag(print_clock, LV_OBJ_FLAG_HIDDEN));
+
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("System");
+  ui::tap(toggle);
+  CHECK(Config::get_instance()->get<bool>("/show_clock"));
+  CHECK(json::parse(std::ifstream(app::dir() + "/guppyconfig.json"))["show_clock"] == true);
+  ui::tap_tab(Nav::PRINT);
+  CHECK_FALSE(lv_obj_has_flag(print_clock, LV_OBJ_FLAG_HIDDEN));
+  CHECK(app::wait_until([&] {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return strcmp(lv_label_get_text(print_clock), "--:--:--") != 0;
+  }));
+}
+
+TEST_CASE("Clock disabled in configuration stays hidden on startup") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker, {{"show_clock", false}});
+  app::wait_ready(moonraker);
+  CHECK_FALSE(Config::get_instance()->get<bool>("/show_clock"));
+
+  lv_obj_t *home_clock = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    ui::walk(Nav::get().root(Nav::HOME), [&](lv_obj_t *obj) {
+      if (lv_obj_check_type(obj, &lv_label_class) && !strcmp(lv_label_get_text(obj), ":") &&
+          lv_obj_get_style_text_font(obj, 0)->dsc == lv_font_montserrat_48.dsc)
+        home_clock = lv_obj_get_parent(obj);
+    });
+  }
+  REQUIRE(home_clock != nullptr);
+  CHECK(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_HIDDEN));
+  moonraker.push_status({{"print_stats", {{"filename", "cube.gcode"}, {"state", "printing"}}}});
+  app::settle(moonraker);
+  ui::tap_tab(Nav::HOME);
+  CHECK_FALSE(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_HIDDEN));
+  bool status_visible = false;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_flag(home_clock, LV_OBJ_FLAG_CLICKABLE));
+    ui::walk(home_clock, [&](lv_obj_t *obj) {
+      if (lv_obj_check_type(obj, &lv_label_class) &&
+          strstr(lv_label_get_text(obj), "ETA:") &&
+          !lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN))
+        status_visible = true;
+    });
+  }
+  CHECK(status_visible);
 }
