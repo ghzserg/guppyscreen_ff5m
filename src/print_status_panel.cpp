@@ -271,10 +271,14 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     if (!print_visible && !home_clock_visible) return;
     const auto now = std::time(nullptr);
     std::tm local;
-    char time_text[9];
-    if (localtime_r(&now, &local) && std::strftime(time_text, sizeof(time_text), "%H:%M:%S", &local)) {
-      if (print_visible) KUtils::set_label_text(panel->clock_label, time_text);
-      else panel->mini_print_status.update_clock(time_text);
+    if (localtime_r(&now, &local)) {
+      if (print_visible) {
+        char time_text[9];
+        if (std::strftime(time_text, sizeof(time_text), "%H:%M:%S", &local))
+          KUtils::set_label_text(panel->clock_label, time_text);
+      } else {
+        panel->mini_print_status.update_clock(local.tm_hour, local.tm_min, local.tm_sec % 2 == 0);
+      }
     }
   }, 1000, this);
 #endif

@@ -23,7 +23,7 @@ class MiniPrintStatus {
   void update_img(const std::string &img_path, size_t twidth);
   void reset();
 #ifdef GUPPY_FF5M
-  void update_clock(const char *time_text);
+  void update_clock(int hour, int minute, bool show_colon);
 #endif
 
  private:
@@ -33,7 +33,9 @@ class MiniPrintStatus {
   lv_obj_t *thumb;
   lv_obj_t *status_label;
 #ifdef GUPPY_FF5M
-  lv_obj_t *clock_label;
+  lv_obj_t *clock_hours;
+  lv_obj_t *clock_minutes;
+  lv_obj_t *clock_colon;
 #endif
   std::string status;
   std::string eta;

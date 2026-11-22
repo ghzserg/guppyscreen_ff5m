@@ -84,16 +84,22 @@ TEST_CASE("Home shows a large clock only when not printing or paused") {
   app::start(moonraker);
   app::wait_ready(moonraker);
 
-  lv_obj_t *clock = nullptr;
+  lv_obj_t *hours = nullptr, *minutes = nullptr, *colon = nullptr;
   lv_obj_t *line = nullptr;
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     ui::walk(Nav::get().root(Nav::HOME), [&](lv_obj_t *obj) {
       if (lv_obj_check_type(obj, &lv_label_class) &&
-          lv_obj_get_style_text_font(obj, 0)->dsc == lv_font_montserrat_48.dsc) clock = obj;
+          lv_obj_get_style_text_font(obj, 0)->dsc == lv_font_montserrat_48.dsc) {
+        if (!strcmp(lv_label_get_text(obj), ":")) colon = obj;
+        else if (!hours) hours = obj;
+        else minutes = obj;
+      }
     });
-    REQUIRE(clock != nullptr);
-    const auto *font = lv_obj_get_style_text_font(clock, 0);
+    REQUIRE(hours != nullptr);
+    REQUIRE(minutes != nullptr);
+    REQUIRE(colon != nullptr);
+    const auto *font = lv_obj_get_style_text_font(hours, 0);
     const auto width = lv_font_get_glyph_width(font, '0', 0);
     for (uint32_t digit = '0'; digit <= '9'; ++digit) {
       CHECK(lv_font_get_glyph_width(font, digit, 0) == width);
@@ -104,37 +110,53 @@ TEST_CASE("Home shows a large clock only when not printing or paused") {
       }
     }
     CHECK(lv_font_get_glyph_width(font, '-', '-') == width);
-    line = lv_obj_get_parent(clock);
+    line = lv_obj_get_parent(hours);
+    CHECK(lv_obj_get_parent(minutes) == line);
+    CHECK(lv_obj_get_parent(colon) == line);
     CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_HIDDEN));
     CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_CLICKABLE));
-    CHECK_FALSE(lv_obj_has_flag(clock, LV_OBJ_FLAG_HIDDEN));
+    CHECK_FALSE(lv_obj_has_flag(hours, LV_OBJ_FLAG_HIDDEN));
+    CHECK_FALSE(lv_obj_has_flag(minutes, LV_OBJ_FLAG_HIDDEN));
+    CHECK(lv_obj_has_flag(colon, LV_OBJ_FLAG_FLOATING));
   }
-  std::string first_time;
+  bool first_hidden = false;
   REQUIRE(app::wait_until([&] {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     const auto now = std::time(nullptr);
     for (auto stamp : {now, now - 1}) {
       std::tm local;
-      char expected[9];
-      if (localtime_r(&stamp, &local) && std::strftime(expected, sizeof(expected), "%H:%M:%S", &local) == 8 &&
-          !strcmp(lv_label_get_text(clock), expected)) {
-        first_time = expected;
+      char expected[6];
+      if (localtime_r(&stamp, &local) && std::strftime(expected, sizeof(expected), "%H:%M", &local) == 5 &&
+          !strncmp(lv_label_get_text(hours), expected, 2) && !strcmp(lv_label_get_text(minutes), expected + 3) &&
+          strlen(lv_label_get_text(hours)) == 2) {
+        first_hidden = lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN);
         return true;
       }
     }
     return false;
   }));
+  lv_area_t idle = ui::coords(line);
+  lv_area_t left = ui::coords(hours);
+  lv_area_t right = ui::coords(minutes);
+  lv_area_t separator = ui::coords(colon);
   REQUIRE(app::wait_until([&] {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    return first_time != lv_label_get_text(clock);
+    return first_hidden != lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN);
   }));
-
-  lv_area_t idle = ui::coords(line);
-  lv_area_t digits = ui::coords(clock);
-  CHECK(digits.x1 >= idle.x1);
-  CHECK(digits.x2 <= idle.x2);
-  CHECK(digits.y1 >= idle.y1);
-  CHECK(digits.y2 <= idle.y2);
+  for (auto *obj : {hours, minutes, colon}) {
+    lv_area_t digits = ui::coords(obj);
+    lv_area_t before = obj == hours ? left : obj == minutes ? right : separator;
+    CHECK(digits.x1 == before.x1);
+    CHECK(digits.x2 == before.x2);
+    CHECK(digits.y1 == before.y1);
+    CHECK(digits.y2 == before.y2);
+    CHECK(digits.x1 >= idle.x1);
+    CHECK(digits.x2 <= idle.x2);
+    CHECK(digits.y1 >= idle.y1);
+    CHECK(digits.y2 <= idle.y2);
+  }
+  CHECK(left.x2 < separator.x1);
+  CHECK(separator.x2 < right.x1);
   ui::tap(line);
   CHECK(Nav::get().active() == Nav::HOME);
 
@@ -145,7 +167,9 @@ TEST_CASE("Home shows a large clock only when not printing or paused") {
     const bool printing = !strcmp(state, "printing") || !strcmp(state, "paused");
     {
       std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-      CHECK(lv_obj_has_flag(clock, LV_OBJ_FLAG_HIDDEN) == printing);
+      CHECK(lv_obj_has_flag(hours, LV_OBJ_FLAG_HIDDEN) == printing);
+      CHECK(lv_obj_has_flag(minutes, LV_OBJ_FLAG_HIDDEN) == printing);
+      if (printing) CHECK(lv_obj_has_flag(colon, LV_OBJ_FLAG_HIDDEN));
       CHECK(lv_obj_has_flag(line, LV_OBJ_FLAG_CLICKABLE) == printing);
       CHECK_FALSE(lv_obj_has_flag(line, LV_OBJ_FLAG_HIDDEN));
     }
