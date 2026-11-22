@@ -16,6 +16,9 @@ class InputShaperPanel {
   ~InputShaperPanel();
 
   void foreground();
+  void set_print_locked(bool locked) {
+    ButtonContainer::set_print_locked(locked, {&calibrate_btn, &save_btn});
+  }
   void handle_callback(lv_event_t *event);
   void handle_image_clicked(lv_event_t *event);
   void handle_macro_response(json &j);

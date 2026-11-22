@@ -19,6 +19,9 @@ class PidPanel : public NotifyConsumer {
   ~PidPanel();
 
   void foreground();
+  void set_print_locked(bool locked) {
+    ButtonContainer::set_print_locked(locked, {&pid_extruder_btn, &pid_bed_btn, &clear_nozzle_btn, &bed_level_screws_tune_btn});
+  }
   void handle_callback(lv_event_t *event);
   void consume(json &j);
   static void _handle_callback(lv_event_t *event) {

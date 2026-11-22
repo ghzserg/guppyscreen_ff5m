@@ -50,6 +50,7 @@ class NozzleTiles {
 
   // The blue background on the tile of `tool`, if selectable.
   void show_selected(int tool);
+  void set_disabled(bool disabled);
   // The tool shown selected; else the first tile's (the only one's), or -1
   // without tiles.
   int selected() const;

@@ -222,7 +222,11 @@ void HomingPanel::update_motion_status(const json &move, bool partial) {
 }
 
 void HomingPanel::handle_callback(lv_event_t *event) {
+  if (State::print_active()) return;
   lv_obj_t *btn = lv_event_get_current_target(event);
+  if ((btn == home_all_btn.get_container() || btn == home_xy_btn.get_container() ||
+       btn == motoroff_btn.get_container()) && State::print_pause_active())
+    return;
   const char * distance = lv_btnmatrix_get_btn_text(distance_selector.get_selector(),
                                                     distance_selector.get_selected_idx());
   std::string move_op;

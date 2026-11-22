@@ -126,7 +126,7 @@ TEST_CASE("Remove extruder does nothing if the C5 Pro carriage is empty") {
   CHECK(moonraker.gcodes().empty());
 }
 
-TEST_CASE("Remove extruder is blocked while the C5 Pro prints or pauses") {
+TEST_CASE("Remove extruder is blocked while printing and allowed while paused on C5 Pro") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   open_extruder_screen(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
 
@@ -139,7 +139,12 @@ TEST_CASE("Remove extruder is blocked while the C5 Pro prints or pauses") {
 
     ui::tap_label("Remove");
     app::settle(moonraker);
-    CHECK(moonraker.gcodes().empty());
+    if (std::string(status) == "printing") {
+      CHECK(moonraker.gcodes().empty());
+    } else {
+      REQUIRE(moonraker.gcodes().size() == 1);
+      CHECK(moonraker.gcodes().front() == "_T_OUT");
+    }
   }
 }
 
@@ -193,10 +198,27 @@ TEST_CASE("a C5 Pro nozzle can't be picked during a print") {
   ui::tap_label("Extrude");
   app::settle(moonraker);
 
+  for (const char *name : {"T0", "T1", "T2", "T3", "Remove"}) {
+    auto *obj = tile(name);
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_state(obj, LV_STATE_DISABLED));
+    lv_event_send(obj, LV_EVENT_SHORT_CLICKED, nullptr);
+  }
   ui::tap(tile("T2"));
   app::settle(moonraker);
   CHECK(is_blue(tile("T0")));
   CHECK_FALSE(is_blue(tile("T2")));
+  CHECK(moonraker.gcodes().empty());
+  for (const char *name : {"Load", "Unload", "Cool down", "ColdPull"}) {
+    auto *obj = ui::label_container(name);
+    REQUIRE(obj != nullptr);
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_has_state(obj, LV_STATE_DISABLED));
+  }
+
+  moonraker.push_status({{"zmod_color", {{"active_tool_id", 3}}}});
+  CHECK(app::wait_until([&] { return is_blue(tile("T3")); }));
+  CHECK_FALSE(is_blue(tile("T0")));
   CHECK(moonraker.gcodes().empty());
 }
 

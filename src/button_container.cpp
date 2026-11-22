@@ -74,17 +74,29 @@ lv_obj_t *ButtonContainer::get_button() {
   return btn;
 }
 
-void ButtonContainer::disable() {
-  lv_obj_add_state(btn, LV_STATE_DISABLED);
-  lv_obj_add_state(btn_cont, LV_STATE_DISABLED);
-  lv_obj_add_state(label, LV_STATE_DISABLED);
+void ButtonContainer::refresh_enabled() {
+  for (lv_obj_t *obj : {btn, btn_cont, label}) {
+    if (enabled && !print_locked) lv_obj_clear_state(obj, LV_STATE_DISABLED);
+    else lv_obj_add_state(obj, LV_STATE_DISABLED);
+  }
+}
 
+void ButtonContainer::disable() {
+  enabled = false;
+  refresh_enabled();
 }
 
 void ButtonContainer::enable() {
-  lv_obj_clear_state(btn, LV_STATE_DISABLED);
-  lv_obj_clear_state(btn_cont, LV_STATE_DISABLED);
-  lv_obj_clear_state(label, LV_STATE_DISABLED);
+  enabled = true;
+  refresh_enabled();
+}
+
+void ButtonContainer::set_print_locked(bool locked, std::initializer_list<ButtonContainer *> buttons) {
+  for (auto *b : buttons) {
+    if (b->print_locked == locked) continue;
+    b->print_locked = locked;
+    b->refresh_enabled();
+  }
 }
 
 void ButtonContainer::hide() {

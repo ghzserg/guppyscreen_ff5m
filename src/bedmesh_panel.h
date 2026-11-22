@@ -16,6 +16,17 @@ class BedMeshPanel : public NotifyConsumer {
 
   void consume(json &j);
   void foreground();
+  void set_print_locked(bool locked) {
+    ButtonContainer::set_print_locked(locked, {&save_btn, &clear_btn, &auto_btn, &calibrate_btn});
+    for (auto *obj : {mesh_table, profile_table}) {
+      if (locked) lv_obj_add_state(obj, LV_STATE_DISABLED);
+      else lv_obj_clear_state(obj, LV_STATE_DISABLED);
+    }
+    if (locked && !lv_obj_has_flag(prompt, LV_OBJ_FLAG_HIDDEN)) {
+      lv_obj_add_flag(prompt, LV_OBJ_FLAG_HIDDEN);
+      lv_obj_move_background(prompt);
+    }
+  }
   void refresh_views_with_lock(json &);
   void refresh_views(json &);
   void refresh_profile_info(std::string pname);

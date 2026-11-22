@@ -205,8 +205,10 @@ void PrinterTunePanel::handle_callback(lv_event_t *event) {
       pid_panel.foreground();
 #ifdef GUPPY_FF5M
     } else if (btn == calibrate_extruders_btn.get_container()) {
+      if (State::print_pause_active()) return;
       ws.gcode_script("CALIBRATE_EXTRUDERS");
     } else if (btn == calibrate_vfa_btn.get_container()) {
+      if (State::print_pause_active()) return;
       ws.gcode_script("CALIBRATE_VFA");
 #endif
 #ifndef GUPPY_FF5M

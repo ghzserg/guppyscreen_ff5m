@@ -32,6 +32,15 @@ class PrinterTunePanel {
   PowerPanel &get_power_panel();
 #endif
   void init(json &j);
+  void set_print_locked(bool locked) {
+    inputshaper_panel.set_print_locked(locked);
+    belts_calibration_panel.set_print_locked(locked);
+    pid_panel.set_print_locked(locked);
+    bedmesh_panel.set_print_locked(locked);
+#ifdef GUPPY_FF5M
+    ButtonContainer::set_print_locked(locked, {&calibrate_extruders_btn, &calibrate_vfa_btn});
+#endif
+  }
 #ifdef GUPPY_FF5M
   void show_calibrations(bool extruders, bool vfa);
 #endif

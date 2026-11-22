@@ -161,10 +161,23 @@ void MainPanel::init(json &j) {
 #endif
 //  print_status_panel.get_exclude_panel().init(j);
   print_status_panel.get_retract_panel().init(j);
+  set_print_locked(j["/result/status/print_stats/state"_json_pointer]);
+}
+
+void MainPanel::set_print_locked(const json &state) {
+  const bool printing = state == "printing";
+  const bool busy = printing || state == "paused";
+  homing_panel.set_print_locked(printing, busy);
+  printertune_panel.set_print_locked(busy);
+  setting_panel.set_print_locked(busy);
+  extruder_panel.set_print_locked(printing);
 }
 
 void MainPanel::consume(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
+  static const auto state_path = "/params/0/print_stats/state"_json_pointer;
+  if (j.contains(state_path) && j.at(state_path).is_string())
+    set_print_locked(j.at(state_path));
   for (const auto &el : sensors) {
     auto target_value = j[json::json_pointer(fmt::format("/params/0/{}/target", el.first))];
     if (!target_value.is_null()) {

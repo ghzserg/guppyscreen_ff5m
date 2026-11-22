@@ -75,6 +75,15 @@ json State::get_data_copy(const json::json_pointer &ptr) {
   return data.contains(ptr) ? data.at(ptr) : json();
 }
 
+bool State::print_active() {
+  return get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer) == "printing";
+}
+
+bool State::print_pause_active() {
+  const auto state = get_instance()->get_data_copy("/printer_state/print_stats/state"_json_pointer);
+  return state == "printing" || state == "paused";
+}
+
 void State::consume(json &j) {
   if (j.contains("params") && !j["params"].empty()) {
     set_data("printer_state", j, "/params/0");

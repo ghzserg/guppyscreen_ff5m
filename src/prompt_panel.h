@@ -76,6 +76,8 @@ class PromptPanel : public NotifyConsumer {
         ExtruderPanel *extruder_panel;
         bool i;
         bool kamp;
+        bool config_prompt_visible = false;
+        bool config_deferred = false;
 
 };
 

@@ -153,8 +153,22 @@ void PromptPanel::ignore_save_config(bool ignore) {
 }
 
 void PromptPanel::consume(json &j) {
-    auto v = j["/params/0/configfile/save_config_pending"_json_pointer];
-    if (!i && !v.is_null() && v.template get<bool>()) {
+    static const auto pending = "/params/0/configfile/save_config_pending"_json_pointer;
+    static const auto print_state = "/params/0/print_stats/state"_json_pointer;
+    if (!j.contains(pending) && !(j.contains(print_state) && j.at(print_state).is_string())) return;
+    std::lock_guard<std::mutex> lock(lv_lock);
+    const auto v = j.contains(pending) ? j.at(pending) : json();
+    const bool busy = State::print_pause_active();
+    if (busy && config_prompt_visible) {
+        background();
+        config_deferred = true;
+    }
+    if (v == false) config_deferred = false;
+    if (!i && busy && v == true) config_deferred = true;
+    if (!i && !busy && (v == true || (config_deferred &&
+            State::get_instance()->get_data_copy("/printer_state/configfile/save_config_pending"_json_pointer) == true))) {
+        config_deferred = false;
+        config_prompt_visible = true;
         spdlog::debug("SAVE_CONFIG");
 
         // remove buttons
@@ -238,6 +252,7 @@ void PromptPanel::foreground() {
 }
 
 void PromptPanel::background() {
+  config_prompt_visible = false;
   lv_obj_move_background(prompt_cont);
 }
 
@@ -288,6 +303,7 @@ void PromptPanel::handle_callback_close_filament(lv_event_t *event) {
 }
 
 void PromptPanel::handle_callback_save(lv_event_t *event) {
+    if (State::print_pause_active()) return;
     background();
 
     // remove buttons
@@ -336,6 +352,7 @@ void PromptPanel::handle_macro_response(json &j) {
             kamp=true;
         }
         if (resp.find("!! ") == 0) {
+            config_prompt_visible = false;
             std::string message = resp.substr(3);
             spdlog::debug("Error message: {}", message);
 
@@ -430,6 +447,7 @@ void PromptPanel::handle_macro_response(json &j) {
             spdlog::debug("action: {}", command);
 
             if (command.find("prompt_begin") == 0) {
+                config_prompt_visible = false;
                 std::string prompt_header = command.substr(13);
                 spdlog::debug("PROMPT_BEGIN: {}", prompt_header);
 
