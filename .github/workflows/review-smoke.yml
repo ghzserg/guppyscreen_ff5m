@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'ci/ui-review.sh'
+      - 'ci/publish-review.sh'
       - 'ci/ppm_to_png.py'
       - 'ci/compare-ui-memory.py'
       - 'ci/ui-scenarios/example.txt'
@@ -27,7 +28,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            ca-certificates git make cmake gcc g++ pkg-config python3
+            ca-certificates curl git make cmake gcc g++ pkg-config python3
 
       - uses: actions/checkout@v7.0.1
         with:
@@ -38,6 +39,11 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           bash ci/ui-review.sh HEAD HEAD ci/ui-scenarios/example.txt "$RUNNER_TEMP/ui-review"
+
+      - name: Publish review screenshots to Catbox
+        run: |
+          bash ci/publish-review.sh "$RUNNER_TEMP/ui-review"
+          cat "$RUNNER_TEMP/ui-review/review-public.md" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v7.0.2
         if: always()
