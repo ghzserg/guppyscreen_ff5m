@@ -131,8 +131,8 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_width(label, LV_PCT(100));
   lv_label_set_text(label, _("Saving the profile will restart the printer.") /* "Сохранение профиля перезапустит принтер." */);
 
-  lv_obj_t *prompt_save_btn = lv_btn_create(msgbox);
   lv_obj_t *prompt_cancel_btn = lv_btn_create(msgbox);
+  lv_obj_t *prompt_save_btn = lv_btn_create(msgbox);
 
   label = lv_label_create(prompt_save_btn);
   lv_label_set_text(label, _("Save") /* "Сохранить" */);

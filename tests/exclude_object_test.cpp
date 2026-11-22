@@ -8,6 +8,7 @@
 #include "ui.h"
 
 #include "guppyscreen.h"
+#include "config.h"
 
 #include <algorithm>
 #include <cstring>
@@ -26,7 +27,7 @@ json square(float x0, float y0, float x1, float y1) {
 
 // ad5m_basic.json, but printing a file with two objects. The bed is
 // -3..220 (toolhead axis limits), so CENTER_CUBE covers the middle of the map.
-void start_printing(FakeMoonraker &moonraker) {
+void start_printing(FakeMoonraker &moonraker, const json &config_patch = json::object()) {
   std::ifstream f(app::fixture("ad5m_basic.json"));
   json fixture = json::parse(f);
   json sub = fixture["printer.objects.subscribe"];
@@ -41,8 +42,16 @@ void start_printing(FakeMoonraker &moonraker) {
     {"current_object", "CENTER_CUBE"},
   };
   moonraker.set_result("printer.objects.subscribe", sub);
-  app::start(moonraker);
+  app::start(moonraker, config_patch);
   app::wait_ready(moonraker);
+}
+
+void answer_confirmation(bool confirm) {
+  lv_obj_t *btns = ui::find_shown(&lv_btnmatrix_class);
+  REQUIRE_MESSAGE(btns != nullptr, ui::dump_screen());
+  lv_area_t a = ui::coords(btns);
+  ui::tap_at(a.x1 + lv_area_get_width(&a) * (confirm ? 3 : 1) / 4,
+             (a.y1 + a.y2) / 2);
 }
 
 struct Pixels {
@@ -102,6 +111,13 @@ TEST_CASE("exclude object map excludes the tapped object") {
 
     if (round == 0) {
       ui::tap(canvas);  // the centre of the map is inside CENTER_CUBE
+      REQUIRE(app::wait_until([] { return ui::find_shown(&lv_btnmatrix_class) != nullptr; }));
+      CHECK_FALSE(contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"));
+      CHECK(count_outline_pixels(canvas).red == 0);
+      answer_confirmation(false);
+      CHECK_FALSE(contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"));
+      ui::tap(canvas);
+      answer_confirmation(true);
       bool sent = app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"); });
       CHECK_MESSAGE(sent, "G-codes sent: " << ui::join(moonraker.gcodes()));
 
@@ -257,8 +273,81 @@ TEST_CASE("the exclude prompt of an object without a polygon is in English witho
   REQUIRE_MESSAGE(btns != nullptr, screen);
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    CHECK(std::string(lv_btnmatrix_get_btn_text(btns, 0)) == "Exclude");
-    CHECK(std::string(lv_btnmatrix_get_btn_text(btns, 1)) == "Cancel");
+    CHECK(std::string(lv_btnmatrix_get_btn_text(btns, 0)) == "Cancel");
+    CHECK(std::string(lv_btnmatrix_get_btn_text(btns, 1)) == "Exclude");
   }
   CHECK_MESSAGE(screen.find("Исключить") == std::string::npos, screen);
+}
+
+TEST_CASE("graphic exclusion skips confirmation when setting is off") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker, {{"prompt_exclude_object", false}});
+  open_exclude_panel();
+  lv_obj_t *canvas = ui::find_shown(&lv_canvas_class);
+  REQUIRE(canvas != nullptr);
+  ui::tap(canvas);
+  CHECK(ui::find_shown(&lv_btnmatrix_class) == nullptr);
+  CHECK(app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"); }));
+}
+
+TEST_CASE("text exclusion cancel does not send gcode") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  std::ifstream f(app::fixture("ad5m_basic.json"));
+  json sub = json::parse(f)["printer.objects.subscribe"];
+  sub["status"]["print_stats"]["state"] = "printing";
+  sub["status"]["print_stats"]["filename"] = "cubes.gcode";
+  sub["status"]["exclude_object"] = {
+    {"objects", json::array({{{"name", "CENTER_CUBE"}}})},
+    {"excluded_objects", json::array()}, {"current_object", "CENTER_CUBE"}
+  };
+  moonraker.set_result("printer.objects.subscribe", sub);
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  open_exclude_panel();
+  ui::tap_label("CENTER_CUBE");
+  REQUIRE(app::wait_until([] { return ui::find_shown(&lv_btnmatrix_class) != nullptr; }));
+  CHECK_FALSE(contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"));
+  answer_confirmation(false);
+  CHECK_FALSE(contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"));
+  ui::tap_label("CENTER_CUBE");
+  answer_confirmation(true);
+  CHECK(app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"); }));
+}
+
+TEST_CASE("text exclusion skips confirmation when setting is off") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  std::ifstream f(app::fixture("ad5m_basic.json"));
+  json sub = json::parse(f)["printer.objects.subscribe"];
+  sub["status"]["print_stats"]["state"] = "printing";
+  sub["status"]["print_stats"]["filename"] = "cubes.gcode";
+  sub["status"]["exclude_object"] = {
+    {"objects", json::array({{{"name", "CENTER_CUBE"}}})},
+    {"excluded_objects", json::array()}, {"current_object", "CENTER_CUBE"}
+  };
+  moonraker.set_result("printer.objects.subscribe", sub);
+  app::start(moonraker, {{"prompt_exclude_object", false}});
+  app::wait_ready(moonraker);
+  open_exclude_panel();
+  ui::tap_label("CENTER_CUBE");
+  CHECK(ui::find_shown(&lv_btnmatrix_class) == nullptr);
+  CHECK(app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"); }));
+}
+
+TEST_CASE("object exclusion confirmation can be changed in System settings") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  CHECK(Config::get_instance()->get<bool>("/prompt_exclude_object"));
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("System");
+  lv_obj_t *label = nullptr;
+  REQUIRE(app::wait_until([&] { return (label = ui::find_label("Object exclusion confirmation")) != nullptr; }));
+  lv_obj_t *toggle;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    toggle = lv_obj_get_child(lv_obj_get_parent(label), 0);
+    CHECK(lv_obj_has_state(toggle, LV_STATE_CHECKED));
+  }
+  ui::tap(toggle);
+  CHECK_FALSE(Config::get_instance()->get<bool>("/prompt_exclude_object"));
 }

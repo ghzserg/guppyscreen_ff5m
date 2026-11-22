@@ -46,6 +46,8 @@ class SysInfoPanel {
 
   lv_obj_t *estop_toggle_cont;
   lv_obj_t *prompt_estop_toggle;
+  lv_obj_t *exclude_toggle_cont;
+  lv_obj_t *prompt_exclude_toggle;
 #ifdef GUPPY_FF5M
   lv_obj_t *clock_toggle_cont;
   lv_obj_t *clock_toggle;

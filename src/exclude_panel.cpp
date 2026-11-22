@@ -1,4 +1,5 @@
 #include "exclude_panel.h"
+#include "config.h"
 #include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -120,9 +121,19 @@ void map_click_cb(lv_event_t *e) {
   for (auto &o : objs) {
     if (o.poly.size() < 3 || !point_in_poly(x, y, o.poly)) continue;
     if (o.excluded) break;
-    o.excluded = true;
-    if (ws_ptr) ws_ptr->gcode_script("EXCLUDE_OBJECT NAME=" + o.name);
-    redraw();
+    auto exclude = [name = o.name]() {
+      if (!active || !ws_ptr) return;
+      auto it = std::find_if(objs.begin(), objs.end(),
+                             [&name](const ExObj &obj) { return obj.name == name; });
+      if (it == objs.end() || it->excluded) return;
+      it->excluded = true;
+      ws_ptr->gcode_script("EXCLUDE_OBJECT NAME=" + name);
+      redraw();
+    };
+    if (Config::get_instance()->get<bool>("/prompt_exclude_object"))
+      ButtonContainer::confirm(fmt::format("{}\n{}", _("Exclude Object?"), o.name), exclude);
+    else
+      exclude();
     break;
   }
 }

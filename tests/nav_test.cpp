@@ -28,13 +28,12 @@ lv_area_t coords(lv_obj_t *obj) {
   return a;
 }
 
-// Tap "Ok" in the confirmation msgbox: its buttons are a button matrix,
-// "Ok" the left one.
+// В окне подтверждения кнопка OK находится справа.
 void tap_msgbox_ok() {
   lv_obj_t *btns = ui::find_shown(&lv_btnmatrix_class);
   REQUIRE_MESSAGE(btns != nullptr, "no msgbox; screen: " << ui::dump_screen());
   lv_area_t a = coords(btns);
-  ui::tap_at(a.x1 + lv_area_get_width(&a) / 4, (a.y1 + a.y2) / 2);
+  ui::tap_at(a.x1 + lv_area_get_width(&a) * 3 / 4, (a.y1 + a.y2) / 2);
 }
 
 Nav::Tab active_tab() {

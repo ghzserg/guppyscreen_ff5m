@@ -1,4 +1,5 @@
 #include "switch_container.h"
+#include "config.h"
 #include "spdlog/spdlog.h"
 #include "websocket_client.h"
 
@@ -90,7 +91,11 @@ void SwitchContainer::hide() {
 }
 
 void SwitchContainer::handle_prompt() {
-    static const char * swts[] = {_("Exclude"), _("Cancel"), ""};
+    if (!Config::get_instance()->get<bool>("/prompt_exclude_object")) {
+        run_callback();
+        return;
+    }
+    static const char * swts[] = {_("Cancel"), _("Exclude"), ""};
 
     lv_obj_t *mbox1 = lv_msgbox_create(NULL, _("Exclude Object?"), prompt_text.c_str(), swts, false);
     lv_obj_t *msg = ((lv_msgbox_t*)mbox1)->text;
@@ -112,7 +117,7 @@ void SwitchContainer::handle_prompt() {
     lv_obj_add_event_cb(mbox1, [](lv_event_t *e) {
         lv_obj_t *obj = lv_obj_get_parent(lv_event_get_target(e));
         uint32_t clicked_swt = lv_msgbox_get_active_btn(obj);
-        if(clicked_swt == 0) {
+        if(clicked_swt == 1) {
             ((SwitchContainer*)e->user_data)->run_callback();
         }
 

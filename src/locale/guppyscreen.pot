@@ -149,6 +149,10 @@ msgstr ""
 msgid "ETA: {}"
 msgstr ""
 
+#: ../sysinfo_panel.cpp
+msgid "Object exclusion confirmation"
+msgstr ""
+
 #: ../sysinfo_panel.cpp:197
 msgid "Emergency stop confirmation"
 msgstr ""
