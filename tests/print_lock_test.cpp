@@ -46,9 +46,17 @@ void check_button(const char *name, bool disabled, bool send = false) {
   if (!strcmp(name, "Save") || !strcmp(name, "Calibrate")) CHECK(labels.size() >= 2);
   for (auto *label : labels) {
     auto *parent = lv_obj_get_parent(label);
-    CHECK(lv_obj_has_state(parent, LV_STATE_DISABLED) == disabled);
-    CHECK(lv_obj_has_state(label, LV_STATE_DISABLED) == disabled);
-    CHECK(lv_obj_has_state(lv_obj_get_child(parent, 0), LV_STATE_DISABLED) == disabled);
+    bool expected_disabled = disabled;
+    // Без активного профиля кнопка сохранения карты стола недоступна и в простое.
+    if (!strcmp(name, "Save")) {
+      ui::walk(lv_obj_get_parent(parent), [&](lv_obj_t *child) {
+        if (lv_obj_check_type(child, &lv_label_class) &&
+            !strcmp(lv_label_get_text(child), "Clean")) expected_disabled = true;
+      });
+    }
+    CHECK(lv_obj_has_state(parent, LV_STATE_DISABLED) == expected_disabled);
+    CHECK(lv_obj_has_state(label, LV_STATE_DISABLED) == expected_disabled);
+    CHECK(lv_obj_has_state(lv_obj_get_child(parent, 0), LV_STATE_DISABLED) == expected_disabled);
     if (send) lv_event_send(parent, LV_EVENT_SHORT_CLICKED, nullptr);
   }
 }
