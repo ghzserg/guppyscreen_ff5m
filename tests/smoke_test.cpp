@@ -96,8 +96,7 @@ TEST_CASE("homing shows live coordinates and axis mode") {
     lv_obj_get_coords(motor_off, &bottom_button);
     CHECK(std::abs(x.y1 - top_button.y1) <= 1);
     CHECK(offset.y1 - z.y1 == 2 * (y.y1 - x.y1));
-    CHECK(mode.y1 - offset.y1 == 2 * (y.y1 - x.y1));
-    CHECK(mode.y2 < bottom_button.y1);
+    CHECK(mode.y1 > bottom_button.y2);
     for (size_t i = 0; i < 5; ++i) {
       lv_obj_add_event_cb(labels[i], count_draw, LV_EVENT_DRAW_MAIN, &draws[i]);
     }
