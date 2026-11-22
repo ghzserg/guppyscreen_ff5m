@@ -184,6 +184,9 @@ void HomingPanel::foreground() {
   lv_obj_update_layout(homing_cont);
   const auto button_height = lv_obj_get_height(z_up_btn.get_container());
   lv_obj_set_style_translate_y(motion_status, (lv_obj_get_height(motion_status) - button_height) / 2, 0);
+  lv_obj_set_style_translate_y(motoroff_btn.get_container(),
+                               (button_height - lv_obj_get_height(motoroff_btn.get_container())) / 2, 0);
+  lv_obj_update_layout(homing_cont);
   lv_obj_align_to(motion_labels[4], motoroff_btn.get_container(), LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
 }
 
