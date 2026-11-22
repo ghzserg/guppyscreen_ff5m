@@ -91,7 +91,7 @@ $(LIBHV_A):
 	@rm -rf $(LIBHV_SRC) && mkdir -p $(DEPS_OUT)
 	cp -a libhv $(LIBHV_SRC)
 	$(MAKE) -C $(LIBHV_SRC) clean >/dev/null
-	LDFLAGS="$(SAN)" $(MAKE) -C $(LIBHV_SRC) -j$(nproc) libhv CC=$(HOST_CC) CXX=$(HOST_CXX) \
+	LDFLAGS="$(SAN)" $(MAKE) -C $(LIBHV_SRC) -j$$(nproc) libhv CC=$(HOST_CC) CXX=$(HOST_CXX) \
 	      CFLAGS="$(DEP_FLAGS)" CXXFLAGS="$(DEP_FLAGS)"
 
 $(SPDLOG_A):
