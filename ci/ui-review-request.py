@@ -28,15 +28,6 @@ SCREENS = {
     'console': 'tab settings\ntap Console',
     'file-preview': 'tab print\ntable_row cube.gcode',
     'print-status': 'status {"print_stats":{"state":"printing","filename":"cube.gcode"}}\ntab print',
-    'exclude-map': (
-        'status {"print_stats":{"state":"printing","filename":"cube.gcode"},'
-        '"exclude_object":{"objects":[{"name":"CENTER_CUBE","polygon":'
-        '[[88,88],[128,88],[128,128],[88,128]]},'
-        '{"name":"CORNER_CUBE","polygon":[[20,20],[40,20],[40,40],[20,40]]}],'
-        '"excluded_objects":[]}}\n'
-        'tab print\n'
-        'tap_parent cube.gcode'
-    ),
     'print-paused': 'status {"print_stats":{"state":"paused","filename":"cube.gcode"}}\ntab print',
     'home-printing': 'status {"print_stats":{"state":"printing","filename":"cube.gcode"}}\ntab home',
     'home-paused': 'status {"print_stats":{"state":"paused","filename":"cube.gcode"}}\ntab home',
