@@ -23,6 +23,9 @@ class MiniPrintStatus {
   void update_progress(int p);
   void update_img(const std::string &img_path, size_t twidth);
   void reset();
+#ifdef GUPPY_FF5M
+  void update_clock(const char *time_text);
+#endif
 
  private:
   KWebSocketClient &ws;
@@ -30,6 +33,9 @@ class MiniPrintStatus {
   lv_obj_t *progress_bar;
   lv_obj_t *thumb;
   lv_obj_t *status_label;
+#ifdef GUPPY_FF5M
+  lv_obj_t *clock_label;
+#endif
   std::string status;
   std::string eta;
 };

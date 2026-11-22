@@ -265,14 +265,16 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_label_set_text(clock_label, "--:--:--");
   clock_timer = lv_timer_create([](lv_timer_t *timer) {
     auto *panel = static_cast<PrintStatusPanel *>(timer->user_data);
-    if (lv_obj_get_child(lv_obj_get_parent(panel->status_cont), -1) != panel->status_cont) {
-      return;
-    }
+    auto *top = lv_obj_get_child(Nav::get().content(), -1);
+    const bool print_visible = top == panel->status_cont;
+    const bool home_clock_visible = !panel->running && top == Nav::get().root(Nav::HOME);
+    if (!print_visible && !home_clock_visible) return;
     const auto now = std::time(nullptr);
     std::tm local;
     char time_text[9];
     if (localtime_r(&now, &local) && std::strftime(time_text, sizeof(time_text), "%H:%M:%S", &local)) {
-      KUtils::set_label_text(panel->clock_label, time_text);
+      if (print_visible) KUtils::set_label_text(panel->clock_label, time_text);
+      else panel->mini_print_status.update_clock(time_text);
     }
   }, 1000, this);
 #endif
@@ -469,13 +471,19 @@ void PrintStatusPanel::init(json &fans) {
       mini_print_status.hide();
       background();
     } else {
+      mini_print_status.show();
       foreground();  // connected during a print
     }
     mini_print_status.update_status(pstatus);
   } else {
+#ifdef GUPPY_FF5M
+    mini_print_status.hide();
+#else
     mini_print_status.show();
+#endif
   }
 #ifdef GUPPY_FF5M
+  lv_timer_ready(clock_timer);
   if (running) {
     const auto &objects = State::get_instance()->get_data("/printer_state/exclude_object/objects"_json_pointer);
     lv_obj_set_style_outline_width(thumbnail, objects.is_array() && !objects.empty() ? 1 : 0, 0);
@@ -498,7 +506,9 @@ void PrintStatusPanel::populate() {
                         handle_metadata(fname, generation, d);
                       });
 
+#ifndef GUPPY_FF5M
       mini_print_status.show();
+#endif
       exclude_panel.init();
     }
   }
@@ -622,6 +632,9 @@ void PrintStatusPanel::consume(json &j) {
     }
 
     mini_print_status.update_status(print_status);
+#ifdef GUPPY_FF5M
+    lv_timer_ready(clock_timer);
+#endif
   }
 #ifdef GUPPY_FF5M
   const auto &objects = j["/params/0/exclude_object/objects"_json_pointer];
@@ -794,7 +807,11 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
     main_panel_ref.get_tune_panel().show_limits();
 #endif
   } else if (btn == mini_print_status.get_container()) {
+#ifdef GUPPY_FF5M
+    if (running) foreground();
+#else
     foreground();
+#endif
   } else if ((btn == finetune_btn.get_container()) or
              (btn == print_speed.get_container()) or
              (btn == z_offset.get_container()) or
