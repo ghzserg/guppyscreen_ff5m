@@ -59,6 +59,40 @@ TEST_CASE("homing panel sends G28") {
   CHECK_MESSAGE(sent, "G-codes sent: " << ui::join(moonraker.gcodes()));
 }
 
+
+TEST_CASE("homing fits two-line Russian motor off label") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  ui::tap_label("Homing");
+  lv_obj_t *motor_label = ui::find_label("Motor off");
+  REQUIRE(motor_label != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_label_set_text(motor_label, "Выключить двигатели");
+    lv_obj_update_layout(lv_scr_act());
+  }
+
+  ui::tap_tab(Nav::HOME);
+  ui::tap_label("Homing");
+  app::redraw();
+
+  lv_obj_t *mode_label = ui::find_label("XYZ: G90");
+  lv_obj_t *distance_label = ui::find_label("Travel distance (mm)");
+  REQUIRE(mode_label != nullptr);
+  REQUIRE(distance_label != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_area_t motor, mode, distance;
+    lv_obj_get_coords(motor_label, &motor);
+    lv_obj_get_coords(mode_label, &mode);
+    lv_obj_get_coords(distance_label, &distance);
+    CHECK_MESSAGE(mode.y1 > motor.y2 + 4, "XYZ overlaps the translated motor button");
+    CHECK_MESSAGE(mode.y2 + 8 < distance.y1, "XYZ is too close to the distance selector");
+  }
+}
+
 TEST_CASE("homing shows live coordinates and axis mode") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker);
