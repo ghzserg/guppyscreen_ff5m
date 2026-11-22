@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <cmath>
 #include <fstream>
 #include <mutex>
 
@@ -136,6 +137,41 @@ TEST_CASE("exclude object map excludes the tapped object") {
     ui::tap_tab(Nav::PRINT);  // back to the print screen
     REQUIRE(app::wait_until([] { return ui::find_shown(&lv_canvas_class) == nullptr; }));
   }
+}
+
+TEST_CASE("exclude map shows a square bed and keeps zoom and pan controls") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker);
+  open_exclude_panel();
+  lv_obj_t *canvas = ui::find_shown(&lv_canvas_class);
+  REQUIRE(canvas != nullptr);
+
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_color_t border = lv_color_hex(0x71889B);
+    int left = 10000, top = 10000, right = -1, bottom = -1;
+    const auto *img = lv_canvas_get_img(canvas);
+    for (int y = 0; y < (int)img->header.h; ++y)
+      for (int x = 0; x < (int)img->header.w; ++x)
+        if (lv_color_to32(lv_canvas_get_px(canvas, x, y)) == lv_color_to32(border)) {
+          left = std::min(left, x); right = std::max(right, x);
+          top = std::min(top, y); bottom = std::max(bottom, y);
+        }
+    CHECK(right - left > 300);
+    CHECK(std::abs((right - left) - (bottom - top)) <= 2);
+  }
+
+  lv_obj_t *plus = ui::find_label("+");
+  REQUIRE(plus != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_get_style_text_font(plus, 0) == &lv_font_montserrat_48);
+  }
+  ui::tap_label("+");
+  ui::tap_label(LV_SYMBOL_LEFT);
+  CHECK(count_outline_pixels(canvas).green > 100);
+  ui::tap_label("-");
+  CHECK(count_outline_pixels(canvas).green > 100);
 }
 
 TEST_CASE("object updates preserve exclusions until Klipper clears them") {
