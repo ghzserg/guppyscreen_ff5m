@@ -4,7 +4,7 @@
 
 Screenshots are captured from the **800×480 LVGL test framebuffer** using the C5 Pro fixture. They are not photos of the printer. Controls shown depend on the printer configuration.
 
-Экран LED не включён: в тестовой конфигурации C5 Pro нет управляемых светодиодов, поэтому эта панель пустая.
+Экран LED включён в галерею: C5 Pro использует управляемую подсветку камеры `led chamber_led`.
 
 Сценарий: [`ci/ui-scenarios/c5pro-gallery.txt`](../ci/ui-scenarios/c5pro-gallery.txt). Обновление изображений — только вручную через GitHub Actions → **Rebuild C5 Pro gallery** → **Run workflow** (выбрать ветку). Локально: `bash ci/generate-c5pro-gallery.sh` после установки зависимостей и применения патчей. Для Input Shaper необходимы `tests/fixtures/resonances_X.png` и `tests/fixtures/resonances_Y.png`.
 
@@ -52,7 +52,7 @@ Screenshots are captured from the **800×480 LVGL test framebuffer** using the C
 |:--|:--|
 | ![Система / System](screenshots/c5pro/system.png) | ![Макросы / Macros](screenshots/c5pro/macros.png) |
 
-| **Консоль / Console** | |
+| **Консоль / Console** | **Подсветка / LED** |
 |:--|:--|
-| ![Консоль / Console](screenshots/c5pro/console.png) | |
+| ![Консоль / Console](screenshots/c5pro/console.png) | ![Подсветка / LED](screenshots/c5pro/led.png) |
 
