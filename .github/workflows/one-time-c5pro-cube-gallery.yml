@@ -7,25 +7,26 @@ on:
       - '.github/workflows/one-time-c5pro-cube-gallery.yml'
 
 permissions:
-  actions: read
   contents: write
 
 jobs:
-  publish:
+  render:
     if: github.repository == 'ghzserg/guppyscreen_ff5m'
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Retrieve previously captured LVGL screenshots
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Install test dependencies
         run: |
-          gh run download 45152888286 -R ghzserg/guppyscreen_ff5m \
-            -n c5pro-cube-capture -D "$RUNNER_TEMP/c5pro-cube-capture"
-          for file in print.png file-preview.png print-status.png print-paused.png; do
-            cp "$RUNNER_TEMP/c5pro-cube-capture/$file" "docs/screenshots/c5pro/$file"
-          done
-      - name: Commit verified cube screenshots
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates git make cmake gcc g++ pkg-config python3
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - name: Apply test patches
+        run: bash ci/apply-patches.sh ad5m
+      - name: Render screenshot gallery
+        run: bash ci/generate-c5pro-gallery.sh
+      - name: Commit cube thumbnails
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
