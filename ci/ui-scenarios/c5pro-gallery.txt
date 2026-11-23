@@ -1,0 +1,67 @@
+# Снимки реального LVGL для C5 Pro в тестовой среде, 800×480.
+# Переключения только через доступные элементы интерфейса.
+tab home
+save home
+tab print
+save print
+tab print
+table_row cube.gcode
+save file-preview
+tab tune
+save tune
+tab settings
+save settings
+tab home
+tap Homing
+save homing
+tab home
+tap Extrude
+save extrude
+tab home
+tap Fans
+save fans
+tab home
+tap Fine Tune
+save fine-tune
+tab home
+tap Bed Mesh
+save bed-mesh
+tab tune
+tap Limits
+save limits
+tab tune
+tap Retract
+save retract
+tab tune
+tap Input Shaper
+save input-shaper
+tab tune
+tap Belts/Shake
+save belts
+tab tune
+tap PID
+save pid
+tab settings
+tap System
+save system
+tab settings
+tap Macros
+save macros
+tab settings
+tap Console
+save console
+status {"print_stats":{"state":"printing","filename":"cube.gcode"}}
+tab print
+save print-status
+status {"print_stats":{"state":"paused","filename":"cube.gcode"}}
+tab print
+save print-paused
+tab home
+save home-paused
+status {"print_stats":{"state":"printing","filename":"cube.gcode"}}
+tab home
+save home-printing
+status {"print_stats":{"state":"printing","filename":"cube.gcode"},"exclude_object":{"objects":[{"name":"CENTER_CUBE","polygon":[[88,88],[128,88],[128,128],[88,128]]},{"name":"CORNER_CUBE","polygon":[[20,20],[40,20],[40,40],[20,40]]}],"excluded_objects":[]}}
+tab print
+tap_parent cube.gcode
+save exclude-map
