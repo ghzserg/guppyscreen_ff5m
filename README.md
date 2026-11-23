@@ -47,8 +47,8 @@ Captured from the 800×480 LVGL test framebuffer using the C5 Pro configuration 
 | ![cube.gcode with a cube thumbnail](docs/screenshots/c5pro/file-preview.png) | ![C5 Pro printing the same cube](docs/screenshots/c5pro/print-status.png) |
 | **Settings** | **Exclude Object** |
 | ![C5 Pro settings](docs/screenshots/c5pro/settings.png) | ![C5 Pro graphical object exclusion](docs/screenshots/c5pro/exclude-map.png) |
-| **Input Shaper** | |
-| ![C5 Pro Input Shaper X/Y graphs](docs/screenshots/c5pro/input-shaper.png) | |
+| **Input Shaper** | **Homing** |
+| ![C5 Pro Input Shaper X/Y graphs](docs/screenshots/c5pro/input-shaper.png) | ![C5 Pro homing and movement controls](docs/screenshots/c5pro/homing.png) |
 
 [Full C5 Pro screen gallery](docs/c5pro-screenshots.md)
 
