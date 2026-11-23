@@ -68,7 +68,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_grow(top_cont, 1);
 
-  lv_obj_set_flex_align(top_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_flex_align(top_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_width(top_cont, LV_PCT(100));
   lv_obj_clear_flag(top_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(top_cont, LV_FLEX_FLOW_ROW);
