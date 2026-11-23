@@ -152,6 +152,11 @@ void Config::init(std::string config_path, const std::string thumbdir) {
   auto &exclude_prompt = data["/prompt_exclude_object"_json_pointer];
   if (exclude_prompt.is_null()) exclude_prompt = true;
 
+  auto &screw_nozzle_temp = data["/screw_nozzle_temp"_json_pointer];
+  if (screw_nozzle_temp.is_null()) screw_nozzle_temp = 245;
+  auto &screw_bed_temp = data["/screw_bed_temp"_json_pointer];
+  if (screw_bed_temp.is_null()) screw_bed_temp = 80;
+
 #ifdef GUPPY_FF5M
   auto &show_clock = data["/show_clock"_json_pointer];
   if (show_clock.is_null()) show_clock = true;

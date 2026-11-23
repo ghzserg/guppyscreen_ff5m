@@ -8,9 +8,11 @@
 #include "ui.h"
 
 #include "guppyscreen.h"
+#include "config.h"
 #include "nav.h"
 
 #include <functional>
+#include <fstream>
 #include <mutex>
 
 namespace {
@@ -372,6 +374,143 @@ TEST_CASE("Home opens Bed Mesh") {
   CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Calibrate") != nullptr; }), ui::dump_screen());
   ui::tap_tab(Nav::HOME);
   CHECK(ui::find_label("Calibrate") == nullptr);
+}
+
+TEST_CASE("Screw adjustment uses its own saved temperatures") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start(moonraker);
+
+  ui::tap_tab(Nav::TUNE);
+  ui::tap_label("PID");
+  CHECK(ui::find_label("Screw adjustment") == nullptr);
+
+  ui::tap_tab(Nav::HOME);
+  ui::tap_label("Bed Mesh");
+  REQUIRE_MESSAGE(ui::find_label("Screw adjustment") != nullptr, ui::dump_screen());
+  REQUIRE_MESSAGE(ui::find_label("245 °C") != nullptr, ui::dump_screen());
+  REQUIRE_MESSAGE(ui::find_label("80 °C") != nullptr, ui::dump_screen());
+  lv_area_t a = coords(ui::find_label("Screw adjustment"));
+  CHECK(a.x1 >= 420);
+  CHECK(a.x2 <= 790);
+  CHECK(a.y1 >= 320);
+  CHECK(a.y2 <= 385);
+  CHECK(coords(lv_obj_get_parent(ui::find_label("Screw adjustment"))).y2 <= 385);
+  lv_obj_t *adjust_label = ui::find_label("Screw adjustment");
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_obj_t *group = lv_obj_get_parent(lv_obj_get_parent(adjust_label));
+    CHECK(lv_obj_get_style_border_width(group, LV_PART_MAIN) == 0);
+    CHECK(lv_obj_get_style_bg_opa(group, LV_PART_MAIN) == LV_OPA_TRANSP);
+  }
+
+  ui::tap_label("245 °C");
+  lv_obj_t *input = ui::find_shown(&lv_textarea_class);
+  REQUIRE_MESSAGE(input != nullptr, ui::dump_screen());
+  lv_textarea_set_text(input, "230");
+  lv_event_send(input, LV_EVENT_READY, nullptr);
+  REQUIRE(ui::find_label("230 °C") != nullptr);
+
+  ui::tap_label("80 °C");
+  input = ui::find_shown(&lv_textarea_class);
+  REQUIRE_MESSAGE(input != nullptr, ui::dump_screen());
+  lv_textarea_set_text(input, "65");
+  lv_event_send(input, LV_EVENT_READY, nullptr);
+  REQUIRE(ui::find_label("65 °C") != nullptr);
+
+  std::ifstream file(Config::get_instance()->get_path());
+  REQUIRE(file.good());
+  json config = json::parse(file);
+  CHECK(config["screw_nozzle_temp"] == 230);
+  CHECK(config["screw_bed_temp"] == 65);
+
+  ui::tap_label("Screw adjustment");
+  CHECK_MESSAGE(app::wait_until([&] {
+    for (const auto &g : moonraker.gcodes()) {
+      if (g == "BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP=230 BED_TEMP=65") return true;
+    }
+    return false;
+  }), ui::join(moonraker.gcodes()));
+
+  ui::tap_label("Calibrate");
+  CHECK_MESSAGE(app::wait_until([&] {
+    for (const auto &g : moonraker.gcodes()) {
+      if (g == "G28\nAUTO_FULL_BED_LEVEL EXTRUDER_TEMP=230 BED_TEMP=65") return true;
+    }
+    return false;
+  }), ui::join(moonraker.gcodes()));
+}
+
+static void check_no_weight_screw_temperature(bool single_nozzle) {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  // Simulate a single-nozzle C5 from the C5 Pro fixture. Both lack weightValue.
+  if (single_nozzle) {
+    json objects = moonraker.result("printer.objects.list");
+    json filtered = json::array();
+    for (const auto &obj : objects["objects"]) {
+      if (obj != "extruder1" && obj != "extruder2" && obj != "extruder3") filtered.push_back(obj);
+    }
+    objects["objects"] = std::move(filtered);
+    moonraker.set_result("printer.objects.list", objects);
+  }
+  start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+
+  ui::tap_label("Bed Mesh");
+  REQUIRE_MESSAGE(ui::find_label("Screw adjustment") != nullptr, ui::dump_screen());
+  CHECK(ui::find_label("245 °C") == nullptr);
+  REQUIRE_MESSAGE(ui::find_label("80 °C") != nullptr, ui::dump_screen());
+  CHECK(Config::get_instance()->get<int>("/screw_nozzle_temp") == 245);
+  CHECK(coords(lv_obj_get_parent(ui::find_label("Screw adjustment"))).y2 <= 385);
+
+  ui::tap_label("80 °C");
+  lv_obj_t *input = ui::find_shown(&lv_textarea_class);
+  REQUIRE_MESSAGE(input != nullptr, ui::dump_screen());
+  lv_textarea_set_text(input, "70");
+  lv_event_send(input, LV_EVENT_READY, nullptr);
+  REQUIRE(ui::find_label("70 °C") != nullptr);
+
+  ui::tap_label("Screw adjustment");
+  CHECK_MESSAGE(app::wait_until([&] {
+    for (const auto &g : moonraker.gcodes()) {
+      if (g == "BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP=245 BED_TEMP=70") return true;
+    }
+    return false;
+  }), ui::join(moonraker.gcodes()));
+
+  ui::tap_label("Calibrate");
+  CHECK_MESSAGE(app::wait_until([&] {
+    for (const auto &g : moonraker.gcodes()) {
+      if (g == "G28\nAUTO_FULL_BED_LEVEL EXTRUDER_TEMP=245 BED_TEMP=70") return true;
+    }
+    return false;
+  }), ui::join(moonraker.gcodes()));
+}
+
+TEST_CASE("C5-like single nozzle without weightValue hides screw nozzle temperature") {
+  check_no_weight_screw_temperature(true);
+}
+
+TEST_CASE("C5 Pro without weightValue hides screw nozzle temperature") {
+  check_no_weight_screw_temperature(false);
+}
+
+TEST_CASE("Bed mesh Calibrate uses shared temperatures without G28 when XY is homed") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start(moonraker, {{"screw_nozzle_temp", 220}, {"screw_bed_temp", 75}});
+  ui::tap_label("Bed Mesh");
+  moonraker.push_status({{"toolhead", {{"homed_axes", "xy"}}}});
+  app::settle(moonraker);
+
+  ui::tap_label("Calibrate");
+  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
+  CHECK(moonraker.gcodes().back() == "AUTO_FULL_BED_LEVEL EXTRUDER_TEMP=220 BED_TEMP=75");
+}
+
+TEST_CASE("AD5X with weightValue shows both screw temperatures") {
+  FakeMoonraker moonraker(app::fixture("ad5x_basic.json"));
+  start(moonraker, app::zmod_sensors("guppyconfig_ad5x.json", "AD5X"));
+  ui::tap_label("Bed Mesh");
+  REQUIRE_MESSAGE(ui::find_label("245 °C") != nullptr, ui::dump_screen());
+  REQUIRE_MESSAGE(ui::find_label("80 °C") != nullptr, ui::dump_screen());
 }
 
 TEST_CASE("Tune has no Fine Tune or Bed Mesh") {

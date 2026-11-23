@@ -8,7 +8,6 @@ LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(pid_extruder_img);
 LV_IMG_DECLARE(pid_bed_img);
 LV_IMG_DECLARE(clear_nozzle_img);
-LV_IMG_DECLARE(bed_level_screws_tune_img);
 LV_IMG_DECLARE(load_cell_tare_img);
 LV_IMG_DECLARE(heater);
 
@@ -32,7 +31,6 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   , pid_bed_btn(cont, &pid_bed_img, _("PID Bed") /* "PID Стола" */, &PidPanel::_handle_callback, this)
   , clear_nozzle_btn(cont, &clear_nozzle_img, _("Clear nozzle") /* "Очистить сопло" */, &PidPanel::_handle_callback, this)
   , load_cell_tare_btn(cont, &load_cell_tare_img, _("Load Cell") /* "Сбросить вес" */, &PidPanel::_handle_callback, this)
-  , bed_level_screws_tune_btn(cont, &bed_level_screws_tune_img, _("Screw adjustment") /* "Регулировка винтов" */, &PidPanel::_handle_callback, this)
 #ifdef GUPPY_FF5M
   , nozzle_tiles(ws, temp_cont, numpad)
 #endif
@@ -97,8 +95,7 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_grid_cell(pid_extruder_btn.get_container(),          LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(pid_bed_btn.get_container(),               LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(clear_nozzle_btn.get_container(),          LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(bed_level_screws_tune_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(load_cell_tare_btn.get_container(),        LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  lv_obj_set_grid_cell(load_cell_tare_btn.get_container(),        LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 #ifdef GUPPY_FF5M
   lv_obj_add_event_cb(heater_bed_temp.get_sensor(), [](lv_event_t *e) {
     auto *panel = (PidPanel *)lv_event_get_user_data(e);
@@ -281,10 +278,6 @@ void PidPanel::handle_callback(lv_event_t *e) {
     clear_nozzle_btn.disable();
     ws.gcode_script(fmt::format("CLEAR_NOZZLE T={} EXTRUDER_TEMP={} BED_TEMP={}", calibrated_tool(), extruder_temp.get_target_value(), heater_bed_temp.get_target_value()));
     clear_nozzle_btn.enable();
-  } else if (btn == bed_level_screws_tune_btn.get_container()) {
-    bed_level_screws_tune_btn.disable();
-    ws.gcode_script(fmt::format("BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP={} BED_TEMP={}", extruder_temp.get_target_value(), heater_bed_temp.get_target_value()));
-    bed_level_screws_tune_btn.enable();
   } else if (btn == load_cell_tare_btn.get_container()) {
     load_cell_tare_btn.disable();
     ws.gcode_script("LOAD_CELL_TARE");
