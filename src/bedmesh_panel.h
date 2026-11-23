@@ -4,22 +4,30 @@
 #include "websocket_client.h"
 #include "notify_consumer.h"
 #include "button_container.h"
+#include "numpad.h"
 #include "lvgl/lvgl.h"
 
 #include <mutex>
 #include <vector>
 
-class PidPanel;
-
 class BedMeshPanel : public NotifyConsumer {
  public:
-  BedMeshPanel(KWebSocketClient &c, std::mutex &l, PidPanel &pid);
+  BedMeshPanel(KWebSocketClient &c, std::mutex &l);
   ~BedMeshPanel();
 
   void consume(json &j);
   void foreground();
   void set_print_locked(bool locked) {
-    ButtonContainer::set_print_locked(locked, {&save_btn, &clear_btn, &auto_btn, &calibrate_btn, &screws_btn});
+    ButtonContainer::set_print_locked(locked, {&save_btn, &clear_btn, &auto_btn, &calibrate_btn});
+    for (auto *obj : {screw_nozzle_btn, screw_bed_btn, screw_adjust_btn}) {
+      if (locked) {
+        lv_obj_add_state(obj, LV_STATE_DISABLED);
+        lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+      } else {
+        lv_obj_clear_state(obj, LV_STATE_DISABLED);
+        lv_obj_add_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+      }
+    }
     for (auto *obj : {mesh_table, profile_table}) {
       if (locked) {
         lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
@@ -83,7 +91,6 @@ class BedMeshPanel : public NotifyConsumer {
   void getCoordinates(int row, int col);
   void table_event_cb(lv_event_t *e);
   KWebSocketClient &ws;
-  PidPanel &pid_panel;
   lv_obj_t *cont;
   lv_obj_t *prompt;
   lv_obj_t *top_cont;
@@ -91,7 +98,13 @@ class BedMeshPanel : public NotifyConsumer {
   lv_obj_t *profile_cont;
   lv_obj_t *profile_table;
   lv_obj_t *profile_info;
-  ButtonContainer screws_btn;
+  lv_obj_t *screws_cont;
+  lv_obj_t *screw_nozzle_btn;
+  lv_obj_t *screw_nozzle_value;
+  lv_obj_t *screw_bed_btn;
+  lv_obj_t *screw_bed_value;
+  lv_obj_t *screw_adjust_btn;
+  Numpad screws_numpad;
   lv_obj_t *controls_cont;
   ButtonContainer save_btn;
   ButtonContainer clear_btn;
