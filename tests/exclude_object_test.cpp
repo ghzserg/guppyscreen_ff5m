@@ -5,6 +5,7 @@
 
 #include "app.h"
 #include "fake_moonraker.h"
+#include "fake_hw.h"
 #include "ui.h"
 
 #include "guppyscreen.h"
@@ -45,6 +46,24 @@ void start_printing(FakeMoonraker &moonraker, const json &config_patch = json::o
   moonraker.set_result("printer.objects.subscribe", sub);
   app::start(moonraker, config_patch);
   app::wait_ready(moonraker);
+}
+
+void touch_frame(int x, int y, bool pressed) {
+  fake_hw::touch_set(x, y, pressed);
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  for (lv_indev_t *i = lv_indev_get_next(NULL); i != NULL; i = lv_indev_get_next(i))
+    lv_timer_ready(i->driver->read_timer);
+  lv_timer_handler();
+}
+
+int bed_left(lv_obj_t *canvas) {
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  const lv_img_dsc_t *img = lv_canvas_get_img(canvas);
+  uint32_t border = lv_color_to32(lv_color_hex(0x71889B));
+  for (int x = 0; x < (int)img->header.w; ++x)
+    for (int y = 0; y < (int)img->header.h; ++y)
+      if (lv_color_to32(lv_canvas_get_px(canvas, x, y)) == border) return x;
+  return -1;
 }
 
 void answer_confirmation(bool confirm) {
@@ -172,6 +191,34 @@ TEST_CASE("exclude map shows a square bed and keeps zoom and pan controls") {
   CHECK(count_outline_pixels(canvas).green > 100);
   ui::tap_label("-");
   CHECK(count_outline_pixels(canvas).green > 100);
+}
+
+TEST_CASE("dragging the zoomed exclusion map pans without excluding objects") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker, {{"prompt_exclude_object", false}});
+  open_exclude_panel();
+  lv_obj_t *canvas = ui::find_shown(&lv_canvas_class);
+  REQUIRE(canvas != nullptr);
+
+  ui::tap_label("+");
+  int before = bed_left(canvas);
+  REQUIRE(before >= 0);
+  lv_area_t a = ui::coords(canvas);
+  int x = (a.x1 + a.x2) / 2, y = (a.y1 + a.y2) / 2;
+
+  touch_frame(x, y, true);
+  for (int dx : {3, 12, 30, 45}) touch_frame(x + dx, y, true);
+  touch_frame(x + 45, y, false);
+  app::redraw();
+
+  CHECK(bed_left(canvas) > before + 15);
+  CHECK_FALSE(contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"));
+  CHECK(ui::find_shown(&lv_btnmatrix_class) == nullptr);
+
+  ui::tap_at(x + 45, y);
+  CHECK(app::wait_until([&] {
+    return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE");
+  }));
 }
 
 TEST_CASE("object updates preserve exclusions until Klipper clears them") {

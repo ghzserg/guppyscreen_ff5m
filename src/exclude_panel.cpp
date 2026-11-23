@@ -32,6 +32,9 @@ bool active = false;
 bool has_polygons = false;
 float zoom = 1.0f;
 float pan_x = 0, pan_y = 0;
+lv_point_t touch_start = {0, 0}, touch_last = {0, 0};
+bool touch_dragged = false;
+uint32_t touch_redraw_ms = 0;
 lv_obj_t *pan_btn[4] = {NULL, NULL, NULL, NULL};
 float min_x = 0, min_y = 0, max_x = 1, max_y = 1;
 int map_w = 0, map_h = 0;
@@ -133,6 +136,7 @@ void redraw() {
 
 void map_click_cb(lv_event_t *e) {
   (void)e;
+  if (touch_dragged) return;
   lv_point_t p;
   lv_indev_get_point(lv_indev_get_act(), &p);
   lv_area_t a;
@@ -156,6 +160,39 @@ void map_click_cb(lv_event_t *e) {
     else
       exclude();
     break;
+  }
+}
+
+void map_drag_cb(lv_event_t *e) {
+  lv_event_code_t code = lv_event_get_code(e);
+  if (code != LV_EVENT_PRESSED && code != LV_EVENT_PRESSING && code != LV_EVENT_RELEASED) return;
+  lv_point_t p;
+  lv_indev_get_point(lv_indev_get_act(), &p);
+
+  if (code == LV_EVENT_PRESSED) {
+    touch_start = touch_last = p;
+    touch_dragged = false;
+    touch_redraw_ms = lv_tick_get();
+  } else if (code == LV_EVENT_PRESSING) {
+    if (!touch_dragged) {
+      if (std::abs(p.x - touch_start.x) < 8 && std::abs(p.y - touch_start.y) < 8) return;
+      touch_dragged = true;
+      touch_last = touch_start;
+    }
+    if (zoom > 1.0f) {
+      pan_x += p.x - touch_last.x;
+      pan_y += p.y - touch_last.y;
+      float lim_x = map_w * zoom / 2, lim_y = map_h * zoom / 2;
+      pan_x = std::max(-lim_x, std::min(lim_x, pan_x));
+      pan_y = std::max(-lim_y, std::min(lim_y, pan_y));
+      if (lv_tick_elaps(touch_redraw_ms) >= 40) {
+        redraw();
+        touch_redraw_ms = lv_tick_get();
+      }
+    }
+    touch_last = p;
+  } else if (touch_dragged && zoom > 1.0f) {
+    redraw();
   }
 }
 
@@ -236,6 +273,7 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_align(map_cont, LV_ALIGN_TOP_LEFT, 0, 0);
   lv_obj_add_flag(map_cont, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(map_cont, map_click_cb, LV_EVENT_CLICKED, NULL);
+  lv_obj_add_event_cb(map_cont, map_drag_cb, LV_EVENT_ALL, NULL);
   lv_obj_add_flag(map_frame, LV_OBJ_FLAG_HIDDEN);
 
   zoom_in_btn = lv_btn_create(cont);
