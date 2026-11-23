@@ -116,6 +116,15 @@ void InitPanel::connected(KWebSocketClient &ws) {
                             this->main_panel.init(data);
                             this->bedmesh_panel.refresh_views_with_lock(
                                                                         data["/result/status/bed_mesh"_json_pointer]);
+                            // Загружаем сохранённую карту, только если другая не активна и печать не идёт.
+                            const auto &bm = data["/result/status/bed_mesh"_json_pointer];
+                            const auto &profile = bm["/profile_name"_json_pointer];
+                            const auto &profiles = bm["/profiles"_json_pointer];
+                            if (profile.is_string() && profile.get<std::string>().empty() &&
+                                profiles.is_object() && profiles.contains("BED_MESH") &&
+                                !State::print_pause_active()) {
+                              ws.gcode_script("BED_MESH_PROFILE LOAD=\"BED_MESH\"");
+                            }
                             spdlog::debug("done init");
                             std::lock_guard<std::mutex> lock(this->lv_lock);
                             lv_obj_add_flag(this->cont, LV_OBJ_FLAG_HIDDEN);
