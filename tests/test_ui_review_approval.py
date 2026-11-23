@@ -9,7 +9,7 @@ spec.loader.exec_module(approval)
 
 
 def pr(owner=False, fork=False):
-    return {'state': 'open', 'number': 12,
+    return {'state': 'open', 'number': 12, 'body': 'UI-Review: file-preview',
             'head': {'repo': {'full_name': 'other/fork' if fork else 'ghzserg/guppyscreen_ff5m'}},
             'user': {'id': approval.OWNER_ID if owner else 12345}}
 
@@ -35,6 +35,11 @@ class UIReviewApprovalTest(unittest.TestCase):
         allowed, calls = self.check(pr(owner=True), [], [])
         self.assertTrue(allowed)
         self.assertEqual(calls, [])
+
+    def test_mention_without_directive(self):
+        request = pr(owner=True)
+        request['body'] = 'Mentioning `UI-Review:` is not a request.'
+        self.assertFalse(self.check(request, [], [])[0])
 
     def test_other_author_without_label(self):
         self.assertFalse(self.check(pr(), [], [])[0])
