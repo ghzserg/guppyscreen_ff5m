@@ -118,11 +118,9 @@ void InitPanel::connected(KWebSocketClient &ws) {
                                                                         data["/result/status/bed_mesh"_json_pointer]);
                             // Загружаем сохранённую карту, только если другая не активна и печать не идёт.
                             const auto &bm = data["/result/status/bed_mesh"_json_pointer];
-                            const auto &profile = bm["/profile_name"_json_pointer];
-                            const auto &profiles = bm["/profiles"_json_pointer];
-                            if (profile.is_string() && profile.get<std::string>().empty() &&
-                                profiles.is_object() && profiles.contains("BED_MESH") &&
-                                !State::print_pause_active()) {
+                            if (bm.is_object() && bm.contains("profile_name") && bm["profile_name"] == "" &&
+                                bm.contains("profiles") && bm["profiles"].is_object() &&
+                                bm["profiles"].contains("BED_MESH") && !State::print_pause_active()) {
                               ws.gcode_script("BED_MESH_PROFILE LOAD=\"BED_MESH\"");
                             }
                             spdlog::debug("done init");

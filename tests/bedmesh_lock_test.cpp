@@ -148,3 +148,14 @@ TEST_CASE("startup does not change a bed mesh during printing") {
   app::wait_ready(moonraker);
   CHECK(moonraker.gcodes().empty());
 }
+
+TEST_CASE("startup without bed_mesh support does not load a profile") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  auto subscription = moonraker.result("printer.objects.subscribe");
+  subscription["status"].erase("bed_mesh");
+  moonraker.set_result("printer.objects.subscribe", subscription);
+
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  CHECK(moonraker.gcodes().empty());
+}
