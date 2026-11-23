@@ -4,6 +4,8 @@
 
 Screenshots are captured from the **800×480 LVGL test framebuffer** using the C5 Pro fixture. They are not photos of the printer. Controls shown depend on the printer configuration.
 
+Экран LED не включён: в тестовой конфигурации C5 Pro нет управляемых светодиодов, поэтому эта панель пустая.
+
 Сценарий: [`ci/ui-scenarios/c5pro-gallery.txt`](../ci/ui-scenarios/c5pro-gallery.txt). Воспроизведение: `bash ci/generate-c5pro-gallery.sh` (после установки зависимостей и применения патчей).
 
 | **Главная / Home** | **Файлы / Print** |
