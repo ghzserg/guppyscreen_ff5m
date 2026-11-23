@@ -11,6 +11,7 @@ concurrency:
 jobs:
   approval:
     if: >-
+      github.repository == 'ghzserg/guppyscreen_ff5m' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.body, 'UI-Review:') &&
       github.event.action != 'unlabeled' &&
