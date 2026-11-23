@@ -102,64 +102,14 @@ TEST_CASE("BED_MESH is displayed by default in the test fixture") {
   CHECK(map_found);
 }
 
-TEST_CASE("startup loads saved BED_MESH when no mesh is active") {
+TEST_CASE("startup never loads a saved mesh automatically") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   auto subscription = moonraker.result("printer.objects.subscribe");
   subscription["status"]["bed_mesh"]["profile_name"] = "";
-  subscription["status"]["bed_mesh"]["probed_matrix"] = json::array({json::array()});
-  subscription["status"]["bed_mesh"]["mesh_matrix"] = json::array({json::array()});
   moonraker.set_result("printer.objects.subscribe", subscription);
 
   app::start(moonraker);
   app::wait_ready(moonraker);
-  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
-  CHECK(moonraker.gcodes() == std::vector<std::string>{"BED_MESH_PROFILE LOAD=\"BED_MESH\""});
-}
-
-TEST_CASE("startup does not replace a different active bed mesh") {
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  auto subscription = moonraker.result("printer.objects.subscribe");
-  subscription["status"]["bed_mesh"]["profile_name"] = "custom";
-  subscription["status"]["bed_mesh"]["profiles"]["custom"] = subscription["status"]["bed_mesh"]["profiles"]["BED_MESH"];
-  moonraker.set_result("printer.objects.subscribe", subscription);
-
-  app::start(moonraker);
-  app::wait_ready(moonraker);
-  CHECK(moonraker.gcodes().empty());
-}
-
-TEST_CASE("startup does not load BED_MESH if it is not saved") {
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  auto subscription = moonraker.result("printer.objects.subscribe");
-  subscription["status"]["bed_mesh"]["profile_name"] = "";
-  subscription["status"]["bed_mesh"]["profiles"].erase("BED_MESH");
-  moonraker.set_result("printer.objects.subscribe", subscription);
-
-  app::start(moonraker);
-  app::wait_ready(moonraker);
-  CHECK(moonraker.gcodes().empty());
-}
-
-TEST_CASE("startup does not change a bed mesh during printing") {
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  auto subscription = moonraker.result("printer.objects.subscribe");
-  subscription["status"]["bed_mesh"]["profile_name"] = "";
-  subscription["status"]["print_stats"]["state"] = "printing";
-  subscription["status"]["print_stats"]["filename"] = "cube.gcode";
-  moonraker.set_result("printer.objects.subscribe", subscription);
-
-  app::start(moonraker);
-  app::wait_ready(moonraker);
-  CHECK(moonraker.gcodes().empty());
-}
-
-TEST_CASE("startup without bed_mesh support does not load a profile") {
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  auto subscription = moonraker.result("printer.objects.subscribe");
-  subscription["status"].erase("bed_mesh");
-  moonraker.set_result("printer.objects.subscribe", subscription);
-
-  app::start(moonraker);
-  app::wait_ready(moonraker);
+  app::settle(moonraker);
   CHECK(moonraker.gcodes().empty());
 }

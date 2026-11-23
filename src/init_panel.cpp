@@ -106,7 +106,7 @@ void InitPanel::connected(KWebSocketClient &ws) {
           json subs = {{ "objects", sub_objs }};
           spdlog::debug("subcribing to {}", subs.dump());
           ws.send_jsonrpc("printer.objects.subscribe", subs,
-                          [this, &ws](json &data) {
+                          [this](json &data) {
                             if (!data.contains("/result/status"_json_pointer)) {
                               spdlog::warn("printer.objects.subscribe failed: {}", data.dump());
                               return;
@@ -116,13 +116,6 @@ void InitPanel::connected(KWebSocketClient &ws) {
                             this->main_panel.init(data);
                             this->bedmesh_panel.refresh_views_with_lock(
                                                                         data["/result/status/bed_mesh"_json_pointer]);
-                            // Загружаем сохранённую карту, только если другая не активна и печать не идёт.
-                            const auto &bm = data["/result/status/bed_mesh"_json_pointer];
-                            if (bm.is_object() && bm.contains("profile_name") && bm["profile_name"] == "" &&
-                                bm.contains("profiles") && bm["profiles"].is_object() &&
-                                bm["profiles"].contains("BED_MESH") && !State::print_pause_active()) {
-                              ws.gcode_script("BED_MESH_PROFILE LOAD=\"BED_MESH\"");
-                            }
                             spdlog::debug("done init");
                             std::lock_guard<std::mutex> lock(this->lv_lock);
                             lv_obj_add_flag(this->cont, LV_OBJ_FLAG_HIDDEN);
