@@ -394,7 +394,7 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
   CHECK(a.x2 <= 790);
   CHECK(a.y1 >= 320);
   CHECK(a.y2 <= 385);
-  CHECK(coords(lv_obj_get_parent(label)).y2 <= 385);
+  CHECK(coords(lv_obj_get_parent(ui::find_label("Screw adjustment"))).y2 <= 385);
 
   ui::tap_label("245 °C");
   lv_obj_t *input = ui::find_shown(&lv_textarea_class);
@@ -425,17 +425,19 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
   }), ui::join(moonraker.gcodes()));
 }
 
-static void check_c5_screw_temperature(const char *model) {
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  json config = {
-    {"default_printer", model},
-    {"printers", {{model, {
-      {"moonraker_host", "127.0.0.1"},
-      {"moonraker_port", moonraker.port()},
-      {"moonraker_api_key", false}
-    }}}}
-  };
-  start(moonraker, config);
+static void check_no_weight_screw_temperature(bool single_nozzle) {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  // Simulate a single-nozzle C5 from the C5 Pro fixture. Both lack weightValue.
+  if (single_nozzle) {
+    json objects = moonraker.result("printer.objects.list");
+    json filtered = json::array();
+    for (const auto &obj : objects["objects"]) {
+      if (obj != "extruder1" && obj != "extruder2" && obj != "extruder3") filtered.push_back(obj);
+    }
+    objects["objects"] = std::move(filtered);
+    moonraker.set_result("printer.objects.list", objects);
+  }
+  start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
 
   ui::tap_label("Bed Mesh");
   REQUIRE_MESSAGE(ui::find_label("Screw adjustment") != nullptr, ui::dump_screen());
@@ -460,12 +462,20 @@ static void check_c5_screw_temperature(const char *model) {
   }), ui::join(moonraker.gcodes()));
 }
 
-TEST_CASE("C5 hides screw nozzle temperature but keeps its default") {
-  check_c5_screw_temperature("C5");
+TEST_CASE("C5-like single nozzle without weightValue hides screw nozzle temperature") {
+  check_no_weight_screw_temperature(true);
 }
 
-TEST_CASE("C5 Pro hides screw nozzle temperature but keeps its default") {
-  check_c5_screw_temperature("C5Pro");
+TEST_CASE("C5 Pro without weightValue hides screw nozzle temperature") {
+  check_no_weight_screw_temperature(false);
+}
+
+TEST_CASE("AD5X with weightValue shows both screw temperatures") {
+  FakeMoonraker moonraker(app::fixture("ad5x_basic.json"));
+  start(moonraker, app::zmod_sensors("guppyconfig_ad5x.json", "AD5X"));
+  ui::tap_label("Bed Mesh");
+  REQUIRE_MESSAGE(ui::find_label("245 °C") != nullptr, ui::dump_screen());
+  REQUIRE_MESSAGE(ui::find_label("80 °C") != nullptr, ui::dump_screen());
 }
 
 TEST_CASE("Tune has no Fine Tune or Bed Mesh") {

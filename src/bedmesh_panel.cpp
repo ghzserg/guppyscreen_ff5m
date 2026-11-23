@@ -33,8 +33,10 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   , profile_table(lv_table_create(profile_cont))
   , profile_info(lv_table_create(profile_cont))
   , screws_cont(lv_obj_create(top_cont))
+  , screw_nozzle_label(lv_label_create(screws_cont))
   , screw_nozzle_btn(lv_btn_create(screws_cont))
   , screw_nozzle_value(lv_label_create(screw_nozzle_btn))
+  , screw_bed_label(lv_label_create(screws_cont))
   , screw_bed_btn(lv_btn_create(screws_cont))
   , screw_bed_value(lv_label_create(screw_bed_btn))
   , screw_adjust_btn(lv_btn_create(screws_cont))
@@ -101,11 +103,9 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_pad_bottom(profile_info, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
   lv_obj_set_style_border_side(profile_info, LV_BORDER_SIDE_BOTTOM, 0);
 
-  const auto &printer_model = Config::get_instance()->get_json("/default_printer");
-  const bool is_c5 = printer_model == "C5" || printer_model == "C5Pro";
   lv_obj_add_flag(screws_cont, LV_OBJ_FLAG_FLOATING);
-  lv_obj_set_size(screws_cont, 320 * scale, (is_c5 ? 90 : 120) * hscale);
-  lv_obj_align(screws_cont, LV_ALIGN_TOP_LEFT, 390 * scale, (is_c5 ? 270 : 255) * hscale);
+  lv_obj_set_size(screws_cont, 320 * scale, 120 * hscale);
+  lv_obj_align(screws_cont, LV_ALIGN_TOP_LEFT, 390 * scale, 255 * hscale);
   lv_obj_set_style_pad_all(screws_cont, 0, 0);
   lv_obj_set_style_border_width(screws_cont, 1, 0);
   lv_obj_set_style_border_color(screws_cont, lv_color_hex(0x484C52), 0);
@@ -113,12 +113,10 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_radius(screws_cont, 8, 0);
   lv_obj_clear_flag(screws_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_t *nozzle_label = lv_label_create(screws_cont);
-  lv_label_set_text(nozzle_label, _("Extruder") /* "Экструдер" */);
-  lv_obj_align(nozzle_label, LV_ALIGN_TOP_LEFT, 12 * scale, 8 * hscale);
-  lv_obj_t *bed_label = lv_label_create(screws_cont);
-  lv_label_set_text(bed_label, _("Bed") /* "Стол" */);
-  lv_obj_align(bed_label, LV_ALIGN_TOP_LEFT, 12 * scale, (is_c5 ? 8 : 48) * hscale);
+  lv_label_set_text(screw_nozzle_label, _("Extruder") /* "Экструдер" */);
+  lv_obj_align(screw_nozzle_label, LV_ALIGN_TOP_LEFT, 12 * scale, 8 * hscale);
+  lv_label_set_text(screw_bed_label, _("Bed") /* "Стол" */);
+  lv_obj_align(screw_bed_label, LV_ALIGN_TOP_LEFT, 12 * scale, 48 * hscale);
 
   for (lv_obj_t *obj : {screw_nozzle_btn, screw_bed_btn}) {
     lv_obj_set_size(obj, 110 * scale, 36 * hscale);
@@ -127,18 +125,14 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_add_event_cb(obj, &BedMeshPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
   }
   lv_obj_align(screw_nozzle_btn, LV_ALIGN_TOP_RIGHT, -12 * scale, 0);
-  lv_obj_align(screw_bed_btn, LV_ALIGN_TOP_RIGHT, -12 * scale, (is_c5 ? 0 : 40) * hscale);
-  if (is_c5) {
-    lv_obj_add_flag(nozzle_label, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(screw_nozzle_btn, LV_OBJ_FLAG_HIDDEN);
-  }
+  lv_obj_align(screw_bed_btn, LV_ALIGN_TOP_RIGHT, -12 * scale, 40 * hscale);
   lv_label_set_text(screw_nozzle_value, fmt::format("{} °C", Config::get_instance()->get<int>("/screw_nozzle_temp")).c_str());
   lv_label_set_text(screw_bed_value, fmt::format("{} °C", Config::get_instance()->get<int>("/screw_bed_temp")).c_str());
   lv_obj_center(screw_nozzle_value);
   lv_obj_center(screw_bed_value);
 
   lv_obj_set_size(screw_adjust_btn, 300 * scale, 34 * hscale);
-  lv_obj_align(screw_adjust_btn, LV_ALIGN_TOP_MID, 0, (is_c5 ? 44 : 82) * hscale);
+  lv_obj_align(screw_adjust_btn, LV_ALIGN_TOP_MID, 0, 82 * hscale);
   lv_obj_set_style_bg_color(screw_adjust_btn, lv_color_hex(0x45494F), 0);
   lv_obj_set_style_bg_color(screw_adjust_btn, lv_color_hex(0x555B62), LV_STATE_PRESSED);
   lv_obj_set_style_radius(screw_adjust_btn, 6, 0);
@@ -464,6 +458,23 @@ void BedMeshPanel::refresh_profile_info(std::string profile) {
     rowidx++;
 #endif
   }
+}
+
+void BedMeshPanel::show_screw_nozzle_temp(bool show) {
+  const double scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  const double hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  if (show) {
+    lv_obj_clear_flag(screw_nozzle_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(screw_nozzle_btn, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(screw_nozzle_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(screw_nozzle_btn, LV_OBJ_FLAG_HIDDEN);
+  }
+  lv_obj_set_size(screws_cont, 320 * scale, (show ? 120 : 90) * hscale);
+  lv_obj_align(screws_cont, LV_ALIGN_TOP_LEFT, 390 * scale, (show ? 255 : 270) * hscale);
+  lv_obj_align(screw_bed_label, LV_ALIGN_TOP_LEFT, 12 * scale, (show ? 48 : 8) * hscale);
+  lv_obj_align(screw_bed_btn, LV_ALIGN_TOP_RIGHT, -12 * scale, (show ? 40 : 0) * hscale);
+  lv_obj_align(screw_adjust_btn, LV_ALIGN_TOP_MID, 0, (show ? 82 : 44) * hscale);
 }
 
 void BedMeshPanel::foreground() {

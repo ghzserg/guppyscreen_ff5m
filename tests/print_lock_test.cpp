@@ -18,7 +18,7 @@ const char *printing_only_buttons[] = {
 const char *job_locked_buttons[] = {
     "G28", "G28 XY", "Motor off",
     "Save", "Calibrate", "Shake Belts", "Excitate", "PID Extruder", "PID Bed",
-    "Clear nozzle", "Screw adjustment", "245 °C", "80 °C", "Calibrate extruders", "Calibrate VFA",
+    "Clear nozzle", "Screw adjustment", "80 °C", "Calibrate extruders", "Calibrate VFA",
     "Native screen", "Restore Print", "Clean", "Cold"
 };
 
@@ -148,6 +148,20 @@ TEST_CASE("print locks all unsafe buttons even on connecting during a print") {
   app::settle(moonraker);
   for (auto *name : printing_only_buttons) check_button(name, true);
   for (auto *name : job_locked_buttons) check_button(name, true);
+}
+
+TEST_CASE("AD5M screw nozzle temperature is locked while printing") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  auto subscription = moonraker.result("printer.objects.subscribe");
+  subscription["status"]["print_stats"]["state"] = "printing";
+  subscription["status"]["print_stats"]["filename"] = "cube.gcode";
+  moonraker.set_result("printer.objects.subscribe", subscription);
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  check_button("245 °C", true, true);
+  app::settle(moonraker);
+  CHECK(moonraker.gcodes().empty());
 }
 
 TEST_CASE("configuration change dialog waits until the print has ended") {

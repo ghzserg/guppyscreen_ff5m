@@ -159,7 +159,9 @@ void MainPanel::init(json &j) {
   bool air = has({"servo my_servo", "fan_generic internal", "fan_generic external"})
       || has({"fan_generic chamber_heat_fan", "fan_generic chamber_loop_fan", "fan_generic chamber_cool_fan"});
   fan_panel.show_air_circulation(air);
-  print_status_panel.get_pid_panel().show_weight_controls(has({PidPanel::WEIGHT}));
+  bool has_weight = has({PidPanel::WEIGHT});
+  print_status_panel.get_pid_panel().show_weight_controls(has_weight);
+  printertune_panel.get_bedmesh_panel().show_screw_nozzle_temp(has_weight);
   printertune_panel.show_calibrations(has({"gcode_macro CALIBRATE_EXTRUDERS"}),
                                       has({"gcode_macro CALIBRATE_VFA"}));
 #endif

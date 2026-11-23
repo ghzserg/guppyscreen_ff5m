@@ -17,6 +17,9 @@ class BedMeshPanel : public NotifyConsumer {
 
   void consume(json &j);
   void foreground();
+  // As with the weight controls: show the nozzle field only if Klipper
+  // exposes the hardware feature requiring nozzle preheat.
+  void show_screw_nozzle_temp(bool show);
   void set_print_locked(bool locked) {
     ButtonContainer::set_print_locked(locked, {&save_btn, &clear_btn, &auto_btn, &calibrate_btn});
     for (auto *obj : {screw_nozzle_btn, screw_bed_btn, screw_adjust_btn}) {
@@ -99,8 +102,10 @@ class BedMeshPanel : public NotifyConsumer {
   lv_obj_t *profile_table;
   lv_obj_t *profile_info;
   lv_obj_t *screws_cont;
+  lv_obj_t *screw_nozzle_label;
   lv_obj_t *screw_nozzle_btn;
   lv_obj_t *screw_nozzle_value;
+  lv_obj_t *screw_bed_label;
   lv_obj_t *screw_bed_btn;
   lv_obj_t *screw_bed_value;
   lv_obj_t *screw_adjust_btn;
