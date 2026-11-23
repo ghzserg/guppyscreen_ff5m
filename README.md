@@ -36,15 +36,19 @@ See [the Z-Mod DISPLAY_OFF documentation](https://wiki.zmod.link/System/#display
 
 Captured from the 800×480 LVGL test framebuffer using the C5 Pro configuration with four extruders. Controls on a real printer depend on Z-Mod and Klipper configuration.
 
-| Home | Files |
+| Home | Tune — extruder and VFA calibration |
 |:--|:--|
-| ![C5 Pro home](docs/screenshots/c5pro/home.png) | ![C5 Pro files](docs/screenshots/c5pro/print.png) |
+| ![C5 Pro home](docs/screenshots/c5pro/home.png) | ![C5 Pro Tune with extruder and VFA calibration](docs/screenshots/c5pro/tune.png) |
 | **Fans** | **PID** |
 | ![C5 Pro fans](docs/screenshots/c5pro/fans.png) | ![C5 Pro PID](docs/screenshots/c5pro/pid.png) |
 | **Extruders** | **Bed Mesh** |
 | ![C5 Pro extruders](docs/screenshots/c5pro/extrude.png) | ![C5 Pro Bed Mesh](docs/screenshots/c5pro/bed-mesh.png) |
-| **Printing** | **Settings** |
-| ![C5 Pro printing](docs/screenshots/c5pro/print-status.png) | ![C5 Pro settings](docs/screenshots/c5pro/settings.png) |
+| **File selection** | **Printing** |
+| ![cube.gcode with a cube thumbnail](docs/screenshots/c5pro/file-preview.png) | ![C5 Pro printing the same cube](docs/screenshots/c5pro/print-status.png) |
+| **Settings** | **Exclude Object** |
+| ![C5 Pro settings](docs/screenshots/c5pro/settings.png) | ![C5 Pro graphical object exclusion](docs/screenshots/c5pro/exclude-map.png) |
+| **Input Shaper** | |
+| ![C5 Pro Input Shaper X/Y graphs](docs/screenshots/c5pro/input-shaper.png) | |
 
 [Full C5 Pro screen gallery](docs/c5pro-screenshots.md)
 

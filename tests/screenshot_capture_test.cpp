@@ -41,11 +41,14 @@ TEST_CASE("Screenshot: scripted") {
   FakeMoonraker moonraker(app::fixture(c5pro ? "c5pro_basic.json" : "ad5m_basic.json"));
   PrintFile sample;
   sample.path = "cube.gcode";
-  FakePrinter printer(moonraker, {sample}, FakePrinter::Options{});
+  FakePrinter::Options options;
+  std::string root;
   if (c5pro) {
-    std::string root = "/tmp/guppy-gallery-XXXXXX";
+    root = "/tmp/guppy-gallery-XXXXXX";
     REQUIRE(mkdtemp(root.data()) != nullptr);
     REQUIRE(mkdir((root + "/mod_data").c_str(), 0755) == 0);
+    REQUIRE(mkdir((root + "/gcodes").c_str(), 0755) == 0);
+    options.gcodes_dir = root + "/gcodes";
     for (const char *axis : {"X", "Y"}) {
       const std::string filename = std::string("resonances_") + axis + ".png";
       std::ifstream in(app::fixture(filename), std::ios::binary);
@@ -54,10 +57,14 @@ TEST_CASE("Screenshot: scripted") {
       out << in.rdbuf();
       REQUIRE(out.good());
     }
+  }
+  FakePrinter printer(moonraker, {sample}, options);
+  if (c5pro) {
     moonraker.set_result("server.files.roots", json::array({
       {{"name", "config"}, {"path", root}, {"permissions", "rw"}},
-      {{"name", "gcodes"}, {"path", "/data"}, {"permissions", "rw"}},
+      {{"name", "gcodes"}, {"path", options.gcodes_dir}, {"permissions", "rw"}},
     }));
+    REQUIRE(std::ifstream(options.gcodes_dir + "/.thumbs/cube-300x300.png").good());
   }
   app::start(moonraker, settings);
   app::wait_ready(moonraker);

@@ -36,15 +36,19 @@ DISPLAY_ON
 
 Снимки интерфейса C5 Pro (четыре экструдера) сделаны в тестовом LVGL-стенде при разрешении 800×480. На реальном принтере набор кнопок зависит от конфигурации Z-Mod.
 
-| Главная | Печать |
+| Главная | Tune — калибровка экструдеров и VFA |
 |:--|:--|
-| ![Главная C5 Pro](docs/screenshots/c5pro/home.png) | ![Файлы C5 Pro](docs/screenshots/c5pro/print.png) |
+| ![Главная C5 Pro](docs/screenshots/c5pro/home.png) | ![Tune C5 Pro: калибровка экструдеров и VFA](docs/screenshots/c5pro/tune.png) |
 | **Вентиляторы** | **PID** |
 | ![Вентиляторы C5 Pro](docs/screenshots/c5pro/fans.png) | ![PID C5 Pro](docs/screenshots/c5pro/pid.png) |
 | **Экструдеры** | **Карта стола** |
 | ![Экструдеры C5 Pro](docs/screenshots/c5pro/extrude.png) | ![Карта стола C5 Pro](docs/screenshots/c5pro/bed-mesh.png) |
-| **Во время печати** | **Настройки** |
-| ![Экран печати C5 Pro](docs/screenshots/c5pro/print-status.png) | ![Настройки C5 Pro](docs/screenshots/c5pro/settings.png) |
+| **Выбор файла** | **Во время печати** |
+| ![Выбор cube.gcode и миниатюра кубика](docs/screenshots/c5pro/file-preview.png) | ![Печать кубика C5 Pro](docs/screenshots/c5pro/print-status.png) |
+| **Настройки** | **Исключение объектов** |
+| ![Настройки C5 Pro](docs/screenshots/c5pro/settings.png) | ![Графическое исключение объектов C5 Pro](docs/screenshots/c5pro/exclude-map.png) |
+| **Input Shaper** | |
+| ![Графики X/Y в Input Shaper C5 Pro](docs/screenshots/c5pro/input-shaper.png) | |
 
 [Все экраны C5 Pro](docs/c5pro-screenshots.md)
 
