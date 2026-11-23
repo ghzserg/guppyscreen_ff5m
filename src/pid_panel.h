@@ -19,7 +19,6 @@ class PidPanel : public NotifyConsumer {
   ~PidPanel();
 
   void foreground();
-  void adjust_screws();
   void set_print_locked(bool locked) {
     ButtonContainer::set_print_locked(locked, {&pid_extruder_btn, &pid_bed_btn, &clear_nozzle_btn});
   }
