@@ -1,0 +1,53 @@
+name: Rebuild C5 Pro gallery
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: c5pro-gallery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    if: github.repository == 'ghzserg/guppyscreen_ff5m'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates git make cmake gcc g++ pkg-config python3
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Apply test patches
+        run: bash ci/apply-patches.sh ad5m
+
+      - name: Render screenshots
+        run: bash ci/generate-c5pro-gallery.sh
+
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: c5pro-gallery
+          path: docs/screenshots/c5pro/*.png
+          if-no-files-found: error
+
+      - name: Update gallery screenshots
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/screenshots/c5pro/*.png
+          if ! git diff --cached --quiet; then
+            git commit -m 'Regenerate C5 Pro screenshot gallery'
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
