@@ -36,15 +36,17 @@ DISPLAY_ON
 
 Снимки интерфейса C5 Pro (четыре экструдера) сделаны в тестовом LVGL-стенде при разрешении 800×480. На реальном принтере набор кнопок зависит от конфигурации Z-Mod.
 
-| Главная | Печать |
+| Главная | Tune — калибровка экструдеров и VFA |
 |:--|:--|
-| ![Главная C5 Pro](docs/screenshots/c5pro/home.png) | ![Файлы C5 Pro](docs/screenshots/c5pro/print.png) |
+| ![Главная C5 Pro](docs/screenshots/c5pro/home.png) | ![Tune C5 Pro: калибровка экструдеров и VFA](docs/screenshots/c5pro/tune.png) |
 | **Вентиляторы** | **PID** |
 | ![Вентиляторы C5 Pro](docs/screenshots/c5pro/fans.png) | ![PID C5 Pro](docs/screenshots/c5pro/pid.png) |
 | **Экструдеры** | **Карта стола** |
 | ![Экструдеры C5 Pro](docs/screenshots/c5pro/extrude.png) | ![Карта стола C5 Pro](docs/screenshots/c5pro/bed-mesh.png) |
 | **Во время печати** | **Настройки** |
 | ![Экран печати C5 Pro](docs/screenshots/c5pro/print-status.png) | ![Настройки C5 Pro](docs/screenshots/c5pro/settings.png) |
+| **Исключение объектов** | |
+| ![Графическое исключение объектов C5 Pro](docs/screenshots/c5pro/exclude-map.png) | |
 
 [Все экраны C5 Pro](docs/c5pro-screenshots.md)
 
