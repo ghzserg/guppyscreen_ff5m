@@ -31,8 +31,10 @@ prepare() {
 }
 capture() {
   local phase=$1 work=$2
+  # Для снимков собираем только сценарий и тестовый стенд.
   (cd "$work" && GUPPY_SCREENSHOT_SCRIPT="$scenario" \
-    GUPPY_SCREENSHOT_DIR="$output/$phase" make test TEST='Screenshot: scripted')
+    GUPPY_SCREENSHOT_DIR="$output/$phase" make test TEST='Screenshot: scripted' \
+    TEST_SRCS="tests/test_main.cpp tests/screenshot_capture_test.cpp $(printf '%s ' tests/harness/*.cpp)")
 }
 
 prepare "$output/.worktree-before" "$base"
