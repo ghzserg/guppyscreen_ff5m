@@ -25,7 +25,19 @@ TEST_CASE("Screenshot: scripted") {
   json settings = json::object();
   if (const char *config = std::getenv("GUPPY_SCREENSHOT_CONFIG"))
     settings = json::parse(config);
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  const char *profile = std::getenv("GUPPY_SCREENSHOT_PROFILE");
+  const bool c5pro = profile && std::string(profile) == "c5pro";
+  if (profile && !c5pro && std::string(profile) != "ad5m")
+    FAIL("Unknown screenshot profile: " << profile);
+  if (c5pro) {
+    json config = json::parse(std::ifstream(app::fixture("guppyconfig_c5pro.json")));
+    const json &printer = config["printers"]["C5Pro"];
+    settings.merge_patch({{"printers", {{"FF5M", {
+      {"monitored_sensors", printer["monitored_sensors"]},
+      {"fans", printer["fans"]}
+    }}}}});
+  }
+  FakeMoonraker moonraker(app::fixture(c5pro ? "c5pro_basic.json" : "ad5m_basic.json"));
   PrintFile sample;
   sample.path = "cube.gcode";
   FakePrinter printer(moonraker, {sample}, FakePrinter::Options{});
