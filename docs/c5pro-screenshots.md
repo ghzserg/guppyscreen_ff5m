@@ -50,7 +50,7 @@ Screenshots are captured from the **800×480 LVGL test framebuffer** using the C
 |:--|:--|
 | ![Система / System](screenshots/c5pro/system.png) | ![Макросы / Macros](screenshots/c5pro/macros.png) |
 
-| **Консоль / Console** | **** |
+| **Консоль / Console** | **Подсветка / LED** |
 |:--|:--|
-| ![Консоль / Console](screenshots/c5pro/console.png) |  |
+| ![Консоль / Console](screenshots/c5pro/console.png) | ![Подсветка / LED](screenshots/c5pro/led.png) |
 
