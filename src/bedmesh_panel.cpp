@@ -105,8 +105,10 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_size(screws_cont, 320 * scale, 126 * hscale);
   lv_obj_align(screws_cont, LV_ALIGN_TOP_LEFT, 390 * scale, 255 * hscale);
   lv_obj_set_style_pad_all(screws_cont, 0, 0);
-  lv_obj_set_style_border_width(screws_cont, 0, 0);
-  lv_obj_set_style_bg_opa(screws_cont, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(screws_cont, 1, 0);
+  lv_obj_set_style_border_color(screws_cont, lv_color_hex(0x484C52), 0);
+  lv_obj_set_style_bg_color(screws_cont, lv_color_hex(0x292C31), 0);
+  lv_obj_set_style_radius(screws_cont, 8, 0);
   lv_obj_clear_flag(screws_cont, LV_OBJ_FLAG_SCROLLABLE);
 
   lv_obj_t *nozzle_label = lv_label_create(screws_cont);
