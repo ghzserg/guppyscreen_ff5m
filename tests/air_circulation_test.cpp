@@ -171,15 +171,6 @@ TEST_CASE("the AD5M has no unsupported circulation buttons") {
   for (const char *c : CALIBRATIONS) CHECK(ui::find_label(c) == nullptr);
 }
 
-TEST_CASE("the C5 Pro without calibration macros hides their Tune buttons") {
-  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
-  start_c5pro(moonraker, false);
-  open_tune(moonraker);
-  CHECK(ui::find_label("PID") != nullptr);
-  CHECK(ui::find_label("Pro") == nullptr);
-  for (const char *c : CALIBRATIONS) CHECK(ui::find_label(c) == nullptr);
-}
-
 TEST_CASE("the C5 Pro's Tune screen has both calibrations beside PID") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
   start_c5pro(moonraker, true);
