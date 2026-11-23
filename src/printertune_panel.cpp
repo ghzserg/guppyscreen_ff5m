@@ -30,7 +30,7 @@ LV_IMG_DECLARE(print);
 PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, FineTunePanel &finetune, RetractPanel &retract_p, PidPanel &pid_p, PromptPanel &p)
   : ws(c)
   , cont(lv_obj_create(parent))
-  , bedmesh_panel(c, l)
+  , bedmesh_panel(c, l, pid_p)
   , finetune_panel(finetune)
   , limits_panel(c, l)
   , retract_panel(retract_p)
