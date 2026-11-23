@@ -395,9 +395,10 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
   CHECK(a.y1 >= 320);
   CHECK(a.y2 <= 385);
   CHECK(coords(lv_obj_get_parent(ui::find_label("Screw adjustment"))).y2 <= 385);
+  lv_obj_t *adjust_label = ui::find_label("Screw adjustment");
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-    lv_obj_t *group = lv_obj_get_parent(lv_obj_get_parent(ui::find_label("Screw adjustment")));
+    lv_obj_t *group = lv_obj_get_parent(lv_obj_get_parent(adjust_label));
     CHECK(lv_obj_get_style_border_width(group, LV_PART_MAIN) == 0);
     CHECK(lv_obj_get_style_bg_opa(group, LV_PART_MAIN) == LV_OPA_TRANSP);
   }
