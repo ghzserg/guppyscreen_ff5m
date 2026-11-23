@@ -22,6 +22,15 @@ TEST_CASE("Screenshot: scripted") {
   REQUIRE_MESSAGE(has_dir, "GUPPY_SCREENSHOT_DIR is not set");
   std::ifstream script(script_path);
   REQUIRE_MESSAGE(script.good(), "Cannot open screenshot scenario: " << script_path);
+  bool shaper_graphs = false;
+  for (std::string line; std::getline(script, line);) {
+    if (line == "tap Input Shaper") {
+      shaper_graphs = true;
+      break;
+    }
+  }
+  script.clear();
+  script.seekg(0);
 
   json settings = json::object();
   if (const char *config = std::getenv("GUPPY_SCREENSHOT_CONFIG"))
@@ -43,12 +52,14 @@ TEST_CASE("Screenshot: scripted") {
   sample.path = "cube.gcode";
   FakePrinter::Options options;
   std::string root;
-  if (c5pro) {
+  if (c5pro || shaper_graphs) {
     root = "/tmp/guppy-gallery-XXXXXX";
     REQUIRE(mkdtemp(root.data()) != nullptr);
     REQUIRE(mkdir((root + "/mod_data").c_str(), 0755) == 0);
-    REQUIRE(mkdir((root + "/gcodes").c_str(), 0755) == 0);
-    options.gcodes_dir = root + "/gcodes";
+    if (c5pro) {
+      REQUIRE(mkdir((root + "/gcodes").c_str(), 0755) == 0);
+      options.gcodes_dir = root + "/gcodes";
+    }
     for (const char *axis : {"X", "Y"}) {
       const std::string filename = std::string("resonances_") + axis + ".png";
       std::ifstream in(app::fixture(filename), std::ios::binary);
@@ -59,12 +70,13 @@ TEST_CASE("Screenshot: scripted") {
     }
   }
   FakePrinter printer(moonraker, {sample}, options);
-  if (c5pro) {
+  if (c5pro || shaper_graphs) {
     moonraker.set_result("server.files.roots", json::array({
       {{"name", "config"}, {"path", root}, {"permissions", "rw"}},
-      {{"name", "gcodes"}, {"path", options.gcodes_dir}, {"permissions", "rw"}},
+      {{"name", "gcodes"}, {"path", c5pro ? options.gcodes_dir : "/data"}, {"permissions", "rw"}},
     }));
-    REQUIRE(std::ifstream(options.gcodes_dir + "/.thumbs/cube-300x300.png").good());
+    if (c5pro)
+      REQUIRE(std::ifstream(options.gcodes_dir + "/.thumbs/cube-300x300.png").good());
   }
   app::start(moonraker, settings);
   app::wait_ready(moonraker);
@@ -72,6 +84,9 @@ TEST_CASE("Screenshot: scripted") {
     ui::tap_tab(Nav::TUNE);
     REQUIRE_MESSAGE(ui::find_label("Calibrate extruders"), "C5 Pro lacks extruder calibration");
     REQUIRE_MESSAGE(ui::find_label("Calibrate VFA"), "C5 Pro lacks VFA calibration");
+    ui::tap_tab(Nav::HOME);
+    ui::tap_label("LED");
+    REQUIRE_MESSAGE(ui::find_label("Chamber Led"), "C5 Pro LED panel is empty");
   }
 
   std::string line;

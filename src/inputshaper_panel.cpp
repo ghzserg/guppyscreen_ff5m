@@ -109,9 +109,9 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   lv_img_set_zoom(ygraph, 95);
   lv_obj_center(ygraph);
 
-  lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
+  lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(47));
   lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
+  lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(47));
   lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_SCROLLABLE);
 
   // text output
@@ -431,7 +431,7 @@ void InputShaperPanel::handle_image_clicked(lv_event_t *e) {
         lv_obj_invalidate(ygraph);
         lv_img_set_zoom(ygraph, 150);
         yimage_fullsized = false;
-        lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
+        lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(47));
         lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
 
         // lv_obj_set_size(ygraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -441,7 +441,7 @@ void InputShaperPanel::handle_image_clicked(lv_event_t *e) {
 
       if (ximage_fullsized) {
         lv_img_set_zoom(xgraph, 95);
-        lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
+        lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(47));
         lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);
 
         // lv_obj_set_size(xgraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -460,7 +460,7 @@ void InputShaperPanel::handle_image_clicked(lv_event_t *e) {
         lv_img_set_zoom(xgraph, 150);
         ximage_fullsized = false;
         // lv_obj_set_size(xgraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-        lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
+        lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(47));
         lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);
 
       }
@@ -470,7 +470,7 @@ void InputShaperPanel::handle_image_clicked(lv_event_t *e) {
       if (yimage_fullsized) {
         lv_img_set_zoom(ygraph, 95);
         // lv_obj_set_size(ygraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-        lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
+        lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(47));
         lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
 
       } else {
