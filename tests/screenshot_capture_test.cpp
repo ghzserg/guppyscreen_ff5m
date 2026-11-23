@@ -11,6 +11,7 @@
 #include <fstream>
 #include <mutex>
 #include <sstream>
+#include <sys/stat.h>
 #include <string>
 
 TEST_CASE("Screenshot: scripted") {
@@ -41,8 +42,30 @@ TEST_CASE("Screenshot: scripted") {
   PrintFile sample;
   sample.path = "cube.gcode";
   FakePrinter printer(moonraker, {sample}, FakePrinter::Options{});
+  if (c5pro) {
+    std::string root = "/tmp/guppy-gallery-XXXXXX";
+    REQUIRE(mkdtemp(root.data()) != nullptr);
+    REQUIRE(mkdir((root + "/mod_data").c_str(), 0755) == 0);
+    for (const char *axis : {"X", "Y"}) {
+      const std::string filename = std::string("resonances_") + axis + ".png";
+      std::ifstream in(app::fixture(filename), std::ios::binary);
+      REQUIRE_MESSAGE(in.good(), "Missing Input Shaper sample: " << filename);
+      std::ofstream out(root + "/mod_data/" + filename, std::ios::binary);
+      out << in.rdbuf();
+      REQUIRE(out.good());
+    }
+    moonraker.set_result("server.files.roots", json::array({
+      {{"name", "config"}, {"path", root}, {"permissions", "rw"}},
+      {{"name", "gcodes"}, {"path", "/data"}, {"permissions", "rw"}},
+    }));
+  }
   app::start(moonraker, settings);
   app::wait_ready(moonraker);
+  if (c5pro) {
+    ui::tap_tab(Nav::TUNE);
+    REQUIRE_MESSAGE(ui::find_label("Calibrate extruders"), "C5 Pro lacks extruder calibration");
+    REQUIRE_MESSAGE(ui::find_label("Calibrate VFA"), "C5 Pro lacks VFA calibration");
+  }
 
   std::string line;
   int line_no = 0;
