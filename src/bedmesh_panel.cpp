@@ -1,4 +1,5 @@
 #include "bedmesh_panel.h"
+#include "pid_panel.h"
 #include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -12,6 +13,7 @@ LV_IMG_DECLARE(delete_img);
 LV_IMG_DECLARE(auto_img);
 LV_IMG_DECLARE(bedmesh_img);
 LV_IMG_DECLARE(sd_img);
+LV_IMG_DECLARE(bed_level_screws_tune_img);
 
 
 static lv_color_t color_gradient(double offset);
@@ -21,9 +23,10 @@ static lv_color_t color_gradient2(double offset);
 uint16_t selected_row = LV_TABLE_CELL_NONE;
 uint16_t selected_col = LV_TABLE_CELL_NONE;
 
-BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
+BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l, PidPanel &pid)
   : NotifyConsumer(l)
   , ws(c)
+  , pid_panel(pid)
   , cont(lv_obj_create(Nav::get().content()))
   , prompt(lv_obj_create(Nav::get().content()))
   , top_cont(lv_obj_create(cont))
@@ -31,6 +34,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   , profile_cont(lv_table_create(top_cont))
   , profile_table(lv_table_create(profile_cont))
   , profile_info(lv_table_create(profile_cont))
+  , screws_btn(top_cont, &bed_level_screws_tune_img, _("Screw adjustment") /* "Регулировка винтов" */, &BedMeshPanel::_handle_callback, this)
   , controls_cont(lv_obj_create(cont))
   , save_btn(controls_cont, &sd_img, _("Save") /* "Сохранить" */, &BedMeshPanel::_handle_callback, this)
   , clear_btn(controls_cont, &delete_img, _("Clean") /* "Очистить" */, &BedMeshPanel::_handle_callback, this)
@@ -92,6 +96,9 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_pad_top(profile_info, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
   lv_obj_set_style_pad_bottom(profile_info, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
   lv_obj_set_style_border_side(profile_info, LV_BORDER_SIDE_BOTTOM, 0);
+
+  lv_obj_add_flag(screws_btn.get_container(), LV_OBJ_FLAG_FLOATING);
+  lv_obj_align(screws_btn.get_container(), LV_ALIGN_TOP_LEFT, 385 * scale, 260 * hscale);
 
   // button controls
   lv_obj_set_width(controls_cont, LV_PCT(100));
@@ -453,6 +460,10 @@ void BedMeshPanel::handle_callback(lv_event_t *event) {
     }
     ws.gcode_script("G28\nBED_MESH_CALIBRATE");
     calibrate_btn.enable();
+  } else if (btn == screws_btn.get_container()) {
+    screws_btn.disable();
+    pid_panel.adjust_screws();
+    screws_btn.enable();
   } else if (btn == auto_btn.get_container()) {
     auto_btn.disable();
     spdlog::trace("auto mesh calibrate pressed");
