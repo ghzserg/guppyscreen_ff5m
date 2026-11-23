@@ -11,6 +11,7 @@
 #include <fstream>
 #include <mutex>
 #include <sstream>
+#include <sys/stat.h>
 #include <string>
 
 TEST_CASE("Screenshot: scripted") {
@@ -25,12 +26,46 @@ TEST_CASE("Screenshot: scripted") {
   json settings = json::object();
   if (const char *config = std::getenv("GUPPY_SCREENSHOT_CONFIG"))
     settings = json::parse(config);
-  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  const char *profile = std::getenv("GUPPY_SCREENSHOT_PROFILE");
+  const bool c5pro = profile && std::string(profile) == "c5pro";
+  if (profile && !c5pro && std::string(profile) != "ad5m")
+    FAIL("Unknown screenshot profile: " << profile);
+  if (c5pro) {
+    json config = json::parse(std::ifstream(app::fixture("guppyconfig_c5pro.json")));
+    const json &printer = config["printers"]["C5Pro"];
+    settings.merge_patch({{"printers", {{"FF5M", {
+      {"monitored_sensors", printer["monitored_sensors"]},
+      {"fans", printer["fans"]}
+    }}}}});
+  }
+  FakeMoonraker moonraker(app::fixture(c5pro ? "c5pro_basic.json" : "ad5m_basic.json"));
   PrintFile sample;
   sample.path = "cube.gcode";
   FakePrinter printer(moonraker, {sample}, FakePrinter::Options{});
+  if (c5pro) {
+    std::string root = "/tmp/guppy-gallery-XXXXXX";
+    REQUIRE(mkdtemp(root.data()) != nullptr);
+    REQUIRE(mkdir((root + "/mod_data").c_str(), 0755) == 0);
+    for (const char *axis : {"X", "Y"}) {
+      const std::string filename = std::string("resonances_") + axis + ".png";
+      std::ifstream in(app::fixture(filename), std::ios::binary);
+      REQUIRE_MESSAGE(in.good(), "Missing Input Shaper sample: " << filename);
+      std::ofstream out(root + "/mod_data/" + filename, std::ios::binary);
+      out << in.rdbuf();
+      REQUIRE(out.good());
+    }
+    moonraker.set_result("server.files.roots", json::array({
+      {{"name", "config"}, {"path", root}, {"permissions", "rw"}},
+      {{"name", "gcodes"}, {"path", "/data"}, {"permissions", "rw"}},
+    }));
+  }
   app::start(moonraker, settings);
   app::wait_ready(moonraker);
+  if (c5pro) {
+    ui::tap_tab(Nav::TUNE);
+    REQUIRE_MESSAGE(ui::find_label("Calibrate extruders"), "C5 Pro lacks extruder calibration");
+    REQUIRE_MESSAGE(ui::find_label("Calibrate VFA"), "C5 Pro lacks VFA calibration");
+  }
 
   std::string line;
   int line_no = 0;

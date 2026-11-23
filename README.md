@@ -32,6 +32,22 @@ Before disabling the stock screen, familiarize yourself with bed leveling, Z-off
 
 See [the Z-Mod DISPLAY_OFF documentation](https://wiki.zmod.link/System/#display_off).
 
+## C5 Pro screenshots
+
+Captured from the 800×480 LVGL test framebuffer using the C5 Pro configuration with four extruders. Controls on a real printer depend on Z-Mod and Klipper configuration.
+
+| Home | Files |
+|:--|:--|
+| ![C5 Pro home](docs/screenshots/c5pro/home.png) | ![C5 Pro files](docs/screenshots/c5pro/print.png) |
+| **Fans** | **PID** |
+| ![C5 Pro fans](docs/screenshots/c5pro/fans.png) | ![C5 Pro PID](docs/screenshots/c5pro/pid.png) |
+| **Extruders** | **Bed Mesh** |
+| ![C5 Pro extruders](docs/screenshots/c5pro/extrude.png) | ![C5 Pro Bed Mesh](docs/screenshots/c5pro/bed-mesh.png) |
+| **Printing** | **Settings** |
+| ![C5 Pro printing](docs/screenshots/c5pro/print-status.png) | ![C5 Pro settings](docs/screenshots/c5pro/settings.png) |
+
+[Full C5 Pro screen gallery](docs/c5pro-screenshots.md)
+
 ## Features
 
 Core features from the original Guppy Screen are retained: temperature and motion controls, fans, LEDs, file printing, console, macros, Bed Mesh, Input Shaper, belt calibration, Fine Tune and Spoolman integration.

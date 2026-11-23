@@ -32,6 +32,8 @@
       "gcode_macro START_PRINT",
       "gcode_macro END_PRINT",
       "gcode_macro LOAD_FILAMENT",
+      "gcode_macro CALIBRATE_EXTRUDERS",
+      "gcode_macro CALIBRATE_VFA",
       "zmod_color"
     ]
   },
@@ -94,7 +96,9 @@
     "G28": "Home one or more axes",
     "M104": "Set extruder temperature",
     "START_PRINT": "G-Code macro",
-    "LOAD_FILAMENT": "G-Code macro"
+    "LOAD_FILAMENT": "G-Code macro",
+    "CALIBRATE_EXTRUDERS": "G-Code macro",
+    "CALIBRATE_VFA": "G-Code macro"
   },
   "printer.objects.subscribe": {
     "eventtime": 1000.0,

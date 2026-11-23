@@ -2,6 +2,7 @@ name: UI review (fork)
 
 on:
   push:
+    branches-ignore: [main]
   workflow_dispatch:
 
 concurrency:
@@ -10,7 +11,7 @@ concurrency:
 
 jobs:
   lookup:
-    if: github.event.repository.fork == true
+    if: github.repository != 'ghzserg/guppyscreen_ff5m'
     runs-on: ubuntu-22.04
     permissions:
       contents: read
