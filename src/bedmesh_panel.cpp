@@ -224,7 +224,6 @@ void BedMeshPanel::consume(json &j) {
 void BedMeshPanel::refresh_views_with_lock(json &bm) {
   std::lock_guard<std::mutex> lock(lv_lock); // more grandular?
   refresh_views(bm);
-  ButtonContainer::set_print_locked(State::print_pause_active(), {&save_btn});
 }
 
 void BedMeshPanel::getCoordinates(int row, int col) {
