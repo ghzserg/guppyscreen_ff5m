@@ -374,6 +374,33 @@ TEST_CASE("Home opens Bed Mesh") {
   CHECK(ui::find_label("Calibrate") == nullptr);
 }
 
+TEST_CASE("Screw adjustment moved from PID to Bed Mesh") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start(moonraker);
+
+  ui::tap_tab(Nav::TUNE);
+  ui::tap_label("PID");
+  CHECK(ui::find_label("Screw adjustment") == nullptr);
+
+  ui::tap_tab(Nav::HOME);
+  ui::tap_label("Bed Mesh");
+  lv_obj_t *label = ui::find_label("Screw adjustment");
+  REQUIRE_MESSAGE(label != nullptr, ui::dump_screen());
+  lv_area_t a = coords(label);
+  CHECK(a.x1 >= 420);
+  CHECK(a.x2 <= 650);
+  CHECK(a.y1 >= 255);
+  CHECK(a.y2 <= 405);
+
+  ui::tap_label("Screw adjustment");
+  CHECK_MESSAGE(app::wait_until([&] {
+    for (const auto &g : moonraker.gcodes()) {
+      if (g == "BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP=245 BED_TEMP=80") return true;
+    }
+    return false;
+  }), ui::join(moonraker.gcodes()));
+}
+
 TEST_CASE("Tune has no Fine Tune or Bed Mesh") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   start(moonraker);
