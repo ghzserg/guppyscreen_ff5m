@@ -7,38 +7,25 @@ on:
       - '.github/workflows/one-time-c5pro-cube-gallery.yml'
 
 permissions:
+  actions: read
   contents: write
 
 jobs:
-  render:
+  publish:
     if: github.repository == 'ghzserg/guppyscreen_ff5m'
     runs-on: ubuntu-22.04
     steps:
-      - name: Install test dependencies
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            ca-certificates git make cmake gcc g++ pkg-config python3
       - uses: actions/checkout@v7.0.1
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Apply patches
-        run: bash ci/apply-patches.sh ad5m
-      - name: Capture screenshot gallery
-        run: bash ci/generate-c5pro-gallery.sh
-      - uses: actions/upload-artifact@v7.0.2
-        if: always()
-        with:
-          name: c5pro-cube-capture
-          path: docs/screenshots/c5pro/*.png
-          if-no-files-found: warn
-      - name: Save cube screenshots to PR branch
+      - name: Retrieve previously captured LVGL screenshots
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 45152888286 -R ghzserg/guppyscreen_ff5m \
+            -n c5pro-cube-capture -D docs/screenshots/c5pro
+      - name: Commit verified cube screenshots
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git fetch origin "$GITHUB_REF_NAME"
-          git reset --hard FETCH_HEAD
           git add docs/screenshots/c5pro/print.png docs/screenshots/c5pro/file-preview.png \
                   docs/screenshots/c5pro/print-status.png docs/screenshots/c5pro/print-paused.png
           if ! git diff --cached --quiet; then
