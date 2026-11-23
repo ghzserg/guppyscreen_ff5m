@@ -18,7 +18,7 @@ const char *printing_only_buttons[] = {
 const char *job_locked_buttons[] = {
     "G28", "G28 XY", "Motor off",
     "Save", "Calibrate", "Shake Belts", "Excitate", "PID Extruder", "PID Bed",
-    "Clear nozzle", "Screw adjustment", "Calibrate extruders", "Calibrate VFA",
+    "Clear nozzle", "Screw adjustment", "245 °C", "80 °C", "Calibrate extruders", "Calibrate VFA",
     "Native screen", "Restore Print", "Clean", "Cold"
 };
 
@@ -39,7 +39,9 @@ void check_button(const char *name, bool disabled, bool send = false) {
       if (!homing) return;
     }
     auto *img = lv_obj_get_child(parent, 0);
-    if (img && lv_obj_check_type(img, &lv_imgbtn_class)) labels.push_back(obj);
+    bool screw_control = !strcmp(name, "Screw adjustment") || !strcmp(name, "245 °C") || !strcmp(name, "80 °C");
+    if ((img && lv_obj_check_type(img, &lv_imgbtn_class)) ||
+        (screw_control && lv_obj_check_type(parent, &lv_btn_class))) labels.push_back(obj);
   });
   INFO(std::string(name));
   REQUIRE(!labels.empty());
@@ -55,6 +57,11 @@ void check_button(const char *name, bool disabled, bool send = false) {
       });
     }
     CHECK(lv_obj_has_state(parent, LV_STATE_DISABLED) == expected_disabled);
+    if (lv_obj_check_type(parent, &lv_btn_class)) {
+      CHECK(lv_obj_has_flag(parent, LV_OBJ_FLAG_CLICKABLE) != expected_disabled);
+      if (send) lv_event_send(parent, LV_EVENT_SHORT_CLICKED, nullptr);
+      continue;
+    }
     CHECK(lv_obj_has_state(label, LV_STATE_DISABLED) == expected_disabled);
     CHECK(lv_obj_has_state(lv_obj_get_child(parent, 0), LV_STATE_DISABLED) == expected_disabled);
     if (send) lv_event_send(parent, LV_EVENT_SHORT_CLICKED, nullptr);
