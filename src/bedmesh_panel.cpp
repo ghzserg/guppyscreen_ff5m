@@ -108,10 +108,8 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_size(screws_cont, 320 * scale, 120 * hscale);
   lv_obj_align(screws_cont, LV_ALIGN_TOP_LEFT, 390 * scale, 255 * hscale);
   lv_obj_set_style_pad_all(screws_cont, 0, 0);
-  lv_obj_set_style_border_width(screws_cont, 1, 0);
-  lv_obj_set_style_border_color(screws_cont, lv_color_hex(0x484C52), 0);
-  lv_obj_set_style_bg_color(screws_cont, lv_color_hex(0x292C31), 0);
-  lv_obj_set_style_radius(screws_cont, 8, 0);
+  lv_obj_set_style_border_width(screws_cont, 0, 0);
+  lv_obj_set_style_bg_opa(screws_cont, LV_OPA_TRANSP, 0);
   lv_obj_clear_flag(screws_cont, LV_OBJ_FLAG_SCROLLABLE);
 
   lv_label_set_text(screw_nozzle_label, _("Extruder") /* "Экструдер" */);
@@ -540,16 +538,19 @@ void BedMeshPanel::handle_callback(lv_event_t *event) {
   } else if (btn == auto_btn.get_container()) {
     auto_btn.disable();
     spdlog::trace("auto mesh calibrate pressed");
+    Config *conf = Config::get_instance();
+    const auto command = fmt::format("AUTO_FULL_BED_LEVEL EXTRUDER_TEMP={} BED_TEMP={}",
+      conf->get<int>("/screw_nozzle_temp"), conf->get<int>("/screw_bed_temp"));
     auto v = State::get_instance()
       ->get_data("/printer_state/toolhead/homed_axes"_json_pointer);
     if (!v.is_null()) {
       if (v.template get<std::string>() == "xy") {
-        ws.gcode_script("AUTO_FULL_BED_LEVEL");
+        ws.gcode_script(command);
         auto_btn.enable();
         return;
       }
     }
-    ws.gcode_script("G28\nAUTO_FULL_BED_LEVEL");
+    ws.gcode_script("G28\n" + command);
     auto_btn.enable();
   }
 }

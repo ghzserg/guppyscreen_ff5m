@@ -395,6 +395,12 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
   CHECK(a.y1 >= 320);
   CHECK(a.y2 <= 385);
   CHECK(coords(lv_obj_get_parent(ui::find_label("Screw adjustment"))).y2 <= 385);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_obj_t *group = lv_obj_get_parent(lv_obj_get_parent(ui::find_label("Screw adjustment")));
+    CHECK(lv_obj_get_style_border_width(group, LV_PART_MAIN) == 0);
+    CHECK(lv_obj_get_style_bg_opa(group, LV_PART_MAIN) == LV_OPA_TRANSP);
+  }
 
   ui::tap_label("245 °C");
   lv_obj_t *input = ui::find_shown(&lv_textarea_class);
@@ -420,6 +426,14 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
   CHECK_MESSAGE(app::wait_until([&] {
     for (const auto &g : moonraker.gcodes()) {
       if (g == "BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP=230 BED_TEMP=65") return true;
+    }
+    return false;
+  }), ui::join(moonraker.gcodes()));
+
+  ui::tap_label("Calibrate");
+  CHECK_MESSAGE(app::wait_until([&] {
+    for (const auto &g : moonraker.gcodes()) {
+      if (g == "G28\nAUTO_FULL_BED_LEVEL EXTRUDER_TEMP=230 BED_TEMP=65") return true;
     }
     return false;
   }), ui::join(moonraker.gcodes()));
@@ -460,6 +474,14 @@ static void check_no_weight_screw_temperature(bool single_nozzle) {
     }
     return false;
   }), ui::join(moonraker.gcodes()));
+
+  ui::tap_label("Calibrate");
+  CHECK_MESSAGE(app::wait_until([&] {
+    for (const auto &g : moonraker.gcodes()) {
+      if (g == "G28\nAUTO_FULL_BED_LEVEL EXTRUDER_TEMP=245 BED_TEMP=70") return true;
+    }
+    return false;
+  }), ui::join(moonraker.gcodes()));
 }
 
 TEST_CASE("C5-like single nozzle without weightValue hides screw nozzle temperature") {
@@ -468,6 +490,18 @@ TEST_CASE("C5-like single nozzle without weightValue hides screw nozzle temperat
 
 TEST_CASE("C5 Pro without weightValue hides screw nozzle temperature") {
   check_no_weight_screw_temperature(false);
+}
+
+TEST_CASE("Bed mesh Calibrate uses shared temperatures without G28 when XY is homed") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start(moonraker, {{"screw_nozzle_temp", 220}, {"screw_bed_temp", 75}});
+  ui::tap_label("Bed Mesh");
+  moonraker.push_status({{"toolhead", {{"homed_axes", "xy"}}}});
+  app::settle(moonraker);
+
+  ui::tap_label("Calibrate");
+  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
+  CHECK(moonraker.gcodes().back() == "AUTO_FULL_BED_LEVEL EXTRUDER_TEMP=220 BED_TEMP=75");
 }
 
 TEST_CASE("AD5X with weightValue shows both screw temperatures") {
