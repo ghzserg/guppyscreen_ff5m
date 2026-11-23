@@ -128,7 +128,7 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
   lv_obj_align(display_sleep_dd, LV_ALIGN_RIGHT_MID, 0, 0);
   lv_dropdown_set_options(display_sleep_dd,
-                          "None"
+                          "None\n"
                           "5m\n"
                           "10m\n"
                           "20m\n"
