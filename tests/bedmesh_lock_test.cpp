@@ -22,10 +22,14 @@ TEST_CASE("bed mesh profiles cannot be loaded or removed during printing and pau
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     ui::walk(lv_scr_act(), [&](lv_obj_t *obj) {
-      if (lv_obj_check_type(obj, &lv_table_class) && lv_table_get_col_cnt(obj) == 3 &&
-          lv_table_get_row_cnt(obj) > 0 && lv_table_get_cell_value(obj, 0, 0) &&
-          !strcmp(lv_table_get_cell_value(obj, 0, 0), "test_mesh"))
-        profiles = obj;
+      if (!lv_obj_check_type(obj, &lv_table_class) || lv_table_get_col_cnt(obj) != 3) return;
+      for (uint16_t row = 0; row < lv_table_get_row_cnt(obj); row++) {
+        const char *name = lv_table_get_cell_value(obj, row, 0);
+        if (name && !strcmp(name, "test_mesh")) {
+          profiles = obj;
+          break;
+        }
+      }
     });
   }
   REQUIRE(profiles != nullptr);
