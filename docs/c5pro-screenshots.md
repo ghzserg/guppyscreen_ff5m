@@ -6,7 +6,7 @@ Screenshots are captured from the **800×480 LVGL test framebuffer** using the C
 
 Экран LED не включён: в тестовой конфигурации C5 Pro нет управляемых светодиодов, поэтому эта панель пустая.
 
-Сценарий: [`ci/ui-scenarios/c5pro-gallery.txt`](../ci/ui-scenarios/c5pro-gallery.txt). Воспроизведение: `bash ci/generate-c5pro-gallery.sh` (после установки зависимостей и применения патчей).
+Сценарий: [`ci/ui-scenarios/c5pro-gallery.txt`](../ci/ui-scenarios/c5pro-gallery.txt). Обновление изображений — только вручную через GitHub Actions → **Rebuild C5 Pro gallery** → **Run workflow** (выбрать ветку). Локально: `bash ci/generate-c5pro-gallery.sh` после установки зависимостей и применения патчей. Для Input Shaper необходимы `tests/fixtures/resonances_X.png` и `tests/fixtures/resonances_Y.png`.
 
 | **Главная / Home** | **Файлы / Print** |
 |:--|:--|
