@@ -72,6 +72,9 @@ TEST_CASE("Screenshot: scripted") {
     ui::tap_tab(Nav::TUNE);
     REQUIRE_MESSAGE(ui::find_label("Calibrate extruders"), "C5 Pro lacks extruder calibration");
     REQUIRE_MESSAGE(ui::find_label("Calibrate VFA"), "C5 Pro lacks VFA calibration");
+    ui::tap_tab(Nav::HOME);
+    ui::tap_label("LED");
+    REQUIRE_MESSAGE(ui::find_label("Chamber Led"), "C5 Pro LED panel is empty");
   }
 
   std::string line;
