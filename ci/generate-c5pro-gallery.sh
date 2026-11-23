@@ -3,6 +3,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 out="docs/screenshots/c5pro"
+for axis in X Y; do
+  test -s "tests/fixtures/resonances_${axis}.png" || {
+    echo "Missing tests/fixtures/resonances_${axis}.png — Input Shaper gallery needs both X/Y graphs" >&2
+    exit 1
+  }
+done
 mkdir -p "$out"
 GUPPY_SCREENSHOT_PROFILE=c5pro \
 GUPPY_SCREENSHOT_SCRIPT="$PWD/ci/ui-scenarios/c5pro-gallery.txt" \
