@@ -47,8 +47,8 @@ DISPLAY_ON
 | ![Выбор cube.gcode и миниатюра кубика](docs/screenshots/c5pro/file-preview.png) | ![Печать кубика C5 Pro](docs/screenshots/c5pro/print-status.png) |
 | **Настройки** | **Исключение объектов** |
 | ![Настройки C5 Pro](docs/screenshots/c5pro/settings.png) | ![Графическое исключение объектов C5 Pro](docs/screenshots/c5pro/exclude-map.png) |
-| **Input Shaper** | |
-| ![Графики X/Y в Input Shaper C5 Pro](docs/screenshots/c5pro/input-shaper.png) | |
+| **Input Shaper** | **Парковка** |
+| ![Графики X/Y в Input Shaper C5 Pro](docs/screenshots/c5pro/input-shaper.png) | ![Парковка и перемещения C5 Pro](docs/screenshots/c5pro/homing.png) |
 
 [Все экраны C5 Pro](docs/c5pro-screenshots.md)
 
