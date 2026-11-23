@@ -70,6 +70,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
 
   lv_obj_set_flex_align(top_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_width(top_cont, LV_PCT(100));
+  lv_obj_set_style_pad_all(top_cont, 0, 0);
   lv_obj_clear_flag(top_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(top_cont, LV_FLEX_FLOW_ROW);
 
@@ -81,6 +82,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   }
   auto scale = (double)screen_width / 800.0;
   auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  lv_obj_set_style_pad_column(top_cont, 12 * scale, 0);
 
   lv_obj_set_size(profile_cont, LV_PCT(50), 340 * hscale);
   lv_obj_set_style_pad_all(profile_cont, 0, 0);
@@ -298,7 +300,7 @@ void BedMeshPanel::refresh_views(json &bm) {
         auto scale  = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
         auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
 
-        int col_width  = std::max(4, (int)(380 * scale  / x_count));
+        int col_width  = std::max(4, (int)(350 * scale  / x_count));
         int cel_height = std::max(1, (int)(380/2 * hscale / y_count - 8 ));
 
         lv_obj_set_style_pad_top   (mesh_table, cel_height, LV_PART_ITEMS | LV_STATE_DEFAULT);

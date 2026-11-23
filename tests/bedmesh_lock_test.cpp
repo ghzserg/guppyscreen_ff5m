@@ -102,6 +102,35 @@ TEST_CASE("BED_MESH is displayed by default in the test fixture") {
   CHECK(map_found);
 }
 
+TEST_CASE("bed mesh profile names do not overlap the mesh grid") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  ui::tap_tab(Nav::HOME);
+  ui::tap_label("Bed Mesh");
+  app::settle(moonraker);
+
+  lv_obj_t *grid = nullptr;
+  lv_obj_t *profiles = nullptr;
+  lv_area_t grid_area{}, profiles_area{};
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_obj_update_layout(lv_scr_act());
+    ui::walk(lv_scr_act(), [&](lv_obj_t *obj) {
+      if (!lv_obj_check_type(obj, &lv_table_class) ||
+          lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN)) return;
+      if (lv_table_get_col_cnt(obj) == 5 && lv_table_get_row_cnt(obj) == 5) grid = obj;
+      if (lv_table_get_col_cnt(obj) == 3 && lv_table_get_row_cnt(obj) > 0 &&
+          !strcmp(lv_table_get_cell_value(obj, 0, 0), "BED_MESH")) profiles = obj;
+    });
+    if (grid) lv_obj_get_coords(grid, &grid_area);
+    if (profiles) lv_obj_get_coords(profiles, &profiles_area);
+  }
+  REQUIRE(grid != nullptr);
+  REQUIRE(profiles != nullptr);
+  CHECK(grid_area.x2 + 6 < profiles_area.x1);
+}
+
 TEST_CASE("startup never loads a saved mesh automatically") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   auto subscription = moonraker.result("printer.objects.subscribe");
