@@ -8,9 +8,11 @@
 #include "ui.h"
 
 #include "guppyscreen.h"
+#include "config.h"
 #include "nav.h"
 
 #include <functional>
+#include <fstream>
 #include <mutex>
 
 namespace {
@@ -374,7 +376,7 @@ TEST_CASE("Home opens Bed Mesh") {
   CHECK(ui::find_label("Calibrate") == nullptr);
 }
 
-TEST_CASE("Screw adjustment moved from PID to Bed Mesh") {
+TEST_CASE("Screw adjustment uses its own saved temperatures") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   start(moonraker);
 
@@ -384,18 +386,39 @@ TEST_CASE("Screw adjustment moved from PID to Bed Mesh") {
 
   ui::tap_tab(Nav::HOME);
   ui::tap_label("Bed Mesh");
-  lv_obj_t *label = ui::find_label("Screw adjustment");
-  REQUIRE_MESSAGE(label != nullptr, ui::dump_screen());
-  lv_area_t a = coords(label);
+  REQUIRE_MESSAGE(ui::find_label("Screw adjustment") != nullptr, ui::dump_screen());
+  REQUIRE_MESSAGE(ui::find_label("245 °C") != nullptr, ui::dump_screen());
+  REQUIRE_MESSAGE(ui::find_label("80 °C") != nullptr, ui::dump_screen());
+  lv_area_t a = coords(ui::find_label("Screw adjustment"));
   CHECK(a.x1 >= 420);
-  CHECK(a.x2 <= 650);
-  CHECK(a.y1 >= 255);
-  CHECK(a.y2 <= 405);
+  CHECK(a.x2 <= 790);
+  CHECK(a.y1 >= 320);
+  CHECK(a.y2 <= 395);
+
+  ui::tap_label("245 °C");
+  lv_obj_t *input = ui::find_shown(&lv_textarea_class);
+  REQUIRE_MESSAGE(input != nullptr, ui::dump_screen());
+  lv_textarea_set_text(input, "230");
+  lv_event_send(input, LV_EVENT_READY, nullptr);
+  REQUIRE(ui::find_label("230 °C") != nullptr);
+
+  ui::tap_label("80 °C");
+  input = ui::find_shown(&lv_textarea_class);
+  REQUIRE_MESSAGE(input != nullptr, ui::dump_screen());
+  lv_textarea_set_text(input, "65");
+  lv_event_send(input, LV_EVENT_READY, nullptr);
+  REQUIRE(ui::find_label("65 °C") != nullptr);
+
+  std::ifstream file(Config::get_instance()->get_path());
+  REQUIRE(file.good());
+  json config = json::parse(file);
+  CHECK(config["screw_nozzle_temp"] == 230);
+  CHECK(config["screw_bed_temp"] == 65);
 
   ui::tap_label("Screw adjustment");
   CHECK_MESSAGE(app::wait_until([&] {
     for (const auto &g : moonraker.gcodes()) {
-      if (g == "BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP=245 BED_TEMP=80") return true;
+      if (g == "BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP=230 BED_TEMP=65") return true;
     }
     return false;
   }), ui::join(moonraker.gcodes()));
