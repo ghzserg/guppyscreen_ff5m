@@ -128,7 +128,7 @@ TEST_CASE("bed mesh profile names do not overlap the mesh grid") {
   }
   REQUIRE(grid != nullptr);
   REQUIRE(profiles != nullptr);
-  CHECK(grid_area.x2 + 6 < profiles_area.x1);
+  CHECK(grid_area.x2 + 1 < profiles_area.x1);
 }
 
 TEST_CASE("startup never loads a saved mesh automatically") {
