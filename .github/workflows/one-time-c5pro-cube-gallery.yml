@@ -21,7 +21,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh run download 45152888286 -R ghzserg/guppyscreen_ff5m \
-            -n c5pro-cube-capture -D docs/screenshots/c5pro
+            -n c5pro-cube-capture -D "$RUNNER_TEMP/c5pro-cube-capture"
+          for file in print.png file-preview.png print-status.png print-paused.png; do
+            cp "$RUNNER_TEMP/c5pro-cube-capture/$file" "docs/screenshots/c5pro/$file"
+          done
       - name: Commit verified cube screenshots
         run: |
           git config user.name 'github-actions[bot]'
