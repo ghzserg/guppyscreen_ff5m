@@ -2,6 +2,7 @@
 """Разрешает UI-ревью для PR автора репозитория или по его метке."""
 import json
 import os
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -13,6 +14,9 @@ APPROVAL_LABEL = 'Готов к ревью'
 def approved(pr, repository, fetch):
     if (pr.get('state') != 'open' or
             (pr.get('head', {}).get('repo') or {}).get('full_name') != repository):
+        return False
+    if not any(re.fullmatch(r'\\s*UI-Review:\\s*(.+?)\\s*', line, re.I)
+               for line in (pr.get('body') or '').splitlines()):
         return False
     if (pr.get('user') or {}).get('id') == OWNER_ID:
         return True
