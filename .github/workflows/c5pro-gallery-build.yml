@@ -49,6 +49,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin ci/skip-main-fork-review
+          git reset --hard FETCH_HEAD
           git add docs/screenshots/c5pro/*.png
           if ! git diff --cached --quiet; then
             git commit -m 'Add captured C5 Pro screen gallery'
