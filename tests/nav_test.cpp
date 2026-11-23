@@ -393,7 +393,8 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
   CHECK(a.x1 >= 420);
   CHECK(a.x2 <= 790);
   CHECK(a.y1 >= 320);
-  CHECK(a.y2 <= 395);
+  CHECK(a.y2 <= 385);
+  CHECK(coords(lv_obj_get_parent(label)).y2 <= 385);
 
   ui::tap_label("245 °C");
   lv_obj_t *input = ui::find_shown(&lv_textarea_class);
@@ -419,6 +420,40 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
   CHECK_MESSAGE(app::wait_until([&] {
     for (const auto &g : moonraker.gcodes()) {
       if (g == "BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP=230 BED_TEMP=65") return true;
+    }
+    return false;
+  }), ui::join(moonraker.gcodes()));
+}
+
+TEST_CASE("C5 hides screw nozzle temperature but keeps its default for calibration") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start(moonraker, {
+    {"default_printer", "C5"},
+    {"printers", {{"C5", {
+      {"moonraker_host", "127.0.0.1"},
+      {"moonraker_port", moonraker.port()},
+      {"moonraker_api_key", false}
+    }}}}
+  });
+
+  ui::tap_label("Bed Mesh");
+  REQUIRE_MESSAGE(ui::find_label("Screw adjustment") != nullptr, ui::dump_screen());
+  CHECK(ui::find_label("245 °C") == nullptr);
+  REQUIRE_MESSAGE(ui::find_label("80 °C") != nullptr, ui::dump_screen());
+  CHECK(Config::get_instance()->get<int>("/screw_nozzle_temp") == 245);
+  CHECK(coords(lv_obj_get_parent(ui::find_label("Screw adjustment"))).y2 <= 385);
+
+  ui::tap_label("80 °C");
+  lv_obj_t *input = ui::find_shown(&lv_textarea_class);
+  REQUIRE_MESSAGE(input != nullptr, ui::dump_screen());
+  lv_textarea_set_text(input, "70");
+  lv_event_send(input, LV_EVENT_READY, nullptr);
+  REQUIRE(ui::find_label("70 °C") != nullptr);
+
+  ui::tap_label("Screw adjustment");
+  CHECK_MESSAGE(app::wait_until([&] {
+    for (const auto &g : moonraker.gcodes()) {
+      if (g == "BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP=245 BED_TEMP=70") return true;
     }
     return false;
   }), ui::join(moonraker.gcodes()));
