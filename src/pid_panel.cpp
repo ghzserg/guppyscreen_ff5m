@@ -95,7 +95,7 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_grid_cell(pid_extruder_btn.get_container(),          LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(pid_bed_btn.get_container(),               LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(clear_nozzle_btn.get_container(),          LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(load_cell_tare_btn.get_container(),        LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  lv_obj_set_grid_cell(load_cell_tare_btn.get_container(),        LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 #ifdef GUPPY_FF5M
   lv_obj_add_event_cb(heater_bed_temp.get_sensor(), [](lv_event_t *e) {
     auto *panel = (PidPanel *)lv_event_get_user_data(e);

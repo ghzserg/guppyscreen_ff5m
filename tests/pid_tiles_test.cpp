@@ -14,6 +14,7 @@
 #include "guppyscreen.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <mutex>
 #include <utility>
 #include <vector>
@@ -319,6 +320,35 @@ TEST_CASE("the C5 Pro PID screen hides unsupported weight controls") {
   CHECK(ui::find_label("Clear nozzle") == nullptr);
   CHECK(ui::find_label("Load Cell") == nullptr);
   CHECK(ui::find_label("PID Bed") != nullptr);
+}
+
+TEST_CASE("Load Cell uses the former screw adjustment slot on PID") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  open_pid(moonraker);
+
+  lv_obj_t *load = ui::find_label("Load Cell");
+  lv_obj_t *bed = ui::find_label("PID Bed");
+  lv_obj_t *clear = ui::find_label("Clear nozzle");
+  REQUIRE(load != nullptr);
+  REQUIRE(bed != nullptr);
+  REQUIRE(clear != nullptr);
+  lv_area_t a, b, c;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_obj_update_layout(lv_scr_act());
+    lv_obj_get_coords(lv_obj_get_parent(load), &a);
+    lv_obj_get_coords(lv_obj_get_parent(bed), &b);
+    lv_obj_get_coords(lv_obj_get_parent(clear), &c);
+  }
+  // Справа от очистки сопла, прямо под PID стола.
+  CHECK(std::abs((int)a.x1 + a.x2 - b.x1 - b.x2) <= 2);
+  CHECK(std::abs((int)a.y1 + a.y2 - c.y1 - c.y2) <= 2);
+
+  ui::tap_label("Load Cell");
+  REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
+  CHECK(moonraker.gcodes().back() == "LOAD_CELL_TARE");
 }
 
 TEST_CASE("the AD5M PID screen keeps weight controls") {
