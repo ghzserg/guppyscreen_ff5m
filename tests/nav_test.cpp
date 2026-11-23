@@ -425,16 +425,17 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
   }), ui::join(moonraker.gcodes()));
 }
 
-TEST_CASE("C5 hides screw nozzle temperature but keeps its default for calibration") {
+static void check_c5_screw_temperature(const char *model) {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  start(moonraker, {
-    {"default_printer", "C5"},
-    {"printers", {{"C5", {
+  json config = {
+    {"default_printer", model},
+    {"printers", {{model, {
       {"moonraker_host", "127.0.0.1"},
       {"moonraker_port", moonraker.port()},
       {"moonraker_api_key", false}
     }}}}
-  });
+  };
+  start(moonraker, config);
 
   ui::tap_label("Bed Mesh");
   REQUIRE_MESSAGE(ui::find_label("Screw adjustment") != nullptr, ui::dump_screen());
@@ -457,6 +458,14 @@ TEST_CASE("C5 hides screw nozzle temperature but keeps its default for calibrati
     }
     return false;
   }), ui::join(moonraker.gcodes()));
+}
+
+TEST_CASE("C5 hides screw nozzle temperature but keeps its default") {
+  check_c5_screw_temperature("C5");
+}
+
+TEST_CASE("C5 Pro hides screw nozzle temperature but keeps its default") {
+  check_c5_screw_temperature("C5Pro");
 }
 
 TEST_CASE("Tune has no Fine Tune or Bed Mesh") {

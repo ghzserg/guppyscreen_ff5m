@@ -101,7 +101,8 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_pad_bottom(profile_info, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
   lv_obj_set_style_border_side(profile_info, LV_BORDER_SIDE_BOTTOM, 0);
 
-  const bool is_c5 = Config::get_instance()->get_json("/default_printer") == "C5";
+  const auto &printer_model = Config::get_instance()->get_json("/default_printer");
+  const bool is_c5 = printer_model == "C5" || printer_model == "C5Pro";
   lv_obj_add_flag(screws_cont, LV_OBJ_FLAG_FLOATING);
   lv_obj_set_size(screws_cont, 320 * scale, (is_c5 ? 90 : 120) * hscale);
   lv_obj_align(screws_cont, LV_ALIGN_TOP_LEFT, 390 * scale, (is_c5 ? 270 : 255) * hscale);
