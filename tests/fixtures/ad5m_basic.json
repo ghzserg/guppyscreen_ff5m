@@ -4,7 +4,7 @@
       "webhooks", "configfile", "mcu", "mcu eboard", "gcode_move", "print_stats", "virtual_sdcard",
       "pause_resume", "display_status", "exclude_object", "heaters", "heater_bed", "extruder", "fan",
       "temperature_sensor head", "temperature_sensor weightValue",
-      "output_pin fan0", "output_pin fan1", "output_pin fan2", "toolhead", "motion_report",
+      "output_pin fan0", "output_pin fan1", "output_pin fan2", "led chamber_led", "toolhead", "motion_report",
       "idle_timeout", "bed_mesh", "firmware_retraction",
       "gcode_macro START_PRINT", "gcode_macro END_PRINT", "gcode_macro LOAD_FILAMENT"
     ]
@@ -97,6 +97,7 @@
       "output_pin fan0": {"value": 0.0},
       "output_pin fan1": {"value": 0.0},
       "output_pin fan2": {"value": 0.0},
+      "led chamber_led": {"color_data": [[0.0, 0.0, 0.0, 0.5]]},
       "toolhead": {
         "homed_axes": "", "axis_minimum": [-3.0, -3.0, -3.0, 0.0], "axis_maximum": [220.0, 220.0, 220.0, 0.0],
         "print_time": 0.0, "stalls": 0, "estimated_print_time": 100.0, "extruder": "extruder",

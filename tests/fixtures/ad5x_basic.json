@@ -17,6 +17,7 @@
       "fan",
       "fan_generic fanM106",
       "fan_generic chamber_fan",
+      "led chamber_led",
       "toolhead",
       "motion_report",
       "idle_timeout",
@@ -331,6 +332,9 @@
       },
       "fan_generic chamber_fan": {
         "speed": 0.0
+      },
+      "led chamber_led": {
+        "color_data": [[0.0, 0.0, 0.0, 0.5]]
       },
       "temperature_sensor head": {
         "temperature": 42.3

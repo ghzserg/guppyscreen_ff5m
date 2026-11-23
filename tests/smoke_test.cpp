@@ -11,9 +11,26 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <fstream>
 
 static bool contains(const std::vector<std::string> &v, const std::string &s) {
   return std::find(v.begin(), v.end(), s) != v.end();
+}
+
+TEST_CASE("Chamber LED is present in every printer fixture and opens on AD5M") {
+  for (const char *name : {"ad5m_basic.json", "ad5x_basic.json", "c5pro_basic.json"}) {
+    json fixture = json::parse(std::ifstream(app::fixture(name)));
+    INFO(name);
+    const json &objects = fixture["printer.objects.list"]["objects"];
+    CHECK(std::count(objects.begin(), objects.end(), "led chamber_led") == 1);
+    CHECK(fixture["printer.objects.subscribe"]["status"]["led chamber_led"]["color_data"][0][3] == 0.5);
+  }
+
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  ui::tap_label("LED");
+  CHECK_MESSAGE(ui::find_label("Chamber Led") != nullptr, "LED panel is empty");
 }
 
 TEST_CASE("startup shows heater temperatures from Klipper") {
