@@ -285,10 +285,6 @@ void PidPanel::handle_callback(lv_event_t *e) {
   }
 }
 
-void PidPanel::adjust_screws() {
-  ws.gcode_script(fmt::format("BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP={} BED_TEMP={}", extruder_temp.get_target_value(), heater_bed_temp.get_target_value()));
-}
-
 int PidPanel::calibrated_tool() const {
 #ifdef GUPPY_FF5M
   // The selected tile's, the only one's on the AD5X: its four filament
