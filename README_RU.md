@@ -32,6 +32,22 @@ DISPLAY_ON
 
 Подробнее: [DISPLAY_OFF в документации Z-Mod](https://wiki.zmod.link/ru/System/#display_off).
 
+## Скриншоты C5 Pro
+
+Снимки интерфейса C5 Pro (четыре экструдера) сделаны в тестовом LVGL-стенде при разрешении 800×480. На реальном принтере набор кнопок зависит от конфигурации Z-Mod.
+
+| Главная | Печать |
+|:--|:--|
+| ![Главная C5 Pro](docs/screenshots/c5pro/home.png) | ![Файлы C5 Pro](docs/screenshots/c5pro/print.png) |
+| **Вентиляторы** | **PID** |
+| ![Вентиляторы C5 Pro](docs/screenshots/c5pro/fans.png) | ![PID C5 Pro](docs/screenshots/c5pro/pid.png) |
+| **Экструдеры** | **Карта стола** |
+| ![Экструдеры C5 Pro](docs/screenshots/c5pro/extrude.png) | ![Карта стола C5 Pro](docs/screenshots/c5pro/bed-mesh.png) |
+| **Во время печати** | **Настройки** |
+| ![Экран печати C5 Pro](docs/screenshots/c5pro/print-status.png) | ![Настройки C5 Pro](docs/screenshots/c5pro/settings.png) |
+
+[Все экраны C5 Pro](docs/c5pro-screenshots.md)
+
 ## Возможности
 
 Сохранены основные возможности Guppy Screen: управление температурами, перемещениями, вентиляторами и подсветкой; печать файлов, консоль, макросы, Bed Mesh, Input Shaper, калибровка ремней, Fine Tune и интеграция со Spoolman.
