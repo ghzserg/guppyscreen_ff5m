@@ -21,9 +21,6 @@ tab home
 tap Fans
 save fans
 tab home
-tap LED
-save led
-tab home
 tap Fine Tune
 save fine-tune
 tab home
