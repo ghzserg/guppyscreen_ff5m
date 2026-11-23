@@ -9,15 +9,17 @@
 #include <mutex>
 #include <vector>
 
+class PidPanel;
+
 class BedMeshPanel : public NotifyConsumer {
  public:
-  BedMeshPanel(KWebSocketClient &c, std::mutex &l);
+  BedMeshPanel(KWebSocketClient &c, std::mutex &l, PidPanel &pid);
   ~BedMeshPanel();
 
   void consume(json &j);
   void foreground();
   void set_print_locked(bool locked) {
-    ButtonContainer::set_print_locked(locked, {&save_btn, &clear_btn, &auto_btn, &calibrate_btn});
+    ButtonContainer::set_print_locked(locked, {&save_btn, &clear_btn, &auto_btn, &calibrate_btn, &screws_btn});
     for (auto *obj : {mesh_table, profile_table}) {
       if (locked) {
         lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
@@ -81,6 +83,7 @@ class BedMeshPanel : public NotifyConsumer {
   void getCoordinates(int row, int col);
   void table_event_cb(lv_event_t *e);
   KWebSocketClient &ws;
+  PidPanel &pid_panel;
   lv_obj_t *cont;
   lv_obj_t *prompt;
   lv_obj_t *top_cont;
@@ -88,6 +91,7 @@ class BedMeshPanel : public NotifyConsumer {
   lv_obj_t *profile_cont;
   lv_obj_t *profile_table;
   lv_obj_t *profile_info;
+  ButtonContainer screws_btn;
   lv_obj_t *controls_cont;
   ButtonContainer save_btn;
   ButtonContainer clear_btn;
