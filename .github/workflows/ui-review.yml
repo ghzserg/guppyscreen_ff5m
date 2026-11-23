@@ -2,17 +2,41 @@ name: UI review
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, edited]
+    types: [opened, reopened, synchronize, edited, labeled, unlabeled]
 
 concurrency:
-  group: ui-review-${{ github.event.pull_request.number }}
+  group: ui-review-${{ github.event.pull_request.number }}-${{ github.event.label.name && github.event.label.name != 'Готов к ревью' && github.run_id || 'capture' }}
   cancel-in-progress: true
 
 jobs:
-  capture:
+  approval:
     if: >-
+      github.repository == 'ghzserg/guppyscreen_ff5m' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.body, 'UI-Review:')
+      contains(github.event.pull_request.body, 'UI-Review:') &&
+      github.event.action != 'unlabeled' &&
+      (github.event.action != 'labeled' || github.event.label.name == 'Готов к ревью')
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      approved: ${{ steps.check.outputs.approved }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Check UI review approval
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 ci/ui-review-approval.py
+
+  capture:
+    needs: approval
+    if: needs.approval.outputs.approved == 'true'
     runs-on: ubuntu-22.04
     container: debian:13
     permissions:

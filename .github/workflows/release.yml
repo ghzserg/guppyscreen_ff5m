@@ -4,7 +4,13 @@ on:
   push:
     branches: [main]
     tags: ['*']
+    paths:
+      - 'src/**'
+      - 'patches/**'
   pull_request:
+    paths:
+      - 'src/**'
+      - 'patches/**'
   workflow_dispatch:
 
 permissions:

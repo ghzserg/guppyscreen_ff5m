@@ -1,0 +1,83 @@
+name: UI review (fork)
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ui-review-fork-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lookup:
+    if: github.event.repository.fork == true
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    outputs:
+      enabled: ${{ steps.request.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Find an upstream UI review request
+        id: request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 ci/ui-review-fork-request.py "$RUNNER_TEMP/ui-review-event.json"
+
+  capture:
+    needs: lookup
+    if: needs.lookup.outputs.enabled == 'true'
+    runs-on: ubuntu-22.04
+    container: debian:13
+    permissions:
+      contents: read
+    steps:
+      - name: Install build tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates git make cmake gcc g++ pkg-config python3 curl
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare requested screens
+        id: prepare
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python3 ci/ui-review-fork-request.py "$RUNNER_TEMP/ui-review-event.json"
+          python3 ci/ui-review-request.py "$RUNNER_TEMP/ui-review-event.json" \
+            "$RUNNER_TEMP/ui-review-scenario.txt"
+
+      - name: Capture before and after
+        env:
+          BASE_SHA: ${{ steps.prepare.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.prepare.outputs.head_sha }}
+        run: |
+          git fetch --no-tags https://github.com/ghzserg/guppyscreen_ff5m.git "$BASE_SHA"
+          git fetch --no-tags origin "$HEAD_SHA"
+          bash ci/ui-review.sh "$BASE_SHA" "$HEAD_SHA" \
+            "$RUNNER_TEMP/ui-review-scenario.txt" "$RUNNER_TEMP/ui-review"
+
+      - name: Publish review to fork run summary
+        env:
+          PR_NUMBER: ${{ steps.prepare.outputs.pr_number }}
+        run: |
+          printf '## UI review for [upstream PR #%s](https://github.com/ghzserg/guppyscreen_ff5m/pull/%s)\n\n' \
+            "$PR_NUMBER" "$PR_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          bash ci/publish-review.sh "$RUNNER_TEMP/ui-review" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: ui-review-evidence
+          path: ${{ runner.temp }}/ui-review/
+          if-no-files-found: ignore
