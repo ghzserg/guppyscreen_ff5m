@@ -1,5 +1,5 @@
 #include "bedmesh_panel.h"
-#include "pid_panel.h"
+#include "config.h"
 #include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -13,7 +13,6 @@ LV_IMG_DECLARE(delete_img);
 LV_IMG_DECLARE(auto_img);
 LV_IMG_DECLARE(bedmesh_img);
 LV_IMG_DECLARE(sd_img);
-LV_IMG_DECLARE(bed_level_screws_tune_img);
 
 
 static lv_color_t color_gradient(double offset);
@@ -23,10 +22,9 @@ static lv_color_t color_gradient2(double offset);
 uint16_t selected_row = LV_TABLE_CELL_NONE;
 uint16_t selected_col = LV_TABLE_CELL_NONE;
 
-BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l, PidPanel &pid)
+BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
-  , pid_panel(pid)
   , cont(lv_obj_create(Nav::get().content()))
   , prompt(lv_obj_create(Nav::get().content()))
   , top_cont(lv_obj_create(cont))
@@ -34,7 +32,13 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l, PidPanel &pid)
   , profile_cont(lv_table_create(top_cont))
   , profile_table(lv_table_create(profile_cont))
   , profile_info(lv_table_create(profile_cont))
-  , screws_btn(top_cont, &bed_level_screws_tune_img, _("Screw adjustment") /* "Регулировка винтов" */, &BedMeshPanel::_handle_callback, this)
+  , screws_cont(lv_obj_create(top_cont))
+  , screw_nozzle_btn(lv_btn_create(screws_cont))
+  , screw_nozzle_value(lv_label_create(screw_nozzle_btn))
+  , screw_bed_btn(lv_btn_create(screws_cont))
+  , screw_bed_value(lv_label_create(screw_bed_btn))
+  , screw_adjust_btn(lv_btn_create(screws_cont))
+  , screws_numpad(Nav::get().content())
   , controls_cont(lv_obj_create(cont))
   , save_btn(controls_cont, &sd_img, _("Save") /* "Сохранить" */, &BedMeshPanel::_handle_callback, this)
   , clear_btn(controls_cont, &delete_img, _("Clean") /* "Очистить" */, &BedMeshPanel::_handle_callback, this)
@@ -97,8 +101,43 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l, PidPanel &pid)
   lv_obj_set_style_pad_bottom(profile_info, 5, LV_PART_ITEMS | LV_STATE_DEFAULT);
   lv_obj_set_style_border_side(profile_info, LV_BORDER_SIDE_BOTTOM, 0);
 
-  lv_obj_add_flag(screws_btn.get_container(), LV_OBJ_FLAG_FLOATING);
-  lv_obj_align(screws_btn.get_container(), LV_ALIGN_TOP_LEFT, 385 * scale, 260 * hscale);
+  lv_obj_add_flag(screws_cont, LV_OBJ_FLAG_FLOATING);
+  lv_obj_set_size(screws_cont, 320 * scale, 126 * hscale);
+  lv_obj_align(screws_cont, LV_ALIGN_TOP_LEFT, 390 * scale, 255 * hscale);
+  lv_obj_set_style_pad_all(screws_cont, 0, 0);
+  lv_obj_set_style_border_width(screws_cont, 0, 0);
+  lv_obj_set_style_bg_opa(screws_cont, LV_OPA_TRANSP, 0);
+  lv_obj_clear_flag(screws_cont, LV_OBJ_FLAG_SCROLLABLE);
+
+  lv_obj_t *nozzle_label = lv_label_create(screws_cont);
+  lv_label_set_text(nozzle_label, _("Extruder") /* "Экструдер" */);
+  lv_obj_align(nozzle_label, LV_ALIGN_TOP_LEFT, 12 * scale, 8 * hscale);
+  lv_obj_t *bed_label = lv_label_create(screws_cont);
+  lv_label_set_text(bed_label, _("Bed") /* "Стол" */);
+  lv_obj_align(bed_label, LV_ALIGN_TOP_LEFT, 12 * scale, 51 * hscale);
+
+  for (lv_obj_t *obj : {screw_nozzle_btn, screw_bed_btn}) {
+    lv_obj_set_size(obj, 110 * scale, 36 * hscale);
+    lv_obj_set_style_bg_color(obj, lv_color_hex(0x393D43), 0);
+    lv_obj_set_style_radius(obj, 6, 0);
+    lv_obj_add_event_cb(obj, &BedMeshPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
+  }
+  lv_obj_align(screw_nozzle_btn, LV_ALIGN_TOP_RIGHT, -12 * scale, 0);
+  lv_obj_align(screw_bed_btn, LV_ALIGN_TOP_RIGHT, -12 * scale, 43 * hscale);
+  lv_label_set_text(screw_nozzle_value, fmt::format("{} °C", Config::get_instance()->get<int>("/screw_nozzle_temp")).c_str());
+  lv_label_set_text(screw_bed_value, fmt::format("{} °C", Config::get_instance()->get<int>("/screw_bed_temp")).c_str());
+  lv_obj_center(screw_nozzle_value);
+  lv_obj_center(screw_bed_value);
+
+  lv_obj_set_size(screw_adjust_btn, 300 * scale, 36 * hscale);
+  lv_obj_align(screw_adjust_btn, LV_ALIGN_TOP_MID, 0, 87 * hscale);
+  lv_obj_set_style_bg_color(screw_adjust_btn, lv_color_hex(0x45494F), 0);
+  lv_obj_set_style_bg_color(screw_adjust_btn, lv_color_hex(0x555B62), LV_STATE_PRESSED);
+  lv_obj_set_style_radius(screw_adjust_btn, 6, 0);
+  lv_obj_t *adjust_label = lv_label_create(screw_adjust_btn);
+  lv_label_set_text(adjust_label, _("Screw adjustment") /* "Регулировка винтов" */);
+  lv_obj_center(adjust_label);
+  lv_obj_add_event_cb(screw_adjust_btn, &BedMeshPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
 
   // button controls
   lv_obj_set_width(controls_cont, LV_PCT(100));
@@ -424,6 +463,8 @@ void BedMeshPanel::foreground() {
   spdlog::trace("bm {}", bm.dump());
   refresh_views(bm);
 
+  lv_label_set_text(screw_nozzle_value, fmt::format("{} °C", Config::get_instance()->get<int>("/screw_nozzle_temp")).c_str());
+  lv_label_set_text(screw_bed_value, fmt::format("{} °C", Config::get_instance()->get<int>("/screw_bed_temp")).c_str());
   lv_obj_move_foreground(cont);
 }
 
@@ -460,10 +501,21 @@ void BedMeshPanel::handle_callback(lv_event_t *event) {
     }
     ws.gcode_script("G28\nBED_MESH_CALIBRATE");
     calibrate_btn.enable();
-  } else if (btn == screws_btn.get_container()) {
-    screws_btn.disable();
-    pid_panel.adjust_screws();
-    screws_btn.enable();
+  } else if (btn == screw_nozzle_btn || btn == screw_bed_btn) {
+    const bool nozzle = btn == screw_nozzle_btn;
+    screws_numpad.set_callback([this, nozzle](double value) {
+      if (State::print_pause_active() || !std::isfinite(value) || value < 0 || value > (nozzle ? 350 : 150)) return;
+      int temp = static_cast<int>(std::lround(value));
+      Config *conf = Config::get_instance();
+      conf->set(nozzle ? "/screw_nozzle_temp" : "/screw_bed_temp", temp);
+      conf->save();
+      lv_label_set_text(nozzle ? screw_nozzle_value : screw_bed_value, fmt::format("{} °C", temp).c_str());
+    });
+    screws_numpad.foreground_reset();
+  } else if (btn == screw_adjust_btn) {
+    ws.gcode_script(fmt::format("BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP={} BED_TEMP={}",
+      Config::get_instance()->get<int>("/screw_nozzle_temp"),
+      Config::get_instance()->get<int>("/screw_bed_temp")));
   } else if (btn == auto_btn.get_container()) {
     auto_btn.disable();
     spdlog::trace("auto mesh calibrate pressed");
