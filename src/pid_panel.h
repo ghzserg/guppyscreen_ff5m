@@ -19,8 +19,9 @@ class PidPanel : public NotifyConsumer {
   ~PidPanel();
 
   void foreground();
+  void adjust_screws();
   void set_print_locked(bool locked) {
-    ButtonContainer::set_print_locked(locked, {&pid_extruder_btn, &pid_bed_btn, &clear_nozzle_btn, &bed_level_screws_tune_btn});
+    ButtonContainer::set_print_locked(locked, {&pid_extruder_btn, &pid_bed_btn, &clear_nozzle_btn});
   }
   void handle_callback(lv_event_t *event);
   void consume(json &j);
@@ -68,7 +69,6 @@ class PidPanel : public NotifyConsumer {
   ButtonContainer pid_bed_btn;
   ButtonContainer clear_nozzle_btn;
   ButtonContainer load_cell_tare_btn;
-  ButtonContainer bed_level_screws_tune_btn;
 #ifdef GUPPY_FF5M
   // Hidden extruder_temp still holds the calibration temperature and feeds
   // the chart with the selected nozzle's temperature.
