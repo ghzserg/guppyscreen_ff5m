@@ -32,8 +32,9 @@ SCREENS = {
         'status {"print_stats":{"state":"printing","filename":"cube.gcode"},'
         '"exclude_object":{"objects":[{"name":"CENTER_CUBE","polygon":'
         '[[88,88],[128,88],[128,128],[88,128]]},'
-        '{"name":"CORNER_CUBE","polygon":[[20,20],[40,20],[40,40],[20,40]]}],'
-        '"excluded_objects":[]}}\n'
+        '{"name":"CORNER_CUBE","polygon":[[20,20],[40,20],[40,40],[20,40]]},'
+        '{"name":"EXCLUDED_CUBE","polygon":[[88,20],[128,20],[128,60],[88,60]]}],'
+        '"excluded_objects":["EXCLUDED_CUBE"],"current_object":"CENTER_CUBE"}}\n'
         'tab print\n'
         'tap_parent cube.gcode'
     ),
