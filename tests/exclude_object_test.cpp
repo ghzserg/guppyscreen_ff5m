@@ -77,6 +77,8 @@ void answer_confirmation(bool confirm) {
 struct Pixels {
   int green = 0;
   int red = 0;
+  int blue = 0;
+  int left = 10000, top = 10000, right = -1, bottom = -1;
 };
 
 // Count the object outline colours drawn on the canvas.
@@ -86,17 +88,33 @@ Pixels count_outline_pixels(lv_obj_t *canvas) {
   lv_img_dsc_t *img = lv_canvas_get_img(canvas);
   lv_color_t green = lv_palette_main(LV_PALETTE_GREEN);
   lv_color_t red = lv_palette_main(LV_PALETTE_RED);
+  lv_color_t blue = lv_palette_main(LV_PALETTE_LIGHT_BLUE);
   auto same = [](lv_color_t a, lv_color_t b) {
     return a.ch.red == b.ch.red && a.ch.green == b.ch.green && a.ch.blue == b.ch.blue;
   };
   for (lv_coord_t y = 0; y < (lv_coord_t)img->header.h; y++) {
     for (lv_coord_t x = 0; x < (lv_coord_t)img->header.w; x++) {
       lv_color_t c = lv_canvas_get_px(canvas, x, y);
-      if (same(c, green)) n.green++;
-      else if (same(c, red)) n.red++;
+      if (same(c, green) || same(c, blue)) {
+        if (same(c, green)) n.green++;
+        else n.blue++;
+        n.left = std::min(n.left, (int)x); n.right = std::max(n.right, (int)x);
+        n.top = std::min(n.top, (int)y); n.bottom = std::max(n.bottom, (int)y);
+      } else if (same(c, red)) n.red++;
     }
   }
   return n;
+}
+
+// Центр CENTER_CUBE после вписывания двух объектов из start_printing.
+void tap_center_cube(lv_obj_t *canvas) {
+  lv_area_t a = ui::coords(canvas);
+  int delta = (int)(lv_area_get_height(&a) * 0.2875f);
+  ui::tap_at((a.x1 + a.x2) / 2 + delta, (a.y1 + a.y2) / 2 - delta);
+}
+
+void show_full_bed() {
+  for (int i = 0; i < 7; ++i) ui::tap_label("-");
 }
 
 // Проверяем экран исключения объектов: имя файла теперь открывает каталог.
@@ -136,13 +154,14 @@ TEST_CASE("exclude object map excludes the tapped object") {
     CHECK_MESSAGE(px.green > 100, "green outline pixels: " << px.green);
 
     if (round == 0) {
-      ui::tap(canvas);  // the centre of the map is inside CENTER_CUBE
+      tap_center_cube(canvas);
       REQUIRE(app::wait_until([] { return ui::find_shown(&lv_btnmatrix_class) != nullptr; }));
       CHECK_FALSE(contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"));
       CHECK(count_outline_pixels(canvas).red == 0);
+      CHECK(count_outline_pixels(canvas).blue > 100);
       answer_confirmation(false);
       CHECK_FALSE(contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"));
-      ui::tap(canvas);
+      tap_center_cube(canvas);
       answer_confirmation(true);
       bool sent = app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"); });
       CHECK_MESSAGE(sent, "G-codes sent: " << ui::join(moonraker.gcodes()));
@@ -151,6 +170,7 @@ TEST_CASE("exclude object map excludes the tapped object") {
       app::wait_until([&] { return count_outline_pixels(canvas).red > 100; });
       px = count_outline_pixels(canvas);
       CHECK_MESSAGE(px.red > 100, "red outline pixels after exclude: " << px.red);
+      CHECK(px.blue == 0);
     }
 
     ui::tap_tab(Nav::PRINT);  // back to the print screen
@@ -164,6 +184,15 @@ TEST_CASE("exclude map shows a square bed with vertical zoom controls") {
   open_exclude_panel();
   lv_obj_t *canvas = ui::find_shown(&lv_canvas_class);
   REQUIRE(canvas != nullptr);
+
+  const auto px = count_outline_pixels(canvas);
+  lv_area_t a = ui::coords(canvas);
+  int w = lv_area_get_width(&a), h = lv_area_get_height(&a);
+  CHECK(std::abs(px.left + px.right - (w - 1)) <= 4);
+  CHECK(std::abs(px.top + px.bottom - (h - 1)) <= 4);
+  CHECK(px.bottom - px.top > h * 0.88f);
+  CHECK(px.bottom - px.top < h * 0.93f);
+  show_full_bed();
 
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
@@ -207,6 +236,36 @@ TEST_CASE("exclude map shows a square bed with vertical zoom controls") {
   CHECK(count_outline_pixels(canvas).green > 100);
 }
 
+TEST_CASE("exclude map fits a small off-center object and restores automatic zoom on reopen") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker, {{"prompt_exclude_object", false}});
+  moonraker.push_status({{"exclude_object", {{"objects", json::array({
+    {{"name", "CORNER_CUBE"}, {"polygon", square(20, 20, 30, 30)}},
+  })}}}});
+  app::settle(moonraker);
+  open_exclude_panel();
+  auto *canvas = ui::find_shown(&lv_canvas_class);
+  REQUIRE(canvas != nullptr);
+  auto px = count_outline_pixels(canvas);
+  lv_area_t a = ui::coords(canvas);
+  int w = lv_area_get_width(&a), h = lv_area_get_height(&a);
+  CHECK(std::abs(px.left + px.right - (w - 1)) <= 4);
+  CHECK(std::abs(px.top + px.bottom - (h - 1)) <= 4);
+  CHECK(px.bottom - px.top > h * 0.15f);
+  CHECK(px.bottom - px.top < h * 0.20f);
+  ui::tap_label("+");
+  CHECK(count_outline_pixels(canvas).green == px.green);
+  ui::tap_label("-");
+  CHECK(count_outline_pixels(canvas).green < px.green);
+  ui::tap_tab(Nav::PRINT);
+  REQUIRE(app::wait_until([] { return ui::find_shown(&lv_canvas_class) == nullptr; }));
+  open_exclude_panel();
+  REQUIRE(app::wait_until([&] { return (canvas = ui::find_shown(&lv_canvas_class)) != nullptr; }));
+  CHECK(count_outline_pixels(canvas).green == px.green);
+  ui::tap(canvas);
+  CHECK(app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CORNER_CUBE"); }));
+}
+
 TEST_CASE("dragging the zoomed exclusion map pans without excluding objects") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   start_printing(moonraker, {{"prompt_exclude_object", false}});
@@ -214,6 +273,7 @@ TEST_CASE("dragging the zoomed exclusion map pans without excluding objects") {
   lv_obj_t *canvas = ui::find_shown(&lv_canvas_class);
   REQUIRE(canvas != nullptr);
 
+  show_full_bed();
   ui::tap_label("+");
   int before = bed_left(canvas);
   REQUIRE(before >= 0);
@@ -242,6 +302,7 @@ TEST_CASE("object updates preserve exclusions until Klipper clears them") {
   auto *canvas = ui::find_shown(&lv_canvas_class);
   REQUIRE(canvas != nullptr);
 
+  show_full_bed();
   moonraker.push_status({{"exclude_object", {{"excluded_objects", {"CENTER_CUBE"}}}}});
   REQUIRE(app::wait_until([&] { return count_outline_pixels(canvas).red > 100; }));
   const auto initial = count_outline_pixels(canvas);
@@ -262,8 +323,52 @@ TEST_CASE("object updates preserve exclusions until Klipper clears them") {
   moonraker.push_status({{"exclude_object", {{"objects", objects}, {"excluded_objects", json::array()}}}});
   REQUIRE(app::wait_until([&] {
     const auto cleared = count_outline_pixels(canvas);
-    return cleared.red == 0 && cleared.green == refreshed.green + refreshed.red;
+    return cleared.red == 0 && cleared.green == refreshed.green && cleared.blue == refreshed.red;
   }));
+}
+
+TEST_CASE("exclude map highlights the current object unless it is excluded") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_printing(moonraker);
+  open_exclude_panel();
+  auto *canvas = ui::find_shown(&lv_canvas_class);
+  REQUIRE(canvas != nullptr);
+  const auto initial = count_outline_pixels(canvas);
+  REQUIRE(initial.blue > 100);
+  REQUIRE(initial.green > 100);
+
+  moonraker.push_status({{"exclude_object", {{"current_object", "CORNER_CUBE"}}}});
+  REQUIRE(app::wait_until([&] {
+    auto px = count_outline_pixels(canvas);
+    return px.blue == initial.green && px.green == initial.blue;
+  }));
+
+  moonraker.push_status({{"exclude_object", {{"excluded_objects", {"CORNER_CUBE"}}}}});
+  REQUIRE(app::wait_until([&] {
+    auto px = count_outline_pixels(canvas);
+    return px.red == initial.green && px.blue == 0 && px.green == initial.blue;
+  }));
+
+  moonraker.push_status({{"exclude_object", {{"current_object", "CENTER_CUBE"}}}});
+  REQUIRE(app::wait_until([&] {
+    auto px = count_outline_pixels(canvas);
+    return px.blue == initial.blue && px.red == initial.green && px.green == 0;
+  }));
+
+  moonraker.push_status({{"exclude_object", {{"current_object", nullptr}}}});
+  REQUIRE(app::wait_until([&] {
+    auto px = count_outline_pixels(canvas);
+    return px.blue == 0 && px.green == initial.blue && px.red == initial.green;
+  }));
+
+  ui::tap_tab(Nav::PRINT);
+  REQUIRE(app::wait_until([] { return ui::find_shown(&lv_canvas_class) == nullptr; }));
+  moonraker.push_status({{"exclude_object", {{"current_object", "CENTER_CUBE"}}}});
+  app::settle(moonraker);
+  open_exclude_panel();
+  REQUIRE(app::wait_until([&] { return (canvas = ui::find_shown(&lv_canvas_class)) != nullptr; }));
+  CHECK(count_outline_pixels(canvas).blue == initial.blue);
+  CHECK(count_outline_pixels(canvas).red == initial.green);
 }
 
 TEST_CASE("leaving the exclude map through the bar frees it") {
@@ -388,7 +493,7 @@ TEST_CASE("graphic exclusion skips confirmation when setting is off") {
   open_exclude_panel();
   lv_obj_t *canvas = ui::find_shown(&lv_canvas_class);
   REQUIRE(canvas != nullptr);
-  ui::tap(canvas);
+  tap_center_cube(canvas);
   CHECK(ui::find_shown(&lv_btnmatrix_class) == nullptr);
   CHECK(app::wait_until([&] { return contains(moonraker.gcodes(), "EXCLUDE_OBJECT NAME=CENTER_CUBE"); }));
 }
