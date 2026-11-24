@@ -37,17 +37,28 @@ TEST_CASE("Screenshot: scripted") {
     settings = json::parse(config);
   const char *profile = std::getenv("GUPPY_SCREENSHOT_PROFILE");
   const bool c5pro = profile && std::string(profile) == "c5pro";
-  if (profile && !c5pro && std::string(profile) != "ad5m")
+  const bool ad5x = profile && std::string(profile) == "ad5x";
+  if (profile && !c5pro && !ad5x && std::string(profile) != "ad5m")
     FAIL("Unknown screenshot profile: " << profile);
-  if (c5pro) {
-    json config = json::parse(std::ifstream(app::fixture("guppyconfig_c5pro.json")));
-    const json &printer = config["printers"]["C5Pro"];
+  if (c5pro || ad5x) {
+    json config = json::parse(std::ifstream(app::fixture(c5pro ? "guppyconfig_c5pro.json" : "guppyconfig_ad5x.json")));
+    const json &printer = config["printers"][c5pro ? "C5Pro" : "AD5X"];
     settings.merge_patch({{"printers", {{"FF5M", {
       {"monitored_sensors", printer["monitored_sensors"]},
       {"fans", printer["fans"]}
     }}}}});
   }
-  FakeMoonraker moonraker(app::fixture(c5pro ? "c5pro_basic.json" : "ad5m_basic.json"));
+  FakeMoonraker moonraker(app::fixture(c5pro ? "c5pro_basic.json" : ad5x ? "ad5x_basic.json" : "ad5m_basic.json"));
+  if (c5pro || ad5x) {
+    json initial = moonraker.result("printer.objects.subscribe");
+    initial["status"]["zmod_color"]["slots"] = json::array({
+      {{"ID", "1"}, {"Material", "PLA"}, {"Color", "Blue"}, {"HEX", "3399FF"}, {"hasFilament", true}},
+      {{"ID", "2"}, {"Material", "PETG"}, {"Color", "Pink"}, {"HEX", "E040A0"}, {"hasFilament", true}},
+      {{"ID", "3"}, {"Material", ""}, {"Color", ""}, {"HEX", ""}, {"hasFilament", false}},
+      {{"ID", "4"}, {"Material", "PLA"}, {"Color", "White"}, {"HEX", "FFFFFF"}, {"hasFilament", true}}
+    });
+    moonraker.set_result("printer.objects.subscribe", initial);
+  }
   PrintFile sample;
   sample.path = "cube.gcode";
   FakePrinter::Options options;
