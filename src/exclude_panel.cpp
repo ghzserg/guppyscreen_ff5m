@@ -19,6 +19,7 @@ struct ExObj {
 };
 
 std::vector<ExObj> objs;
+size_t current_idx = 0;
 // The canvas buffer (map_w x map_h, 32-bit: about 900 KB) exists only while
 // the panel is open and shows the map. Otherwise the canvas points at a
 // single static pixel.
@@ -61,6 +62,30 @@ void compute_bounds() {
   min_y = cy - side / 2; max_y = cy + side / 2;
 }
 
+void fit_objects() {
+  zoom = 1.0f;
+  pan_x = pan_y = 0;
+  bool first = true;
+  float left = 0, right = 0, bottom = 0, top = 0;
+  for (const auto &o : objs) {
+    if (o.poly.size() < 3) continue;
+    for (const auto &p : o.poly) {
+      if (first) { left = right = p.first; bottom = top = p.second; first = false; }
+      left = std::min(left, p.first); right = std::max(right, p.first);
+      bottom = std::min(bottom, p.second); top = std::max(top, p.second);
+    }
+  }
+  if (first) return;
+  float base = std::min(map_w / (max_x - min_x), map_h / (max_y - min_y)) * 0.95f;
+  float scale = 0.9f * std::min(map_w / std::max(1.0f, right - left),
+                                map_h / std::max(1.0f, top - bottom));
+  zoom = std::max(1.0f, std::min(scale / base, 4.0f));
+  if (zoom > 1.0f) {
+    pan_x = ((min_x + max_x) - (left + right)) / 2 * base * zoom;
+    pan_y = ((bottom + top) - (min_y + max_y)) / 2 * base * zoom;
+  }
+}
+
 void to_px(float x, float y, lv_point_t &p) {
   float base = std::min(map_w / (max_x - min_x), map_h / (max_y - min_y)) * 0.95f;
   float s = base * zoom;
@@ -98,6 +123,19 @@ void map_free() {
   std::vector<uint8_t>().swap(map_buf);  // clear() would keep the memory
 }
 
+bool update_current(const json &current) {
+  size_t previous = current_idx;
+  current_idx = objs.size();
+  if (current.is_string()) {
+    const auto &name = current.get_ref<const std::string &>();
+    for (size_t i = 0; i < objs.size(); ++i)
+      if (objs[i].name == name) { current_idx = i; break; }
+  }
+  if (previous == current_idx) return false;
+  return (previous < objs.size() && !objs[previous].excluded && objs[previous].poly.size() >= 3) ||
+         (current_idx < objs.size() && !objs[current_idx].excluded && objs[current_idx].poly.size() >= 3);
+}
+
 void redraw() {
   if (!map_cont || map_buf.empty()) return;
   lv_canvas_fill_bg(map_cont, lv_color_hex(0x101820), LV_OPA_COVER);
@@ -122,9 +160,11 @@ void redraw() {
   dsc.color = lv_color_hex(0x71889B);
   lv_canvas_draw_line(map_cont, bed, 5, &dsc);
   dsc.width = 3;
-  for (const auto &o : objs) {
+  for (size_t i = 0; i < objs.size(); ++i) {
+    const auto &o = objs[i];
     if (o.poly.size() < 3) continue;
-    dsc.color = o.excluded ? lv_palette_main(LV_PALETTE_RED) : lv_palette_main(LV_PALETTE_GREEN);
+    dsc.color = lv_palette_main(o.excluded ? LV_PALETTE_RED :
+                               i == current_idx ? LV_PALETTE_LIGHT_BLUE : LV_PALETTE_GREEN);
     std::vector<lv_point_t> pts(o.poly.size() + 1);
     for (size_t i = 0; i < o.poly.size(); ++i) to_px(o.poly[i].first, o.poly[i].second, pts[i]);
     pts.back() = pts.front();
@@ -197,9 +237,15 @@ void map_drag_cb(lv_event_t *e) {
 
 void zoom_cb(lv_event_t *e) {
   lv_obj_t *t = lv_event_get_target(e);
+  float previous = zoom;
   if (t == zoom_in_btn) zoom = std::min(zoom * 1.25f, 4.0f);
   else zoom = std::max(zoom / 1.25f, 1.0f);
+  if (zoom == previous) return;
   if (zoom == 1.0f) pan_x = pan_y = 0;
+  else {
+    pan_x *= zoom / previous;
+    pan_y *= zoom / previous;
+  }
   redraw();
 }
 
@@ -220,6 +266,7 @@ void load_objects(const json &objects, const json &excluded) {
     if (e.poly.size() >= 3) has_polygons = true;
     objs.push_back(e);
   }
+  current_idx = objs.size();
 }
 
 }
@@ -305,7 +352,7 @@ void ExcludePanel::reset() {
     switches.clear();
 }
 
-static void sync_view(lv_obj_t *exclude_cont, lv_obj_t *zin, lv_obj_t *zout) {
+static void sync_view(lv_obj_t *exclude_cont, lv_obj_t *zin, lv_obj_t *zout, bool fit) {
   if (has_polygons) {
     if (active) map_alloc();
     lv_obj_add_flag(exclude_cont, LV_OBJ_FLAG_HIDDEN);
@@ -313,6 +360,7 @@ static void sync_view(lv_obj_t *exclude_cont, lv_obj_t *zin, lv_obj_t *zout) {
     lv_obj_clear_flag(zin, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(zout, LV_OBJ_FLAG_HIDDEN);
     compute_bounds();
+    if (fit) fit_objects();
     redraw();
   } else {
     lv_obj_clear_flag(exclude_cont, LV_OBJ_FLAG_HIDDEN);
@@ -332,6 +380,7 @@ void ExcludePanel::init() {
     if (v.is_null()) return;
 
     load_objects(v["objects"], v["excluded_objects"]);
+    update_current(v["current_object"]);
     reset();
     if (!has_polygons) {
       for (const auto &o : objs) {
@@ -340,7 +389,7 @@ void ExcludePanel::init() {
         switches.push_back(item);
       }
     }
-    sync_view(exclude_cont, zoom_in_btn, zoom_out_btn);
+    sync_view(exclude_cont, zoom_in_btn, zoom_out_btn, true);
 }
 
 void ExcludePanel::foreground() {
@@ -359,11 +408,17 @@ void ExcludePanel::consume(json &j) {
     std::lock_guard<std::mutex> lock(lv_lock);
     if (!active) return;
 
+    const auto current_path = "/params/0/exclude_object/current_object"_json_pointer;
+    bool has_current = j.contains(current_path);
     const auto &v = j["/params/0/exclude_object/objects"_json_pointer];
     auto ex = j["/params/0/exclude_object/excluded_objects"_json_pointer];
-    if (v.is_null() && ex.is_null()) return;
 
     if (v.is_null()) {
+      bool changed = has_current && update_current(j.at(current_path));
+      if (ex.is_null()) {
+        if (changed) redraw();
+        return;
+      }
       std::vector<std::string> names;
       for (const auto &n : ex) names.push_back(n.get<std::string>());
       for (auto &o : objs)
@@ -379,7 +434,9 @@ void ExcludePanel::consume(json &j) {
     if (ex.is_null()) {
       ex = State::get_instance()->get_data_copy("/printer_state/exclude_object/excluded_objects"_json_pointer);
     }
+    bool fit = !has_polygons;
     load_objects(v, ex);
+    update_current(State::get_instance()->get_data_copy("/printer_state/exclude_object/current_object"_json_pointer));
     reset();
     if (!has_polygons) {
       for (const auto &o : objs) {
@@ -388,6 +445,6 @@ void ExcludePanel::consume(json &j) {
         switches.push_back(item);
       }
     }
-    sync_view(exclude_cont, zoom_in_btn, zoom_out_btn);
+    sync_view(exclude_cont, zoom_in_btn, zoom_out_btn, fit);
 }
 
