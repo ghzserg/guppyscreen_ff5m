@@ -158,7 +158,7 @@ TEST_CASE("exclude object map excludes the tapped object") {
   }
 }
 
-TEST_CASE("exclude map shows a square bed and keeps zoom and pan controls") {
+TEST_CASE("exclude map shows a square bed with vertical zoom controls") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   start_printing(moonraker);
   open_exclude_panel();
@@ -181,13 +181,27 @@ TEST_CASE("exclude map shows a square bed and keeps zoom and pan controls") {
   }
 
   lv_obj_t *plus = ui::find_label("+");
+  lv_obj_t *minus = ui::find_label("-");
   REQUIRE(plus != nullptr);
+  REQUIRE(minus != nullptr);
+  CHECK(ui::find_label(LV_SYMBOL_LEFT) == nullptr);
+  CHECK(ui::find_label(LV_SYMBOL_RIGHT) == nullptr);
+  CHECK(ui::find_label(LV_SYMBOL_UP) == nullptr);
+  CHECK(ui::find_label(LV_SYMBOL_DOWN) == nullptr);
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_area_t map_area, plus_area, minus_area;
+    lv_obj_get_coords(lv_obj_get_parent(canvas), &map_area);
+    lv_obj_get_coords(lv_obj_get_parent(plus), &plus_area);
+    lv_obj_get_coords(lv_obj_get_parent(minus), &minus_area);
+    CHECK(lv_obj_get_width(canvas) > 600);
+    CHECK(lv_obj_get_height(canvas) > 400);
+    CHECK(map_area.x2 < plus_area.x1);
+    CHECK(map_area.x2 < minus_area.x1);
+    CHECK(plus_area.y2 < minus_area.y1);
     CHECK(lv_obj_get_style_text_font(plus, 0) == &lv_font_montserrat_48);
   }
   ui::tap_label("+");
-  ui::tap_label(LV_SYMBOL_LEFT);
   CHECK(count_outline_pixels(canvas).green > 100);
   ui::tap_label("-");
   CHECK(count_outline_pixels(canvas).green > 100);
