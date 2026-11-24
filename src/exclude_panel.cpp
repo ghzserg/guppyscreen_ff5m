@@ -35,7 +35,6 @@ float pan_x = 0, pan_y = 0;
 lv_point_t touch_start = {0, 0}, touch_last = {0, 0};
 bool touch_dragged = false;
 uint32_t touch_redraw_ms = 0;
-lv_obj_t *pan_btn[4] = {NULL, NULL, NULL, NULL};
 float min_x = 0, min_y = 0, max_x = 1, max_y = 1;
 int map_w = 0, map_h = 0;
 
@@ -196,19 +195,6 @@ void map_drag_cb(lv_event_t *e) {
   }
 }
 
-void pan_cb(lv_event_t *e) {
-  lv_obj_t *t = lv_event_get_target(e);
-  float step = map_w / 8.0f;
-  if (t == pan_btn[0]) pan_x += step;
-  else if (t == pan_btn[1]) pan_x -= step;
-  else if (t == pan_btn[2]) pan_y += step;
-  else if (t == pan_btn[3]) pan_y -= step;
-  float lim_x = map_w * zoom / 2, lim_y = map_h * zoom / 2;
-  pan_x = std::max(-lim_x, std::min(lim_x, pan_x));
-  pan_y = std::max(-lim_y, std::min(lim_y, pan_y));
-  redraw();
-}
-
 void zoom_cb(lv_event_t *e) {
   lv_obj_t *t = lv_event_get_target(e);
   if (t == zoom_in_btn) zoom = std::min(zoom * 1.25f, 4.0f);
@@ -255,9 +241,9 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_flex_flow(exclude_cont, LV_FLEX_FLOW_COLUMN);
 
 
-  // The content area beside the nav bar, less the zoom and pan buttons.
-  map_w = Nav::content_width() - 140;
-  map_h = lv_disp_get_ver_res(NULL) - 130;
+  // Место справа оставлено только для кнопок масштаба.
+  map_w = Nav::content_width() - 100;
+  map_h = lv_disp_get_ver_res(NULL) - 24;
   lv_obj_t *map_frame = lv_obj_create(cont);
   lv_obj_set_size(map_frame, map_w + 8, map_h + 8);
   lv_obj_align(map_frame, LV_ALIGN_TOP_LEFT, 0, 0);
@@ -282,7 +268,7 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   lv_label_set_text(zin_lbl, "+");
   lv_obj_set_style_text_font(zin_lbl, &lv_font_montserrat_48, 0);
   lv_obj_center(zin_lbl);
-  lv_obj_align(zoom_in_btn, LV_ALIGN_BOTTOM_RIGHT, -270, -20);
+  lv_obj_align(zoom_in_btn, LV_ALIGN_RIGHT_MID, -10, -45);
   lv_obj_add_event_cb(zoom_in_btn, zoom_cb, LV_EVENT_CLICKED, NULL);
 
   zoom_out_btn = lv_btn_create(cont);
@@ -291,25 +277,10 @@ ExcludePanel::ExcludePanel(KWebSocketClient &c, std::mutex &l)
   lv_label_set_text(zout_lbl, "-");
   lv_obj_set_style_text_font(zout_lbl, &lv_font_montserrat_48, 0);
   lv_obj_center(zout_lbl);
-  lv_obj_align(zoom_out_btn, LV_ALIGN_BOTTOM_RIGHT, -185, -20);
+  lv_obj_align(zoom_out_btn, LV_ALIGN_RIGHT_MID, -10, 45);
   lv_obj_add_event_cb(zoom_out_btn, zoom_cb, LV_EVENT_CLICKED, NULL);
   lv_obj_add_flag(zoom_in_btn, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(zoom_out_btn, LV_OBJ_FLAG_HIDDEN);
-
-  const char *pan_text[4] = {LV_SYMBOL_LEFT, LV_SYMBOL_RIGHT, LV_SYMBOL_UP, LV_SYMBOL_DOWN};
-  lv_align_t pan_align[4] = {LV_ALIGN_TOP_RIGHT, LV_ALIGN_TOP_RIGHT, LV_ALIGN_TOP_RIGHT, LV_ALIGN_TOP_RIGHT};
-  lv_coord_t pan_x_off[4] = {-70, 0, -35, -35};
-  lv_coord_t pan_y_off[4] = {160, 160, 90, 230};
-  for (int i = 0; i < 4; ++i) {
-    pan_btn[i] = lv_btn_create(cont);
-    lv_obj_set_size(pan_btn[i], 60, 60);
-    lv_obj_t *pan_lbl = lv_label_create(pan_btn[i]);
-    lv_label_set_text(pan_lbl, pan_text[i]);
-    lv_obj_center(pan_lbl);
-    lv_obj_align(pan_btn[i], pan_align[i], pan_x_off[i], pan_y_off[i]);
-    lv_obj_add_event_cb(pan_btn[i], pan_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_add_flag(pan_btn[i], LV_OBJ_FLAG_HIDDEN);
-  }
 
   // Left through the nav bar (the map's canvas buffer is ~0.9 MB).
   Nav::get().on_leave(cont, [this]() { background(); });
@@ -341,7 +312,6 @@ static void sync_view(lv_obj_t *exclude_cont, lv_obj_t *zin, lv_obj_t *zout) {
     lv_obj_clear_flag(lv_obj_get_parent(map_cont), LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(zin, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(zout, LV_OBJ_FLAG_HIDDEN);
-    for (auto b : pan_btn) lv_obj_clear_flag(b, LV_OBJ_FLAG_HIDDEN);
     compute_bounds();
     redraw();
   } else {
@@ -349,7 +319,6 @@ static void sync_view(lv_obj_t *exclude_cont, lv_obj_t *zin, lv_obj_t *zout) {
     lv_obj_add_flag(lv_obj_get_parent(map_cont), LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(zin, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(zout, LV_OBJ_FLAG_HIDDEN);
-    for (auto b : pan_btn) lv_obj_add_flag(b, LV_OBJ_FLAG_HIDDEN);
   }
 }
 
