@@ -570,3 +570,7 @@ msgstr "Не удалось удалить файл."
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "Часы"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "Цвета филамента"

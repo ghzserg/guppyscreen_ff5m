@@ -563,3 +563,7 @@ msgstr "ファイルを削除できませんでした。"
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "時計"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "フィラメントの色"

@@ -152,6 +152,11 @@ void Config::init(std::string config_path, const std::string thumbdir) {
   auto &exclude_prompt = data["/prompt_exclude_object"_json_pointer];
   if (exclude_prompt.is_null()) exclude_prompt = true;
 
+#ifdef GUPPY_FF5M
+  auto &filament_colors = data["/use_filament_colors"_json_pointer];
+  if (filament_colors.is_null()) filament_colors = true;
+#endif
+
   auto &screw_nozzle_temp = data["/screw_nozzle_temp"_json_pointer];
   if (screw_nozzle_temp.is_null()) screw_nozzle_temp = 245;
   auto &screw_bed_temp = data["/screw_bed_temp"_json_pointer];

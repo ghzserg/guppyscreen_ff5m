@@ -562,3 +562,7 @@ msgstr "无法删除文件。"
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "时钟"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "耗材颜色"

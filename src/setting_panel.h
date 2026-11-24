@@ -28,6 +28,7 @@ class SettingPanel {
                std::function<void()> open_macros, std::function<void()> open_console
 #ifdef GUPPY_FF5M
                , std::function<void(bool)> clock_changed
+               , std::function<void()> filament_colors_changed
 #endif
                );
   ~SettingPanel();

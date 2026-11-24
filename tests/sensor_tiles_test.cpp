@@ -216,6 +216,52 @@ TEST_CASE("the C5 Pro nozzles keep the colours of the config") {
   CHECK(stripe("T3") == palette(LV_PALETTE_GREEN));
 }
 
+TEST_CASE("C5 Pro uses filament colors and hides an empty nozzle stripe") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  app::start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+  app::wait_ready(moonraker);
+
+  moonraker.push_status({{"zmod_color", {{"slots", json::array({
+    {{"ID", "1"}, {"HEX", "12AB34"}, {"hasFilament", true}},
+    {{"ID", "2"}, {"HEX", "FF0000"}, {"hasFilament", false}},
+    {{"ID", "3"}, {"HEX", "0000FF"}, {"hasFilament", true}},
+    {{"ID", "4"}, {"HEX", "00FF00"}, {"hasFilament", true}}
+  })}}}});
+  REQUIRE(app::wait_until([] { return stripe("T0") == lv_color_to32(lv_color_hex(0x12AB34)); }));
+  CHECK(stripe("T1") == palette(LV_PALETTE_GREY));
+  lv_obj_t *name = ui::find_label("T1");
+  REQUIRE(name != nullptr);
+  lv_obj_t *chart = ui::find_shown(&lv_chart_class);
+  REQUIRE(chart != nullptr);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_get_style_border_opa(lv_obj_get_parent(name), LV_PART_MAIN) == LV_OPA_TRANSP);
+    bool filament_line = false, empty_line = false;
+    for (lv_chart_series_t *s = lv_chart_get_series_next(chart, NULL); s; s = lv_chart_get_series_next(chart, s)) {
+      filament_line |= lv_color_to32(s->color) == lv_color_to32(lv_color_hex(0x12AB34));
+      empty_line |= lv_color_to32(s->color) == palette(LV_PALETTE_GREY);
+    }
+    CHECK(filament_line);
+    CHECK(empty_line);
+  }
+
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("System");
+  lv_obj_t *label = ui::find_label("Filament colors");
+  REQUIRE(label != nullptr);
+  lv_obj_t *toggle;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    toggle = ui::find_in(lv_obj_get_parent(label), &lv_switch_class);
+    REQUIRE(toggle != nullptr);
+    CHECK(lv_obj_has_state(toggle, LV_STATE_CHECKED));
+  }
+  ui::tap(toggle);
+  ui::tap_tab(Nav::HOME);
+  REQUIRE(app::wait_until([] { return stripe("T0") == palette(LV_PALETTE_RED); }));
+  CHECK(stripe("T1") == palette(LV_PALETTE_ORANGE));
+}
+
 namespace {
 
 // The tile of the sensor named `name`.

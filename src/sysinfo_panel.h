@@ -14,6 +14,7 @@ class SysInfoPanel {
   SysInfoPanel(KWebSocketClient &c
 #ifdef GUPPY_FF5M
                , std::function<void(bool)> clock_changed
+               , std::function<void()> filament_colors_changed
 #endif
                );
   ~SysInfoPanel();
@@ -52,6 +53,9 @@ class SysInfoPanel {
   lv_obj_t *clock_toggle_cont;
   lv_obj_t *clock_toggle;
   std::function<void(bool)> clock_changed;
+  lv_obj_t *filament_colors_cont;
+  lv_obj_t *filament_colors_toggle;
+  std::function<void()> filament_colors_changed;
 #endif
 
 #ifndef GUPPY_FF5M

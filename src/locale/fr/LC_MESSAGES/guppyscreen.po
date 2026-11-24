@@ -563,3 +563,7 @@ msgstr "Impossible de supprimer le fichier."
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "Horloge"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "Couleurs du filament"

@@ -60,6 +60,9 @@ class MainPanel : public NotifyConsumer {
 
   void create_panel();
   void create_sensors(json &temp_sensors);
+#ifdef GUPPY_FF5M
+  void refresh_filament_colors();
+#endif
   void create_fans(json &temp_fans);
   void create_leds(json &leds);
   void handle_homing_cb(lv_event_t *event);
@@ -142,6 +145,8 @@ class MainPanel : public NotifyConsumer {
   lv_obj_t *temp_cont;
 #ifdef GUPPY_FF5M
   lv_obj_t *sensor_tiles;  // the sensor tiles, in temp_cont above the print status
+  std::map<std::string, lv_color_t> default_tool_colors;
+  void update_filament_colors(const json &slots);
 #endif
   lv_obj_t *temp_chart;
 
