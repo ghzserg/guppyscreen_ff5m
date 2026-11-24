@@ -6,7 +6,7 @@ import re
 import sys
 from pathlib import Path
 
-# Постоянно доступные окна AD5M: открытие без реальных действий над принтером.
+# Общие окна C5 Pro, AD5X и AD5M: открытие без реальных действий над принтером.
 SCREENS = {
     'home': 'tab home',
     'print': 'tab print',
