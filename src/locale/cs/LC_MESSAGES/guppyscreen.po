@@ -558,3 +558,7 @@ msgstr "Soubor se nepodařilo smazat."
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "Hodiny"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "Barvy filamentu"

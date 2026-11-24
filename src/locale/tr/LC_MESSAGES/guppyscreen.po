@@ -563,3 +563,7 @@ msgstr "Dosya silinemedi."
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "Saat"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "Filament renkleri"

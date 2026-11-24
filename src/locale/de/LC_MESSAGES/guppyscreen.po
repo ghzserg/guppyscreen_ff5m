@@ -567,3 +567,7 @@ msgstr "Datei konnte nicht gelöscht werden."
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "Uhr"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "Filamentfarben"

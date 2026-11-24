@@ -1,5 +1,6 @@
 #include "sysinfo_panel.h"
 #include "nav.h"
+#include "state.h"
 #include "utils.h"
 #include "config.h"
 #include "theme.h"
@@ -62,6 +63,7 @@ static std::map<std::string, uint32_t> sleep_label_to_sec = {
 SysInfoPanel::SysInfoPanel(KWebSocketClient &c
 #ifdef GUPPY_FF5M
                             , std::function<void(bool)> clock_changed_cb
+                            , std::function<void()> filament_colors_changed_cb
 #endif
                             )
   : ws(c)
@@ -91,6 +93,9 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   , clock_toggle_cont(lv_obj_create(left_cont))
   , clock_toggle(lv_switch_create(clock_toggle_cont))
   , clock_changed(std::move(clock_changed_cb))
+  , filament_colors_cont(lv_obj_create(left_cont))
+  , filament_colors_toggle(lv_switch_create(filament_colors_cont))
+  , filament_colors_changed(std::move(filament_colors_changed_cb))
 #endif
 
 #ifndef GUPPY_FF5M
@@ -244,6 +249,17 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   if (conf->get<bool>("/show_clock")) lv_obj_add_state(clock_toggle, LV_STATE_CHECKED);
   lv_obj_add_event_cb(clock_toggle, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
+
+  lv_obj_set_size(filament_colors_cont, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(filament_colors_cont, 0, 0);
+  l = lv_label_create(filament_colors_cont);
+  lv_label_set_text(l, _("Filament colors"));
+  lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_align(filament_colors_toggle, LV_ALIGN_RIGHT_MID, 0, 0);
+  if (conf->get<bool>("/use_filament_colors")) lv_obj_add_state(filament_colors_toggle, LV_STATE_CHECKED);
+  lv_obj_add_event_cb(filament_colors_toggle, &SysInfoPanel::_handle_callback,
+                      LV_EVENT_VALUE_CHANGED, this);
+  lv_obj_add_flag(filament_colors_cont, LV_OBJ_FLAG_HIDDEN);
 #endif
 
 #ifndef GUPPY_FF5M
@@ -306,6 +322,12 @@ SysInfoPanel::~SysInfoPanel() {
 
 void SysInfoPanel::foreground() {
   lv_obj_move_foreground(cont);
+#ifdef GUPPY_FF5M
+  if (State::get_instance()->get_extruders().size() > 1)
+    lv_obj_clear_flag(filament_colors_cont, LV_OBJ_FLAG_HIDDEN);
+  else
+    lv_obj_add_flag(filament_colors_cont, LV_OBJ_FLAG_HIDDEN);
+#endif
 
   auto ifaces = KUtils::get_interfaces();
   std::vector<std::string> network_detail;
@@ -355,6 +377,10 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       conf->set<bool>("/show_clock", enabled);
       conf->save();
       clock_changed(enabled);
+    } else if (obj == filament_colors_toggle) {
+      conf->set<bool>("/use_filament_colors", lv_obj_has_state(filament_colors_toggle, LV_STATE_CHECKED));
+      conf->save();
+      filament_colors_changed();
     }
 #endif
     else if (obj == display_sleep_dd) {

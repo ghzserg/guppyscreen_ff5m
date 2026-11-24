@@ -563,3 +563,7 @@ msgstr "Impossibile eliminare il file."
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "Orologio"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "Colori del filamento"

@@ -563,3 +563,7 @@ msgstr "파일을 삭제할 수 없습니다."
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "시계"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "필라멘트 색상"

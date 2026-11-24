@@ -567,3 +567,7 @@ msgstr "Could not delete the file."
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr "Clock"
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr "Filament colors"

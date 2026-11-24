@@ -545,3 +545,7 @@ msgstr ""
 #: ../sysinfo_panel.cpp
 msgid "Clock"
 msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Filament colors"
+msgstr ""
