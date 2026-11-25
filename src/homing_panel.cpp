@@ -280,8 +280,7 @@ void HomingPanel::handle_callback(lv_event_t *event) {
   }
 
   if (move_op.size() > 0) {
-    // ws.gcode_script("G91");
-    ws.gcode_script(fmt::format("G91\n{}", move_op));
+    ws.gcode_script(move_op);
   }
 }
 
