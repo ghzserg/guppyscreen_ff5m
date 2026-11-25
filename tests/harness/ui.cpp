@@ -23,6 +23,15 @@ static lv_point_t centre(lv_obj_t *obj) {
   return {(lv_coord_t)((a.x1 + a.x2) / 2), (lv_coord_t)((a.y1 + a.y2) / 2)};
 }
 
+// lv_obj_update_layout() only lays out the object's own screen. Dialogs
+// (lv_msgbox) live on the top layer: without this their coordinates stay
+// unset until the next display refresh (every 30 ms).
+static void update_layouts() {
+  for (lv_obj_t *root : {lv_scr_act(), lv_layer_top(), lv_layer_sys()}) {
+    lv_obj_update_layout(root);
+  }
+}
+
 static bool is_self_or_ancestor(lv_obj_t *candidate, lv_obj_t *obj) {
   for (lv_obj_t *o = obj; o != NULL; o = lv_obj_get_parent(o)) {
     if (o == candidate) return true;
@@ -65,7 +74,7 @@ std::vector<lv_obj_t *> btnmatrices(const std::string &text, uint32_t idx) {
 }
 
 static void walk_all(const std::function<void(lv_obj_t *)> &fn) {
-  lv_obj_update_layout(lv_scr_act());
+  update_layouts();
   for (lv_obj_t *root : {lv_scr_act(), lv_layer_top(), lv_layer_sys()}) {
     walk(root, fn);
   }
@@ -102,7 +111,7 @@ static std::vector<std::string> texts_in_locked(lv_obj_t *root) {
 
 bool is_shown(lv_obj_t *obj) {
   std::lock_guard<std::mutex> lock(lv_lock());
-  lv_obj_update_layout(lv_scr_act());
+  update_layouts();
   return shown(obj);
 }
 
@@ -124,7 +133,7 @@ lv_obj_t *find_label(const std::string &text, Match match) {
 
 std::vector<std::string> texts_in(lv_obj_t *root) {
   std::lock_guard<std::mutex> lock(lv_lock());
-  lv_obj_update_layout(lv_scr_act());
+  update_layouts();
   return texts_in_locked(root);
 }
 
@@ -166,7 +175,7 @@ void tap(lv_obj_t *obj) {
   lv_point_t p;
   {
     std::lock_guard<std::mutex> lock(lv_lock());
-    lv_obj_update_layout(lv_scr_act());
+    update_layouts();
     p = centre(obj);
   }
   tap_at(p.x, p.y);
@@ -256,7 +265,7 @@ lv_obj_t *tile(const std::string &name) {
 std::pair<lv_area_t, lv_area_t> tile_and_icon(const std::string &name) {
   lv_obj_t *t = tile(name);
   std::lock_guard<std::mutex> lock(lv_lock());
-  lv_obj_update_layout(lv_scr_act());
+  update_layouts();
   lv_area_t a, i;
   lv_obj_get_coords(t, &a);
   lv_obj_get_coords(lv_obj_get_child(t, 0), &i);
@@ -265,7 +274,7 @@ std::pair<lv_area_t, lv_area_t> tile_and_icon(const std::string &name) {
 
 lv_area_t coords(lv_obj_t *obj) {
   std::lock_guard<std::mutex> lock(lv_lock());
-  lv_obj_update_layout(lv_scr_act());
+  update_layouts();
   lv_area_t a;
   lv_obj_get_coords(obj, &a);
   return a;
