@@ -300,7 +300,7 @@ int PidPanel::chart_selected_nozzle() {
   int tool = nozzle_tiles.selected();
   if (tool != charted_tool) {
     if (charted_tool >= 0) {  // another nozzle's history: start afresh
-      lv_chart_set_all_value(temp_chart, extruder_temp_series, LV_CHART_POINT_NONE);
+      extruder_temp.clear_series();
     }
     charted_tool = tool;
     lv_chart_set_series_color(temp_chart, extruder_temp_series, nozzle_tiles.nozzle(tool)->color);

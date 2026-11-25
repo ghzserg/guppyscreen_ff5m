@@ -1,10 +1,14 @@
 #include "sensor_container.h"
 #include "spdlog/spdlog.h"
 
+#include <set>
 #include <string>
 
 LV_FONT_DECLARE(notosemi_22_digits);
 LV_FONT_DECLARE(notosemi_16);
+
+// Датчики с точками, ещё не добавленными в график.
+static std::set<SensorContainer *> with_pending;
 
 SensorContainer::SensorContainer(KWebSocketClient &c,
                                  lv_obj_t *parent,
@@ -141,6 +145,7 @@ SensorContainer::SensorContainer(KWebSocketClient &c,
 
 SensorContainer::~SensorContainer() {
   numpad.forget(this);
+  with_pending.erase(this);
   if (sensor_cont != NULL) {
     spdlog::debug("deleting sensor {}", id);
     lv_obj_del(sensor_cont);
@@ -264,18 +269,52 @@ int SensorContainer::get_target_value() {
 }
 
 void SensorContainer::attach_series(lv_obj_t *new_chart, lv_chart_series_t *new_series) {
+  pending.clear();
+  with_pending.erase(this);
   chart = new_chart;
   series = new_series;
+}
+
+// Раз в 2 с добавляет накопленные точки всех датчиков и перерисовывает каждый
+// график один раз: датчики приходят в разных уведомлениях, и иначе график
+// перерисовывался бы целиком на каждую точку каждого датчика. Точки пишутся
+// прямо перед перерисовкой, чтобы частичная перерисовка (закрылся попап) не
+// показала в одной части графика новые данные, а в другой старые.
+void SensorContainer::add_pending_points(lv_timer_t *) {
+  std::set<lv_obj_t *> charts;
+  for (SensorContainer *s : with_pending) {
+    LV_ASSERT_OBJ(s->chart, &lv_chart_class);
+    uint16_t count = lv_chart_get_point_count(s->chart);
+    // Как lv_chart_set_next_value, но без её перерисовки: та захватывает и поля
+    // под подписи осей со всех четырёх сторон, а подписи от точек не меняются.
+    for (lv_coord_t v : s->pending) {
+      s->series->y_points[s->series->start_point] = v;
+      s->series->start_point = (s->series->start_point + 1) % count;
+    }
+    s->pending.clear();
+    charts.insert(s->chart);
+  }
+  with_pending.clear();
+  for (lv_obj_t *chart : charts) lv_obj_invalidate_area(chart, &chart->coords);
 }
 
 void SensorContainer::update_series(int v) {
   if (series != NULL && chart != NULL) {
     auto delta = std::time(nullptr) - last_updated_ts;
     if (delta > 1) {
-      lv_chart_set_next_value(chart, series, v);
+      static lv_timer_t *timer = lv_timer_create(add_pending_points, 2000, NULL);
+      (void)timer;
+      pending.push_back(v);
+      with_pending.insert(this);
       last_updated_ts = std::time(nullptr);
     }
   }
+}
+
+void SensorContainer::clear_series() {
+  pending.clear();
+  with_pending.erase(this);
+  lv_chart_set_all_value(chart, series, LV_CHART_POINT_NONE);
 }
 
 void SensorContainer::handle_edit(lv_event_t *e) {
