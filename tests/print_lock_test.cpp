@@ -171,3 +171,25 @@ TEST_CASE("configuration change dialog waits until the print has ended") {
   moonraker.push_status({{"print_stats", {{"state", "complete"}}}});
   CHECK(app::wait_until([&] { return ui::find_label("Configuration change detected") != nullptr; }));
 }
+
+TEST_CASE("axis movement sends only the relative movement macro") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  auto subscription = moonraker.result("printer.objects.subscribe");
+  subscription["status"]["toolhead"]["homed_axes"] = "xyz";
+  moonraker.set_result("printer.objects.subscribe", subscription);
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+
+  for (bool absolute : {true, false}) {
+    moonraker.push_status({{"gcode_move", {{"absolute_coordinates", absolute}}}});
+    app::settle(moonraker);
+    for (auto *name : {"X+", "X-", "Y+", "Y-", "Z+", "Z-"}) {
+      const auto count = moonraker.gcodes().size();
+      check_button(name, false, true);
+      REQUIRE(app::wait_until([&] { return moonraker.gcodes().size() > count; }));
+      REQUIRE(moonraker.gcodes().size() == count + 1);
+      CHECK(moonraker.gcodes().back() ==
+            std::string("_CLIENT_LINEAR_MOVE ") + name[0] + "=" + name[1] + "1 F=7800");
+    }
+  }
+}
