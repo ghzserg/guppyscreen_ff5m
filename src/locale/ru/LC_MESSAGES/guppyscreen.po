@@ -574,3 +574,39 @@ msgstr "Часы"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "Цвета филамента"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "Повторить замер"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "Измеряем высоту винтов…"
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "Нет результатов регулировки винтов."
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "Поворот"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "Винт"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "Опорный"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "Не крутить"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "По часовой"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "Против часовой"

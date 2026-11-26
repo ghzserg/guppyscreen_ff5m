@@ -40,6 +40,10 @@ Screenshots are captured from the **800×480 LVGL test framebuffer** using the C
 |:--|:--|
 | ![Карта стола / Bed Mesh](screenshots/c5pro/bed-mesh.png) | ![Лимиты / Limits](screenshots/c5pro/limits.png) |
 
+| **Регулировка винтов / Screw adjustment** |
+|:--|
+| ![Регулировка винтов / Screw adjustment](screenshots/c5pro/screw-adjustment.png) |
+
 | **Ретракт / Retraction** | **Input Shaper** |
 |:--|:--|
 | ![Ретракт / Retraction](screenshots/c5pro/retract.png) | ![Input Shaper](screenshots/c5pro/input-shaper.png) |

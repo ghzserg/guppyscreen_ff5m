@@ -41,7 +41,8 @@ class KWebSocketClient : public hv::WebSocketClient {
   int send_jsonrpc(const std::string &method, const json &params, NotifyConsumer *consumer);
   int send_jsonrpc(const std::string &method, const json &params);
   int send_jsonrpc(const std::string &method);
-  int gcode_script(const std::string &gcode);
+  int gcode_script(const std::string &gcode, std::function<void(json&)> cb = {},
+                   std::chrono::milliseconds timeout = {});
 
   void register_method_callback(std::string resp_method,
                                 std::string handler_name,
@@ -62,7 +63,8 @@ class KWebSocketClient : public hv::WebSocketClient {
     std::chrono::steady_clock::time_point expires;
   };
   int send_request(const std::string &method, const json *params,
-                   std::function<void(json&)> cb = {}, bool keep_macros = false);
+                   std::function<void(json&)> cb = {}, bool keep_macros = false,
+                   std::chrono::milliseconds timeout = {});
   void expire_pending();
   void stop_expiry_timer();
   const std::chrono::milliseconds reply_timeout;

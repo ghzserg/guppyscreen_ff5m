@@ -211,6 +211,7 @@ BedMeshPanel::~BedMeshPanel() {
     lv_obj_del(prompt);
     prompt = NULL;
   }
+  if (screw_dialog) lv_obj_del(screw_dialog);
 }
 
 void BedMeshPanel::consume(json &j) {
@@ -486,6 +487,193 @@ void BedMeshPanel::foreground() {
   lv_obj_move_foreground(cont);
 }
 
+void BedMeshPanel::create_screw_dialog() {
+  screw_dialog = lv_obj_create(Nav::get().content());
+  lv_obj_set_size(screw_dialog, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_opa(screw_dialog, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(screw_dialog, 0, 0);
+  lv_obj_set_style_radius(screw_dialog, 0, 0);
+  lv_obj_set_style_pad_all(screw_dialog, 10, 0);
+  lv_obj_set_style_pad_row(screw_dialog, 8, 0);
+  lv_obj_clear_flag(screw_dialog, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_flex_flow(screw_dialog, LV_FLEX_FLOW_COLUMN);
+  Nav::get().add_dialog(screw_dialog);
+
+  const auto width = Nav::get().content_width();
+  const auto *font = width < 500 ? &notosemi_16 : &notosemi_20;
+  lv_obj_set_style_text_font(screw_dialog, font, 0);
+
+  auto *title = lv_label_create(screw_dialog);
+  lv_label_set_text(title, _("Screw adjustment"));
+
+  screw_status = lv_label_create(screw_dialog);
+  lv_obj_set_width(screw_status, LV_PCT(100));
+  lv_obj_set_flex_grow(screw_status, 1);
+
+  screw_results = lv_table_create(screw_dialog);
+  lv_obj_set_style_border_width(screw_results, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(screw_results, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(screw_results, 6, LV_PART_ITEMS);
+  lv_obj_set_style_text_font(screw_results, font, LV_PART_ITEMS);
+  lv_obj_set_width(screw_results, LV_PCT(100));
+  lv_obj_set_flex_grow(screw_results, 1);
+  lv_obj_set_scroll_dir(screw_results, LV_DIR_VER);
+  lv_obj_set_scrollbar_mode(screw_results, LV_SCROLLBAR_MODE_AUTO);
+  lv_table_set_col_cnt(screw_results, 3);
+  const lv_coord_t table_width = width - 20;
+  lv_table_set_col_width(screw_results, 0, table_width * 41 / 100);
+  lv_table_set_col_width(screw_results, 1, table_width * 24 / 100);
+  lv_table_set_col_width(screw_results, 2, table_width - table_width * 41 / 100 - table_width * 24 / 100);
+  lv_obj_add_event_cb(screw_results, [](lv_event_t *e) {
+    auto *dsc = lv_event_get_draw_part_dsc(e);
+    if (!dsc->label_dsc || dsc->type != LV_TABLE_DRAW_PART_CELL) return;
+    auto *table = lv_event_get_target(e);
+    const auto row = dsc->id / 3;
+    const auto col = dsc->id % 3;
+    if (row == 0) {
+      dsc->rect_dsc->bg_color = lv_palette_darken(LV_PALETTE_GREY, 3);
+    } else if (col == 2) {
+      const bool no_turn = lv_table_has_cell_ctrl(table, row, col, LV_TABLE_CELL_CTRL_CUSTOM_1);
+      const bool turn = lv_table_has_cell_ctrl(table, row, col, LV_TABLE_CELL_CTRL_CUSTOM_2);
+      if (no_turn) dsc->label_dsc->color = lv_palette_lighten(LV_PALETTE_GREEN, 2);
+      if (turn) dsc->label_dsc->color = lv_palette_lighten(LV_PALETTE_AMBER, 2);
+    }
+  }, LV_EVENT_DRAW_PART_BEGIN, nullptr);
+
+  auto *actions = lv_obj_create(screw_dialog);
+  lv_obj_set_size(actions, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(actions, 0, 0);
+  lv_obj_set_style_border_width(actions, 0, 0);
+  lv_obj_set_style_bg_opa(actions, LV_OPA_TRANSP, 0);
+  lv_obj_clear_flag(actions, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_flex_flow(actions, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(actions, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+  screw_close_btn = lv_btn_create(actions);
+  screw_retry_btn = lv_btn_create(actions);
+  for (auto *btn : {screw_close_btn, screw_retry_btn}) {
+    lv_obj_set_size(btn, LV_SIZE_CONTENT, 42);
+    auto *label = lv_label_create(btn);
+    lv_label_set_text(label, btn == screw_close_btn ? _("Close") : _("Measure again"));
+    lv_obj_center(label);
+    lv_obj_add_event_cb(btn, &BedMeshPanel::_handle_callback, LV_EVENT_SHORT_CLICKED, this);
+  }
+}
+
+void BedMeshPanel::dismiss_screw_adjustment() {
+  if (!screw_dialog || lv_obj_has_flag(screw_dialog, LV_OBJ_FLAG_HIDDEN)) return;
+  ++screw_request;
+  lv_obj_clear_state(screw_close_btn, LV_STATE_DISABLED);
+  lv_obj_clear_state(screw_retry_btn, LV_STATE_DISABLED);
+  lv_obj_add_flag(screw_dialog, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_background(screw_dialog);
+}
+
+void BedMeshPanel::measure_screws() {
+  const auto request = ++screw_request;
+  lv_obj_add_flag(screw_results, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_flag(screw_status, LV_OBJ_FLAG_HIDDEN);
+  lv_label_set_text(screw_status, _("Measuring bed screws…"));
+  lv_obj_add_state(screw_close_btn, LV_STATE_DISABLED);
+  lv_obj_add_state(screw_retry_btn, LV_STATE_DISABLED);
+  lv_obj_clear_flag(screw_dialog, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(screw_dialog);
+
+  auto *conf = Config::get_instance();
+  const auto command = fmt::format("BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP={} BED_TEMP={}",
+    conf->get<int>("/screw_nozzle_temp"), conf->get<int>("/screw_bed_temp"));
+  const int sent = ws.gcode_script(command, [this, request](json &reply) {
+    std::lock_guard<std::mutex> lock(lv_lock);
+    if (request != screw_request || State::print_pause_active()) return;
+    if (!reply.contains("result")) {
+      show_screw_error(reply);
+      return;
+    }
+    const json params = {{"objects", {{"screws_tilt_adjust", {"results"}}}}};
+    if (ws.send_jsonrpc("printer.objects.query", params, [this, request](json &result) {
+      std::lock_guard<std::mutex> lock(lv_lock);
+      if (request == screw_request && !State::print_pause_active()) show_screw_results(result);
+    }) < 0) {
+      show_screw_error(json());
+    }
+  }, std::chrono::minutes(30));
+  if (sent < 0) show_screw_error(json());
+}
+
+void BedMeshPanel::show_screw_error(const json &reply) {
+  static const auto message = "/error/message"_json_pointer;
+  if (reply.contains(message) && reply.at(message).is_string()) {
+    lv_label_set_text_fmt(screw_status, "%s\n%s", _("No screw adjustment results."),
+                         reply.at(message).get_ref<const std::string &>().c_str());
+  } else {
+    lv_label_set_text(screw_status, _("No screw adjustment results."));
+  }
+  lv_obj_clear_state(screw_close_btn, LV_STATE_DISABLED);
+  lv_obj_clear_state(screw_retry_btn, LV_STATE_DISABLED);
+}
+
+void BedMeshPanel::show_screw_results(const json &reply) {
+  static const auto path = "/result/status/screws_tilt_adjust/results"_json_pointer;
+  if (!reply.contains(path) || !reply.at(path).is_object() || reply.at(path).empty()) {
+    show_screw_error(reply);
+    return;
+  }
+  const auto &results = reply.at(path);
+  const auto settings = State::get_instance()->get_data_copy(
+    "/printer_state/configfile/settings/screws_tilt_adjust"_json_pointer);
+
+  lv_table_set_row_cnt(screw_results, 1);
+  lv_table_set_cell_value(screw_results, 0, 0, _("Name"));
+  lv_table_set_cell_value(screw_results, 0, 1, "Z");
+  lv_table_set_cell_value(screw_results, 0, 2, _("Adjustment"));
+  uint16_t row = 1;
+  for (int number = 1; number <= 99; ++number) {
+    const auto key = fmt::format("screw{}", number);
+    const auto screw = results.find(key);
+    if (screw == results.end() || !screw->is_object()) continue;
+    const auto name = settings.find(key + "_name");
+    auto location = name != settings.end() && name->is_string()
+      ? name->get<std::string>() : fmt::format("{} {}", _("Screw"), number);
+    const auto xy = settings.find(key);
+    if (xy != settings.end() && xy->is_array() && xy->size() == 2 &&
+        (*xy)[0].is_number() && (*xy)[1].is_number()) {
+      location += fmt::format("\nX {}   Y {}", (*xy)[0].get<double>(), (*xy)[1].get<double>());
+    }
+    lv_table_set_cell_value(screw_results, row, 0, location.c_str());
+    const auto z = screw->find("z");
+    if (z != screw->end() && z->is_number()) {
+      lv_table_set_cell_value(screw_results, row, 1, fmt::format("{:.4f}", z->get<double>()).c_str());
+    }
+    const auto base = screw->find("is_base");
+    const auto amount = screw->find("adjust");
+    const auto sign = screw->find("sign");
+    if (base != screw->end() && *base == true) {
+      lv_table_set_cell_value(screw_results, row, 2, _("Reference"));
+    } else if (amount != screw->end() && *amount == "00:00") {
+      lv_table_set_cell_value(screw_results, row, 2, _("No turn"));
+      lv_table_add_cell_ctrl(screw_results, row, 2, LV_TABLE_CELL_CTRL_CUSTOM_1);
+    } else if (amount != screw->end() && amount->is_string() &&
+               sign != screw->end() && (*sign == "CW" || *sign == "CCW")) {
+      const char *direction = *sign == "CW" ? _("Clockwise") : _("Counterclockwise");
+      lv_table_set_cell_value_fmt(screw_results, row, 2, "%s\n%s", direction,
+                                 amount->get_ref<const std::string &>().c_str());
+      lv_table_add_cell_ctrl(screw_results, row, 2, LV_TABLE_CELL_CTRL_CUSTOM_2);
+    } else {
+      lv_table_set_cell_value(screw_results, row, 2, "—");
+    }
+    ++row;
+  }
+  if (row == 1) {
+    show_screw_error(reply);
+    return;
+  }
+  lv_obj_scroll_to_y(screw_results, 0, LV_ANIM_OFF);
+  lv_obj_add_flag(screw_status, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_flag(screw_results, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_state(screw_close_btn, LV_STATE_DISABLED);
+  lv_obj_clear_state(screw_retry_btn, LV_STATE_DISABLED);
+}
+
 void BedMeshPanel::handle_callback(lv_event_t *event) {
   if (State::print_pause_active()) return;
   lv_obj_t *btn = lv_event_get_current_target(event);
@@ -530,10 +718,11 @@ void BedMeshPanel::handle_callback(lv_event_t *event) {
       lv_label_set_text(nozzle ? screw_nozzle_value : screw_bed_value, fmt::format("{} °C", temp).c_str());
     });
     screws_numpad.foreground_reset();
-  } else if (btn == screw_adjust_btn) {
-    ws.gcode_script(fmt::format("BED_LEVEL_SCREWS_TUNE EXTRUDER_TEMP={} BED_TEMP={}",
-      Config::get_instance()->get<int>("/screw_nozzle_temp"),
-      Config::get_instance()->get<int>("/screw_bed_temp")));
+  } else if (btn == screw_adjust_btn || btn == screw_retry_btn) {
+    if (!screw_dialog) create_screw_dialog();
+    if (!lv_obj_has_state(screw_retry_btn, LV_STATE_DISABLED)) measure_screws();
+  } else if (btn == screw_close_btn) {
+    dismiss_screw_adjustment();
   } else if (btn == auto_btn.get_container()) {
     auto_btn.disable();
     spdlog::trace("auto mesh calibrate pressed");

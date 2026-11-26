@@ -135,6 +135,7 @@ void InitPanel::connected(KWebSocketClient &ws) {
 void InitPanel::disconnected(KWebSocketClient &ws) {
   spdlog::debug("init panel disconnected");
   std::lock_guard<std::mutex> lock(lv_lock);
+  bedmesh_panel.dismiss_screw_adjustment();
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_foreground(cont);
 }
