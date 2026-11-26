@@ -1,0 +1,45 @@
+--- a/src/core/lv_obj_pos.c
++++ b/src/core/lv_obj_pos.c
+@@ -844,6 +844,34 @@
+ }
+ 
+ 
++/*A sibling above `obj` or above one of its parents covers `area` with an
++ *opaque background: a change there can't be seen, so it needn't be redrawn.
++ *Whatever uncovers it (hiding, moving, deleting, restyling that sibling,
++ *reordering the children) invalidates that area and redraws it as it is.*/
++static bool area_is_covered(const lv_obj_t * obj, const lv_area_t * area)
++{
++    const lv_obj_t * o = obj;
++    lv_obj_t * par = lv_obj_get_parent(o);
++    while(par != NULL) {
++        uint32_t cnt = lv_obj_get_child_cnt(par);
++        uint32_t i;
++        for(i = lv_obj_get_index(o) + 1; i < cnt; i++) {
++            lv_obj_t * s = par->spec_attr->children[i];
++            if(lv_obj_has_flag(s, LV_OBJ_FLAG_HIDDEN)) continue;
++            if(!_lv_area_is_in(area, &s->coords, 0)) continue;
++            if(_lv_obj_get_layer_type(s) != LV_LAYER_TYPE_NONE) continue;
++            lv_cover_check_info_t info;
++            info.res = LV_COVER_RES_COVER;
++            info.area = area;
++            lv_event_send(s, LV_EVENT_COVER_CHECK, &info);
++            if(info.res == LV_COVER_RES_COVER) return true;
++        }
++        o = par;
++        par = lv_obj_get_parent(o);
++    }
++    return false;
++}
++
+ void lv_obj_invalidate_area(const lv_obj_t * obj, const lv_area_t * area)
+ {
+     LV_ASSERT_OBJ(obj, MY_CLASS);
+@@ -854,6 +882,7 @@
+     lv_area_t area_tmp;
+     lv_area_copy(&area_tmp, area);
+     if(!lv_obj_area_is_visible(obj, &area_tmp)) return;
++    if(area_is_covered(obj, &area_tmp)) return;
+ 
+     _lv_inv_area(lv_obj_get_disp(obj),  &area_tmp);
+ }
