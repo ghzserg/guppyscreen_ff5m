@@ -68,6 +68,7 @@ static bool keep_configfile_section(const std::string &part, const std::string &
                                     bool keep_macros) {
   static const char *const config_keep[] = {"extruder", "input_shaper"};
   static const char *const settings_keep[] = {"extruder", "firmware_retraction", "printer", "servo my_servo",
+                                              "screws_tilt_adjust",
                                               "gcode_macro air_circulation_internal",
                                               "gcode_macro air_circulation_external"};
   if (part == "config") {
@@ -269,7 +270,8 @@ int KWebSocketClient::send_jsonrpc(const std::string &method) {
 }
 
 int KWebSocketClient::send_request(const std::string &method, const json *params,
-                                   std::function<void(json&)> cb, bool keep_macros) {
+                                   std::function<void(json&)> cb, bool keep_macros,
+                                   std::chrono::milliseconds timeout) {
   const uint64_t request_id = id++;
   json rpc = {{"jsonrpc", "2.0"}, {"method", method}, {"id", request_id}};
   if (params) rpc["params"] = *params;
@@ -281,7 +283,7 @@ int KWebSocketClient::send_request(const std::string &method, const json *params
     destination = active_channel;
     if (!destination) return -1;
     if (cb) {
-      const auto expires = std::chrono::steady_clock::now() + reply_timeout;
+      const auto expires = std::chrono::steady_clock::now() + (timeout.count() > 0 ? timeout : reply_timeout);
       pending.emplace(request_id, PendingReply{std::move(cb), keep_macros, expires});
     }
   }
@@ -293,9 +295,10 @@ int KWebSocketClient::send_request(const std::string &method, const json *params
   return result;
 }
 
-int KWebSocketClient::gcode_script(const std::string &gcode) {
+int KWebSocketClient::gcode_script(const std::string &gcode, std::function<void(json&)> cb,
+                                   std::chrono::milliseconds timeout) {
   json cmd = {{ "script", gcode }};
-  return send_jsonrpc("printer.gcode.script", cmd);
+  return send_request("printer.gcode.script", &cmd, std::move(cb), false, timeout);
 }
 
 void KWebSocketClient::register_method_callback(std::string resp_method,

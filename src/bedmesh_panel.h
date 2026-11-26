@@ -17,6 +17,7 @@ class BedMeshPanel : public NotifyConsumer {
 
   void consume(json &j);
   void foreground();
+  void dismiss_screw_adjustment();
   // As with the weight controls: show the nozzle field only if Klipper
   // exposes the hardware feature requiring nozzle preheat.
   void show_screw_nozzle_temp(bool show);
@@ -40,6 +41,7 @@ class BedMeshPanel : public NotifyConsumer {
         lv_obj_clear_state(obj, LV_STATE_DISABLED);
       }
     }
+    if (locked) dismiss_screw_adjustment();
     if (locked && !lv_obj_has_flag(prompt, LV_OBJ_FLAG_HIDDEN)) {
       lv_obj_add_flag(prompt, LV_OBJ_FLAG_HIDDEN);
       lv_obj_move_background(prompt);
@@ -91,6 +93,10 @@ class BedMeshPanel : public NotifyConsumer {
   };
 
  private:
+  void create_screw_dialog();
+  void measure_screws();
+  void show_screw_results(const json &reply);
+  void show_screw_error(const json &reply);
   void getCoordinates(int row, int col);
   void table_event_cb(lv_event_t *e);
   KWebSocketClient &ws;
@@ -110,6 +116,12 @@ class BedMeshPanel : public NotifyConsumer {
   lv_obj_t *screw_bed_value;
   lv_obj_t *screw_adjust_btn;
   Numpad screws_numpad;
+  lv_obj_t *screw_dialog = nullptr;
+  lv_obj_t *screw_status = nullptr;
+  lv_obj_t *screw_results = nullptr;
+  lv_obj_t *screw_close_btn = nullptr;
+  lv_obj_t *screw_retry_btn = nullptr;
+  uint64_t screw_request = 0;
   lv_obj_t *controls_cont;
   ButtonContainer save_btn;
   ButtonContainer clear_btn;

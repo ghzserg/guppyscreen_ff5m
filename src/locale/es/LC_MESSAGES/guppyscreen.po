@@ -567,3 +567,39 @@ msgstr "Reloj"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "Colores del filamento"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "Volver a medir"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "Midiendo los tornillos de la cama..."
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "No hay resultados del ajuste de los tornillos."
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "Giro"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "Tornillo"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "Referencia"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "No girar"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "Sentido horario"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "Sentido antihorario"

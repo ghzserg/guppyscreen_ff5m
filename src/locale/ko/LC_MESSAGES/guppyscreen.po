@@ -567,3 +567,39 @@ msgstr "시계"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "필라멘트 색상"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "다시 측정"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "베드 나사 위치 측정 중..."
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "나사 조정 결과가 없습니다."
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "회전"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "나사"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "기준"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "돌리지 않음"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "시계 방향"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "반시계 방향"

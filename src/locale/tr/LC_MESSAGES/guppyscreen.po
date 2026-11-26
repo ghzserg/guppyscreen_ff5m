@@ -567,3 +567,39 @@ msgstr "Saat"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "Filament renkleri"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "Yeniden ölç"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "Tabla vidaları ölçülüyor..."
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "Vida ayarı sonucu yok."
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "Dönüş"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "Vida"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "Referans"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "Çevirmeyin"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "Saat yönünde"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "Saat yönünün tersine"

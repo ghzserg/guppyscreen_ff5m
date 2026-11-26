@@ -549,3 +549,39 @@ msgstr ""
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr ""
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr ""

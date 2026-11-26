@@ -431,6 +431,8 @@ TEST_CASE("Screw adjustment uses its own saved temperatures") {
     return false;
   }), ui::join(moonraker.gcodes()));
 
+  REQUIRE(app::wait_until([] { return ui::find_label("No screw adjustment results."); }));
+  ui::tap_label("Close");
   ui::tap_label("Calibrate");
   CHECK_MESSAGE(app::wait_until([&] {
     for (const auto &g : moonraker.gcodes()) {
@@ -476,6 +478,8 @@ static void check_no_weight_screw_temperature(bool single_nozzle) {
     return false;
   }), ui::join(moonraker.gcodes()));
 
+  REQUIRE(app::wait_until([] { return ui::find_label("No screw adjustment results."); }));
+  ui::tap_label("Close");
   ui::tap_label("Calibrate");
   CHECK_MESSAGE(app::wait_until([&] {
     for (const auto &g : moonraker.gcodes()) {

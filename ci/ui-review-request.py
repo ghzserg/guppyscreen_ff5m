@@ -18,6 +18,7 @@ SCREENS = {
     'led': 'tab home\ntap LED',
     'fine-tune': 'tab home\ntap Fine Tune',
     'bed-mesh': 'tab home\ntap Bed Mesh',
+    'screw-adjustment': 'tab home\ntap Bed Mesh\ntap Screw adjustment',
     'limits': 'tab tune\ntap Limits',
     'retract': 'tab tune\ntap Retract',
     'input-shaper': 'tab tune\ntap Input Shaper',
@@ -76,6 +77,8 @@ def scenario(command):
             lines.append(f'sleep {delay}')
         filename = re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-') or 'screen'
         lines.extend((f'save {filename}-{index}', f'memory {filename}-{index}'))
+        if name.lower() == 'screw-adjustment':
+            lines.append('tap_optional Close')
     return '\n'.join(lines) + '\n'
 
 

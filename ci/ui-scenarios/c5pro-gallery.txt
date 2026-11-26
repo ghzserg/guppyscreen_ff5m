@@ -29,6 +29,9 @@ save fine-tune
 tab home
 tap Bed Mesh
 save bed-mesh
+tap Screw adjustment
+save screw-adjustment
+tap Close
 tab tune
 tap Limits
 save limits

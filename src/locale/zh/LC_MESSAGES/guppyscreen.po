@@ -566,3 +566,39 @@ msgstr "时钟"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "耗材颜色"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "重新测量"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "正在测量热床螺丝位置..."
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "没有螺丝调节结果。"
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "转动"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "螺丝"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "基准"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "无需转动"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "顺时针"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "逆时针"
