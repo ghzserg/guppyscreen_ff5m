@@ -11,6 +11,7 @@
 #include "pid_panel.h"
 #include "mini_print_status.h"
 #include "lvgl/lvgl.h"
+#include <set>
 
 #include <mutex>
 #include <ctime>
@@ -91,6 +92,15 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_obj_t *pbar_cont;
   lv_obj_t *progress_bar;
   lv_obj_t *progress_label;
+  // Выводит значения (скорость, время, температуры, прогресс...) из `j`
+  // в формате уведомления.
+  void show_values(json &j);
+  void show_pending_values();
+  // Поля объектов Klipper, изменившиеся с последнего вывода (не чаще 2 раз
+  // в секунду, одной перерисовкой).
+  std::map<std::string, std::set<std::string>> changed_fields;
+  lv_timer_t *values_timer;
+  uint32_t values_shown_at = 0;
   lv_obj_t *progress_end;
 #ifdef GUPPY_FF5M
   lv_obj_t *progress_eta;  // at the bar's left: "ETA: 23м 18с"

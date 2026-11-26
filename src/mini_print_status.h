@@ -22,6 +22,9 @@ class MiniPrintStatus {
   void update_progress(int p);
   void update_img(const std::string &img_path, size_t twidth);
   void reset();
+  // Выводит сохранённые ETA, статус и прогресс (неизменившиеся не перерисовываются).
+  // Обычные обновления выводятся не чаще раза в секунду.
+  void show(bool immediately = false);
 #ifdef GUPPY_FF5M
   void update_clock(int hour, int minute);
   void set_clock_enabled(bool enabled);
@@ -41,6 +44,9 @@ class MiniPrintStatus {
 #endif
   std::string status;
   std::string eta;
+  int progress = 0;
+  uint32_t shown_at = 0;
+  bool changed = false;  // ETA, статус или прогресс ещё не выведены
 };
 
 #endif //__MINI_PRINT_STATUS__

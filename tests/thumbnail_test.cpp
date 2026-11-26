@@ -206,7 +206,7 @@ TEST_CASE("late print metadata cannot overwrite the next print") {
   moonraker.hold_next_reply("server.files.metadata");
   start_print("part1.gcode");
   REQUIRE(app::wait_until([&] { return moonraker.request_count("server.files.metadata") == 2; }));
-  CHECK_MESSAGE(ui::find_label("1 / 0") != nullptr, ui::dump_screen());
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("1 / 0") != nullptr; }), ui::dump_screen());
   moonraker.release_reply();
   REQUIRE(app::wait_until([&] { return shown_thumbnail() == next_thumb; }));
   cancel_print();
