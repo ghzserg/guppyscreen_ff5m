@@ -281,9 +281,17 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
         panel->mini_print_status.update_clock(local.tm_hour, local.tm_min);
       }
     }
-  }, 1000, this);
+  }, 2000, this);  // часы с секундами на экране печати: раз в 2 с
   set_clock_enabled(Config::get_instance()->get<bool>("/show_clock"));
 #endif
+  // Значения выводятся при уведомлении (см. consume); таймер выводит
+  // оставшиеся, когда уведомления перестали приходить.
+  values_timer = lv_timer_create([](lv_timer_t *timer) {
+    auto *panel = static_cast<PrintStatusPanel *>(timer->user_data);
+    if (lv_tick_elaps(panel->values_shown_at) < 1000) return;
+    panel->show_pending_values();
+    panel->mini_print_status.show();
+  }, 500, this);
   lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
 #ifdef GUPPY_FF5M
   // Laid out at its zoomed size (192 px), not the file's (often 300 px): else
@@ -347,6 +355,7 @@ void PrintStatusPanel::set_clock_enabled(bool enabled) {
 
 PrintStatusPanel::~PrintStatusPanel() {
   if (resume_timer) lv_timer_del(resume_timer);
+  lv_timer_del(values_timer);
 #ifdef GUPPY_FF5M
   lv_timer_del(clock_timer);
 #endif
@@ -388,6 +397,8 @@ void PrintStatusPanel::background() {
 }
 
 void PrintStatusPanel::reset() {
+  // Сначала изменившиеся значения, чтобы они потом не затёрли сброс.
+  show_pending_values();
   file_loaded = false;
   ++metadata_generation;
   current_file = nullptr;
@@ -510,7 +521,9 @@ void PrintStatusPanel::init(json &fans) {
     lv_obj_set_style_outline_width(thumbnail, objects.is_array() && !objects.empty() ? 1 : 0, 0);
   }
 #endif
-
+  // Подпись сопла выводится при его изменениях: первый раз — из State.
+  changed_fields["extruder"].insert("temperature");
+  show_pending_values();
 }
 
 void PrintStatusPanel::populate() {
@@ -657,49 +670,96 @@ void PrintStatusPanel::consume(json &j) {
   }
 #endif
 
-  auto v = j["/params/0/extruder/target"_json_pointer];
-  if (!v.is_null()) {
-    extruder_target = v.template get<int>();
-  }
-
-  int active_tool_id = 0;
-  auto zmod_active = j["/params/0/zmod_color/active_tool_id"_json_pointer];
-  if (!zmod_active.is_null()) {
-    active_tool_id = zmod_active.template get<int>();
-  } else {
-    auto v_active = State::get_instance()->get_data("/printer_state/zmod_color/active_tool_id"_json_pointer);
-    if (!v_active.is_null()) {
-      active_tool_id = v_active.template get<int>();
+  // State уже принял это уведомление; здесь только отмечается, какие поля
+  // изменились. Поля, которые искали через operator[] и не нашли, равны null.
+  const auto &params = j["/params/0"_json_pointer];
+  if (params.is_object()) {
+    for (auto it = params.begin(); it != params.end(); ++it) {
+      if (!it->is_object()) continue;
+      for (auto f = it->begin(); f != it->end(); ++f)
+        if (!f->is_null()) changed_fields[it.key()].insert(f.key());
     }
   }
-  int effective_id = (active_tool_id >= 0) ? active_tool_id : 0;
-  std::string tool_prefix = "T" + std::to_string(effective_id);
-  std::string ext_name = "extruder" + (effective_id > 0 ? std::to_string(effective_id) : "");
-  // AD5X channels T1-T3 share extruder; real multi-nozzle printers have
-  // their own extruderN object, even before its temperature is reported.
-  if (effective_id > 0) {
-    auto extruders = State::get_instance()->get_extruders();
-    if (std::find(extruders.begin(), extruders.end(), ext_name) == extruders.end()) {
-      ext_name = "extruder";
-    }
+  // Скорость, поток и время меняются в каждом уведомлении (4 раза в секунду):
+  // значения выводятся не чаще 2 раз в секунду, в той же перерисовке, что и
+  // остальные панели по этому уведомлению.
+  if (lv_tick_elaps(values_shown_at) >= 500) show_pending_values();
+}
+
+// Выводит последние значения полей, изменившихся с прошлого вызова.
+void PrintStatusPanel::show_pending_values() {
+  if (changed_fields.empty()) return;
+  json params = json::object();
+  auto *state = State::get_instance();
+  for (const auto &[name, fields] : changed_fields)
+    for (const auto &f : fields)
+      params[name][f] = state->get_data_copy(json::json_pointer("/printer_state") / name / f);
+  changed_fields.clear();
+  json j = {{"params", json::array({std::move(params)})}};
+  values_shown_at = lv_tick_get();
+  show_values(j);
+  if (lv_tick_elaps(mini_shown_at) >= 2000) {  // статус печати на Home: раз в 2 с
+    mini_print_status.show();
+    mini_shown_at = lv_tick_get();
+  }
+}
+
+void PrintStatusPanel::show_values(json &j) {
+  // Подписи сопла и вентиляторов — только если их объекты изменились.
+  const json &params = j["/params/0"_json_pointer];
+  bool extruder_changed = params.contains("zmod_color");
+  bool fans_changed = false;
+  for (auto it = params.begin(); it != params.end(); ++it) {
+    extruder_changed = extruder_changed || it.key().rfind("extruder", 0) == 0;
+    fans_changed = fans_changed || fan_speeds.count(it.key());
   }
 
-  auto v_target = j[json::json_pointer("/params/0/" + ext_name + "/target")];
-  if (!v_target.is_null()) {
-    extruder_target = v_target.template get<int>();
-  } else {
-    auto st_target = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/target"));
-    if (!st_target.is_null()) {
-      extruder_target = st_target.template get<int>();
+  json v;
+  if (extruder_changed) {
+    v = j["/params/0/extruder/target"_json_pointer];
+    if (!v.is_null()) {
+      extruder_target = v.template get<int>();
     }
-  }
 
-  v = j[json::json_pointer("/params/0/" + ext_name + "/temperature")];
-  if (v.is_null()) {
-    v = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/temperature"));
-  }
-  if (!v.is_null()) {
-    extruder_temp.update_label(extruder_target > 0 ? fmt::format("{}: {} / {}", tool_prefix, v.template get<int>(), extruder_target).c_str() : fmt::format("{}: {}", tool_prefix, v.template get<int>()).c_str());
+    int active_tool_id = 0;
+    auto zmod_active = j["/params/0/zmod_color/active_tool_id"_json_pointer];
+    if (!zmod_active.is_null()) {
+      active_tool_id = zmod_active.template get<int>();
+    } else {
+      auto v_active = State::get_instance()->get_data("/printer_state/zmod_color/active_tool_id"_json_pointer);
+      if (!v_active.is_null()) {
+        active_tool_id = v_active.template get<int>();
+      }
+    }
+    int effective_id = (active_tool_id >= 0) ? active_tool_id : 0;
+    std::string tool_prefix = "T" + std::to_string(effective_id);
+    std::string ext_name = "extruder" + (effective_id > 0 ? std::to_string(effective_id) : "");
+    // AD5X channels T1-T3 share extruder; real multi-nozzle printers have
+    // their own extruderN object, even before its temperature is reported.
+    if (effective_id > 0) {
+      auto extruders = State::get_instance()->get_extruders();
+      if (std::find(extruders.begin(), extruders.end(), ext_name) == extruders.end()) {
+        ext_name = "extruder";
+      }
+    }
+
+    auto v_target = j[json::json_pointer("/params/0/" + ext_name + "/target")];
+    if (!v_target.is_null()) {
+      extruder_target = v_target.template get<int>();
+    } else {
+      auto st_target = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/target"));
+      if (!st_target.is_null()) {
+        extruder_target = st_target.template get<int>();
+      }
+    }
+
+    v = j[json::json_pointer("/params/0/" + ext_name + "/temperature")];
+    if (v.is_null()) {
+      v = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/temperature"));
+    }
+    if (!v.is_null()) {
+      extruder_temp.update_label(extruder_target > 0 ? fmt::format("{}: {} / {}", tool_prefix, v.template get<int>(), extruder_target).c_str() : fmt::format("{}: {}", tool_prefix, v.template get<int>()).c_str());
+    }
   }
 
   static const auto bed_target_path = "/params/0/heater_bed/target"_json_pointer;
@@ -728,30 +788,32 @@ void PrintStatusPanel::consume(json &j) {
     z_offset.update_label(fmt::format("{:.3f} " + std::string(_("mm")), v.template get<double>()).c_str());
   }
 
-  std::vector<std::string> values;
-  for (auto &f : fan_speeds) {
-    std::string fan_name = f.first;
+  if (fans_changed) {
+    std::vector<std::string> values;
+    for (auto &f : fan_speeds) {
+      std::string fan_name = f.first;
 
-    int fv = f.second;
-    auto fan_value = j[json::json_pointer(fmt::format("/params/0/{}/value", fan_name))];
-    if (!fan_value.is_null()) {
-      fv = static_cast<int>(fan_value.template get<double>() * 100);
-      f.second = fv;
+      int fv = f.second;
+      auto fan_value = j[json::json_pointer(fmt::format("/params/0/{}/value", fan_name))];
+      if (!fan_value.is_null()) {
+        fv = static_cast<int>(fan_value.template get<double>() * 100);
+        f.second = fv;
+      }
+
+      fan_value = j[json::json_pointer(fmt::format("/params/0/{}/speed", fan_name))];
+      if (!fan_value.is_null()) {
+        fv = static_cast<int>(fan_value.template get<double>() * 100);
+        f.second = fv;
+      }
+      values.push_back(fmt::format("{}%", fv));
     }
 
-    fan_value = j[json::json_pointer(fmt::format("/params/0/{}/speed", fan_name))];
-    if (!fan_value.is_null()) {
-      fv = static_cast<int>(fan_value.template get<double>() * 100);
-      f.second = fv;
+    //fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
+    if (fan_speeds.count("fan_generic fanM106")) {
+      fan0.update_label(fmt::format("{}%", fan_speeds["fan_generic fanM106"]).c_str());
+    } else {
+      fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
     }
-    values.push_back(fmt::format("{}%", fv));
-  }
-
-  //fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
-  if (fan_speeds.count("fan_generic fanM106")) {
-    fan0.update_label(fmt::format("{}%", fan_speeds["fan_generic fanM106"]).c_str());
-  } else {
-    fan0.update_label(fmt::format("{}", fmt::join(values, ", ")).c_str());
   }
 
   // progress

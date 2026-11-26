@@ -137,6 +137,7 @@ MiniPrintStatus::~MiniPrintStatus() {
 
 
 void MiniPrintStatus::set_printing(bool printing) {
+  if (printing) show();  // появляется с текущими значениями
 #ifdef GUPPY_FF5M
   if (printing != lv_obj_has_flag(cont, LV_OBJ_FLAG_CLICKABLE)) {
     if (printing) {
@@ -193,22 +194,33 @@ lv_obj_t *MiniPrintStatus::get_container() {
 }
 
 void MiniPrintStatus::update_eta(const std::string &eta_str) {
+  changed = changed || eta != eta_str;
   eta = eta_str;
-  KUtils::set_label_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
 }
 
 void MiniPrintStatus::update_status(std::string &status_str) {
-  status = status_str;
-  lv_label_set_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
+  if (status != status_str) {  // печать началась, пауза, продолжение: сразу
+    status = status_str;
+    changed = true;
+    show();
+  }
   GuppyScreen *guppy = GuppyScreen::get();
   guppy->up(true);
 }
 
 void MiniPrintStatus::update_progress(int p) {
+  changed = changed || progress != p;
+  progress = p;
+}
+
+void MiniPrintStatus::show() {
+  if (!changed) return;  // без форматирования строки
+  changed = false;
+  KUtils::set_label_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
 #ifdef GUPPY_FF5M
-  lv_bar_set_value(progress_bar, p, LV_ANIM_OFF);
+  lv_bar_set_value(progress_bar, progress, LV_ANIM_OFF);
 #else
-  lv_arc_set_value(progress_bar, p);
+  lv_arc_set_value(progress_bar, progress);
 #endif
 }
 
@@ -224,13 +236,13 @@ void MiniPrintStatus::update_img(const std::string &img_path, size_t twidth) {
 }
 
 void MiniPrintStatus::reset() {
-  update_progress(0);
-
   // free src
   KUtils::set_img_src(thumb, NULL);
 
   eta = "...";
   status = "-/-";
-  lv_label_set_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
+  progress = 0;
+  changed = true;
+  show();  // новая печать: сразу, без старых значений
 }
 

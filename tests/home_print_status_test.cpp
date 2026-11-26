@@ -292,3 +292,46 @@ TEST_CASE("Clock disabled in configuration stays hidden on startup") {
   }
   CHECK(status_visible);
 }
+
+TEST_CASE("Home's print status shows new progress once per 2 s") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  print_on_home(moonraker);
+  lv_obj_t *line = status_line();
+  lv_obj_t *bar = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    for (uint32_t i = 0; i < lv_obj_get_child_cnt(line) && bar == nullptr; i++) {
+      if (lv_obj_check_type(lv_obj_get_child(line, i), &lv_bar_class)) bar = lv_obj_get_child(line, i);
+    }
+  }
+  REQUIRE(bar != nullptr);
+  auto value = [&] {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return lv_bar_get_value(bar);
+  };
+
+  // Синхронно с таймером 2 с: 10 % показано сразу после его срабатывания.
+  moonraker.push_status({{"virtual_sdcard", {{"progress", 0.10}}}});
+  REQUIRE(app::wait_until([&] { return value() == 10; }));
+  moonraker.push_status({{"virtual_sdcard", {{"progress", 0.20}}}});
+  app::pump(300);
+  moonraker.push_status({{"virtual_sdcard", {{"progress", 0.30}}}});
+  app::pump(300);
+  CHECK(value() == 10);
+  REQUIRE(app::wait_until([&] { return value() != 10; }, 2500));
+  CHECK(value() == 30);  // оба одним обновлением
+}
+
+TEST_CASE("Home's print status shows a new print state at once") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  print_on_home(moonraker);
+  CHECK_MESSAGE(ui::find_label("Status: printing", ui::Match::Contains) != nullptr, ui::dump_screen());
+  moonraker.push_status({{"print_stats", {{"state", "paused"}}}});
+  // Без ожидания таймера 2 с.
+  CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Status: paused", ui::Match::Contains) != nullptr; }, 300),
+                ui::dump_screen());
+}
