@@ -155,8 +155,8 @@ TEST_CASE("screw adjustment shows fresh Klipper results and can repeat the measu
   subscription["status"]["screws_tilt_adjust"]["results"] = {
     {"screw1", {{"z", -1.8675}, {"is_base", true}, {"sign", "CW"}, {"adjust", "00:00"}}},
     {"screw2", {{"z", -1.8692}, {"is_base", false}, {"sign", "CW"}, {"adjust", "00:00"}}},
-    {"screw3", {{"z", -1.9458}, {"is_base", false}, {"sign", "CW"}, {"adjust", "00:09"}}},
-    {"screw4", {{"z", -2.0133}, {"is_base", false}, {"sign", "CCW"}, {"adjust", "00:18"}}}
+    {"screw3", {{"z", -1.9092}, {"is_base", false}, {"sign", "CW"}, {"adjust", "00:05"}}},
+    {"screw4", {{"z", -1.9175}, {"is_base", false}, {"sign", "CCW"}, {"adjust", "00:06"}}}
   };
   moonraker.set_result("printer.objects.subscribe", subscription);
   app::start(moonraker, {{"screw_nozzle_temp", 160}, {"screw_bed_temp", 55},
@@ -205,9 +205,16 @@ TEST_CASE("screw adjustment shows fresh Klipper results and can repeat the measu
     CHECK(std::string(lv_table_get_cell_value(results, 1, 0)) == "Left Near\nX 12.5   Y 12.5");
     CHECK(std::string(lv_table_get_cell_value(results, 1, 1)) == "-1.8675");
     CHECK(std::string(lv_table_get_cell_value(results, 1, 2)) == "Reference");
-    CHECK(std::string(lv_table_get_cell_value(results, 2, 2)) == "No turn");
-    CHECK(std::string(lv_table_get_cell_value(results, 3, 2)) == "Clockwise\n00:09");
-    CHECK(std::string(lv_table_get_cell_value(results, 4, 2)) == "Counterclockwise\n00:18");
+    CHECK(std::string(lv_table_get_cell_value(results, 2, 2)) == "No turn\n00:00");
+    CHECK(std::string(lv_table_get_cell_value(results, 3, 2)) == "Clockwise\n00:05");
+    CHECK(std::string(lv_table_get_cell_value(results, 4, 2)) == "Counterclockwise\n00:06");
+    CHECK_FALSE(lv_table_has_cell_ctrl(results, 1, 2, LV_TABLE_CELL_CTRL_CUSTOM_1));
+    CHECK_FALSE(lv_table_has_cell_ctrl(results, 1, 2, LV_TABLE_CELL_CTRL_CUSTOM_2));
+    CHECK(lv_table_has_cell_ctrl(results, 2, 2, LV_TABLE_CELL_CTRL_CUSTOM_1));
+    CHECK(lv_table_has_cell_ctrl(results, 3, 2, LV_TABLE_CELL_CTRL_CUSTOM_1));
+    CHECK_FALSE(lv_table_has_cell_ctrl(results, 3, 2, LV_TABLE_CELL_CTRL_CUSTOM_2));
+    CHECK_FALSE(lv_table_has_cell_ctrl(results, 4, 2, LV_TABLE_CELL_CTRL_CUSTOM_1));
+    CHECK(lv_table_has_cell_ctrl(results, 4, 2, LV_TABLE_CELL_CTRL_CUSTOM_2));
   }
   CHECK(moonraker.request_count("printer.objects.query") == queries_before + 1);
 

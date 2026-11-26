@@ -533,10 +533,10 @@ void BedMeshPanel::create_screw_dialog() {
     if (row == 0) {
       dsc->rect_dsc->bg_color = lv_palette_darken(LV_PALETTE_GREY, 3);
     } else if (col == 2) {
-      const bool no_turn = lv_table_has_cell_ctrl(table, row, col, LV_TABLE_CELL_CTRL_CUSTOM_1);
-      const bool turn = lv_table_has_cell_ctrl(table, row, col, LV_TABLE_CELL_CTRL_CUSTOM_2);
-      if (no_turn) dsc->label_dsc->color = lv_palette_lighten(LV_PALETTE_GREEN, 2);
-      if (turn) dsc->label_dsc->color = lv_palette_lighten(LV_PALETTE_AMBER, 2);
+      const bool within_tolerance = lv_table_has_cell_ctrl(table, row, col, LV_TABLE_CELL_CTRL_CUSTOM_1);
+      const bool outside_tolerance = lv_table_has_cell_ctrl(table, row, col, LV_TABLE_CELL_CTRL_CUSTOM_2);
+      if (within_tolerance) dsc->label_dsc->color = lv_palette_lighten(LV_PALETTE_GREEN, 2);
+      if (outside_tolerance) dsc->label_dsc->color = lv_palette_lighten(LV_PALETTE_RED, 2);
     }
   }, LV_EVENT_DRAW_PART_BEGIN, nullptr);
 
@@ -650,14 +650,18 @@ void BedMeshPanel::show_screw_results(const json &reply) {
     if (base != screw->end() && *base == true) {
       lv_table_set_cell_value(screw_results, row, 2, _("Reference"));
     } else if (amount != screw->end() && *amount == "00:00") {
-      lv_table_set_cell_value(screw_results, row, 2, _("No turn"));
+      lv_table_set_cell_value_fmt(screw_results, row, 2, "%s\n00:00", _("No turn"));
       lv_table_add_cell_ctrl(screw_results, row, 2, LV_TABLE_CELL_CTRL_CUSTOM_1);
     } else if (amount != screw->end() && amount->is_string() &&
                sign != screw->end() && (*sign == "CW" || *sign == "CCW")) {
       const char *direction = *sign == "CW" ? _("Clockwise") : _("Counterclockwise");
-      lv_table_set_cell_value_fmt(screw_results, row, 2, "%s\n%s", direction,
-                                 amount->get_ref<const std::string &>().c_str());
-      lv_table_add_cell_ctrl(screw_results, row, 2, LV_TABLE_CELL_CTRL_CUSTOM_2);
+      const auto &adjustment = amount->get_ref<const std::string &>();
+      lv_table_set_cell_value_fmt(screw_results, row, 2, "%s\n%s", direction, adjustment.c_str());
+      // Как во Fluidd: зелёный до 00:05 включительно, начиная с 00:06 — красный.
+      const bool within_tolerance = adjustment.size() == 5 && adjustment.compare(0, 4, "00:0") == 0 &&
+                                    adjustment[4] >= '0' && adjustment[4] <= '5';
+      lv_table_add_cell_ctrl(screw_results, row, 2,
+                            within_tolerance ? LV_TABLE_CELL_CTRL_CUSTOM_1 : LV_TABLE_CELL_CTRL_CUSTOM_2);
     } else {
       lv_table_set_cell_value(screw_results, row, 2, "—");
     }

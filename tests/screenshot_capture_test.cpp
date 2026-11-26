@@ -70,8 +70,8 @@ TEST_CASE("Screenshot: scripted") {
     status["screws_tilt_adjust"]["results"] = {
       {"screw1", {{"z", -1.8675}, {"is_base", true}, {"sign", "CW"}, {"adjust", "00:00"}}},
       {"screw2", {{"z", -1.8692}, {"is_base", false}, {"sign", "CW"}, {"adjust", "00:00"}}},
-      {"screw3", {{"z", -1.9458}, {"is_base", false}, {"sign", "CW"}, {"adjust", "00:09"}}},
-      {"screw4", {{"z", -2.0133}, {"is_base", false}, {"sign", "CCW"}, {"adjust", "00:18"}}}
+      {"screw3", {{"z", -1.9092}, {"is_base", false}, {"sign", "CW"}, {"adjust", "00:05"}}},
+      {"screw4", {{"z", -1.9175}, {"is_base", false}, {"sign", "CCW"}, {"adjust", "00:06"}}}
     };
     moonraker.set_result("printer.objects.subscribe", initial);
   }
