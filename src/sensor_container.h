@@ -6,6 +6,7 @@
 #include "lvgl/lvgl.h"
 
 #include <ctime>
+#include <vector>
 
 class SensorContainer {
  public:
@@ -68,6 +69,7 @@ class SensorContainer {
   void update_value(int new_value);
   void attach_series(lv_obj_t *chart, lv_chart_series_t *series);
   void update_series(int value);
+  void clear_series();  // all points, the ones not yet added too
   int get_target_value();
   int get_value() { return value; }
   const std::string &get_id() const { return id; }
@@ -114,6 +116,8 @@ class SensorContainer {
   lv_obj_t *chart;
   lv_chart_series_t *series;
   std::time_t last_updated_ts;
+  std::vector<lv_coord_t> pending;  // points not yet added to the chart
+  static void add_pending_points(lv_timer_t *);
 #ifdef GUPPY_FF5M
   bool tile = false;
 #endif

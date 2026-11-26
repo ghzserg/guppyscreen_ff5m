@@ -245,7 +245,7 @@ TEST_CASE("the PID chart starts afresh for another nozzle") {
     for (uint16_t i = 0; i < lv_chart_get_point_count(chart); i++) n += y[i] != LV_CHART_POINT_NONE;
     return n;
   };
-  REQUIRE(points() > 0);
+  REQUIRE(app::wait_until([&] { return points() > 0; }));  // added to the chart within 2 s
   ui::tap(t2);
   ui::enter_on_numpad("230");
   CHECK(points() == 0);
