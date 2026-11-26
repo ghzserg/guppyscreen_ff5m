@@ -137,7 +137,7 @@ MiniPrintStatus::~MiniPrintStatus() {
 
 
 void MiniPrintStatus::set_printing(bool printing) {
-  if (printing) show();  // появляется с текущими значениями
+  if (printing) show(true);  // появляется с текущими значениями
 #ifdef GUPPY_FF5M
   if (printing != lv_obj_has_flag(cont, LV_OBJ_FLAG_CLICKABLE)) {
     if (printing) {
@@ -202,7 +202,7 @@ void MiniPrintStatus::update_status(std::string &status_str) {
   if (status != status_str) {  // печать началась, пауза, продолжение: сразу
     status = status_str;
     changed = true;
-    show();
+    show(true);
   }
   GuppyScreen *guppy = GuppyScreen::get();
   guppy->up(true);
@@ -213,8 +213,9 @@ void MiniPrintStatus::update_progress(int p) {
   progress = p;
 }
 
-void MiniPrintStatus::show() {
-  if (!changed) return;  // без форматирования строки
+void MiniPrintStatus::show(bool immediately) {
+  if (!changed || (!immediately && lv_tick_elaps(shown_at) < 1000)) return;
+  shown_at = lv_tick_get();
   changed = false;
   KUtils::set_label_text(status_label, fmt::format(_("ETA: {}\nStatus: {}") /* "Ост: {}\nСтатус: {}" */, eta, status).c_str());
 #ifdef GUPPY_FF5M
@@ -243,6 +244,6 @@ void MiniPrintStatus::reset() {
   status = "-/-";
   progress = 0;
   changed = true;
-  show();  // новая печать: сразу, без старых значений
+  show(true);  // новая печать: сразу, без старых значений
 }
 

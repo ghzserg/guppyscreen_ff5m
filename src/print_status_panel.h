@@ -101,7 +101,6 @@ class PrintStatusPanel : public NotifyConsumer {
   std::map<std::string, std::set<std::string>> changed_fields;
   lv_timer_t *values_timer;
   uint32_t values_shown_at = 0;
-  uint32_t mini_shown_at = 0;
   lv_obj_t *progress_end;
 #ifdef GUPPY_FF5M
   lv_obj_t *progress_eta;  // at the bar's left: "ETA: 23м 18с"

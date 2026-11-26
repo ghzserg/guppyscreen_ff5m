@@ -281,15 +281,14 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
         panel->mini_print_status.update_clock(local.tm_hour, local.tm_min);
       }
     }
-  }, 2000, this);  // часы с секундами на экране печати: раз в 2 с
+  }, 1000, this);
   set_clock_enabled(Config::get_instance()->get<bool>("/show_clock"));
 #endif
   // Значения выводятся при уведомлении (см. consume); таймер выводит
   // оставшиеся, когда уведомления перестали приходить.
   values_timer = lv_timer_create([](lv_timer_t *timer) {
     auto *panel = static_cast<PrintStatusPanel *>(timer->user_data);
-    if (lv_tick_elaps(panel->values_shown_at) < 1000) return;
-    panel->show_pending_values();
+    if (lv_tick_elaps(panel->values_shown_at) >= 1000) panel->show_pending_values();
     panel->mini_print_status.show();
   }, 500, this);
   lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -698,10 +697,7 @@ void PrintStatusPanel::show_pending_values() {
   json j = {{"params", json::array({std::move(params)})}};
   values_shown_at = lv_tick_get();
   show_values(j);
-  if (lv_tick_elaps(mini_shown_at) >= 2000) {  // статус печати на Home: раз в 2 с
-    mini_print_status.show();
-    mini_shown_at = lv_tick_get();
-  }
+  mini_print_status.show();
 }
 
 void PrintStatusPanel::show_values(json &j) {
@@ -726,7 +722,7 @@ void PrintStatusPanel::show_values(json &j) {
     if (!zmod_active.is_null()) {
       active_tool_id = zmod_active.template get<int>();
     } else {
-      auto v_active = State::get_instance()->get_data("/printer_state/zmod_color/active_tool_id"_json_pointer);
+      auto v_active = State::get_instance()->get_data_copy("/printer_state/zmod_color/active_tool_id"_json_pointer);
       if (!v_active.is_null()) {
         active_tool_id = v_active.template get<int>();
       }
@@ -747,7 +743,7 @@ void PrintStatusPanel::show_values(json &j) {
     if (!v_target.is_null()) {
       extruder_target = v_target.template get<int>();
     } else {
-      auto st_target = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/target"));
+      auto st_target = State::get_instance()->get_data_copy(json::json_pointer("/printer_state/" + ext_name + "/target"));
       if (!st_target.is_null()) {
         extruder_target = st_target.template get<int>();
       }
@@ -755,7 +751,7 @@ void PrintStatusPanel::show_values(json &j) {
 
     v = j[json::json_pointer("/params/0/" + ext_name + "/temperature")];
     if (v.is_null()) {
-      v = State::get_instance()->get_data(json::json_pointer("/printer_state/" + ext_name + "/temperature"));
+      v = State::get_instance()->get_data_copy(json::json_pointer("/printer_state/" + ext_name + "/temperature"));
     }
     if (!v.is_null()) {
       extruder_temp.update_label(extruder_target > 0 ? fmt::format("{}: {} / {}", tool_prefix, v.template get<int>(), extruder_target).c_str() : fmt::format("{}: {}", tool_prefix, v.template get<int>()).c_str());
@@ -983,8 +979,8 @@ int PrintStatusPanel::current_layer(json &info) {
 
   if (!current_file.is_null()) {
     State *s = State::get_instance();
-    auto pd = s->get_data("/printer_state/print_stats/print_duration"_json_pointer);
-    auto zpos = s->get_data("/printer_state/gcode_move/gcode_position/2"_json_pointer);
+    auto pd = s->get_data_copy("/printer_state/print_stats/print_duration"_json_pointer);
+    auto zpos = s->get_data_copy("/printer_state/gcode_move/gcode_position/2"_json_pointer);
 
     auto first_layer_height = current_file["/first_layer_height"_json_pointer];
     auto layer_height = current_file["/layer_height"_json_pointer];

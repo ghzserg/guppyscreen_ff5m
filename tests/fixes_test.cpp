@@ -222,7 +222,7 @@ TEST_CASE("an expired print estimate clears all displayed ETAs") {
   CHECK(end_time() != "...");
 
   ui::tap_tab(Nav::HOME);
-  // Статус печати на Home выводит новые значения раз в 2 с.
+  // Статус печати на Home выводит новые значения не чаще раза в секунду.
   lv_obj_t *mini = nullptr;
   REQUIRE(app::wait_until([&] { return (mini = ui::find_label(previous_eta + " / ", ui::Match::Contains)) != nullptr; }));
   ui::tap(mini);
