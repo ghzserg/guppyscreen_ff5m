@@ -567,3 +567,39 @@ msgstr "Relógio"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "Cores do filamento"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "Medir novamente"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "A medir os parafusos da mesa..."
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "Não há resultados do ajuste dos parafusos."
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "Rotação"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "Parafuso"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "Referência"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "Não rodar"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "Sentido horário"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "Sentido anti-horário"

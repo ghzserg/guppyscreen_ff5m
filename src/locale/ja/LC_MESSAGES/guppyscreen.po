@@ -567,3 +567,39 @@ msgstr "時計"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "フィラメントの色"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "再測定"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "ベッドのねじ位置を測定中..."
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "ねじ調整の結果がありません。"
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "回転"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "ねじ"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "基準"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "回さない"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "時計回り"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "反時計回り"

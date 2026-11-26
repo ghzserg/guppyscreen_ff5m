@@ -567,3 +567,39 @@ msgstr "Horloge"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "Couleurs du filament"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "Mesurer à nouveau"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "Mesure des vis du plateau..."
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "Aucun résultat pour le réglage des vis."
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "Rotation"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "Vis"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "Référence"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "Ne pas tourner"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "Sens horaire"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "Sens antihoraire"

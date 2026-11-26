@@ -562,3 +562,39 @@ msgstr "Hodiny"
 #: ../sysinfo_panel.cpp
 msgid "Filament colors"
 msgstr "Barvy filamentu"
+
+#: ../bedmesh_panel.cpp
+msgid "Measure again"
+msgstr "Přeměřit"
+
+#: ../bedmesh_panel.cpp
+msgid "Measuring bed screws…"
+msgstr "Probíhá měření šroubů podložky..."
+
+#: ../bedmesh_panel.cpp
+msgid "No screw adjustment results."
+msgstr "Výsledky seřízení šroubů nejsou k dispozici."
+
+#: ../bedmesh_panel.cpp
+msgid "Adjustment"
+msgstr "Otočení"
+
+#: ../bedmesh_panel.cpp
+msgid "Screw"
+msgstr "Šroub"
+
+#: ../bedmesh_panel.cpp
+msgid "Reference"
+msgstr "Referenční"
+
+#: ../bedmesh_panel.cpp
+msgid "No turn"
+msgstr "Neotáčet"
+
+#: ../bedmesh_panel.cpp
+msgid "Clockwise"
+msgstr "Po směru hodin"
+
+#: ../bedmesh_panel.cpp
+msgid "Counterclockwise"
+msgstr "Proti směru hodin"
