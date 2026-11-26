@@ -226,7 +226,13 @@ void PidPanel::create_chart() {
   lv_obj_set_grid_cell(temp_chart, LV_GRID_ALIGN_END, 0, 2, LV_GRID_ALIGN_END, 2, 1);
   lv_chart_set_axis_tick(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 6, 5, true, 50);
 
+#ifdef GUPPY_FF5M
+  SensorContainer::style_chart(temp_chart, 350);  // как на Home, диапазон выше
+  // Вровень с плитками: их сдвигает отступ temp_cont (create_nozzle_tiles).
+  lv_obj_set_style_translate_x(temp_chart, lv_obj_get_style_pad_left(temp_cont, 0), 0);
+#else
   lv_chart_set_div_line_count(temp_chart, 3, 8);
+#endif
   lv_chart_set_point_count(temp_chart, 200);
   lv_chart_set_zoom_x(temp_chart, 5000);
   lv_obj_scroll_to_x(temp_chart, LV_COORD_MAX, LV_ANIM_OFF);

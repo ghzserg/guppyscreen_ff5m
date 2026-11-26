@@ -29,6 +29,7 @@ class SettingPanel {
 #ifdef GUPPY_FF5M
                , std::function<void(bool)> clock_changed
                , std::function<void()> filament_colors_changed
+               , std::function<void()> chart_max_changed
 #endif
                );
   ~SettingPanel();

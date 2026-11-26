@@ -8,6 +8,7 @@
 #include "doctest/doctest.h"
 
 #include "app.h"
+#include "fake_hw.h"
 #include "fake_moonraker.h"
 #include "ui.h"
 
@@ -401,4 +402,60 @@ TEST_CASE("the AD5M PID bed tile accepts its calibration temperature") {
   ui::tap_label("PID Bed");
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
   CHECK(moonraker.gcodes().back() == "PID_TUNE_BED TEMPERATURE=95");
+}
+
+// График как на Home: шкала справа, вровень с плитками, те же размеры; диапазон 0–350°.
+TEST_CASE("the PID screen's chart looks and sits as Home's") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  lv_obj_t *home = ui::find_shown(&lv_chart_class);
+  REQUIRE(home != nullptr);
+  const lv_area_t home_area = ui::coords(home);
+  open_pid(moonraker);
+  lv_obj_t *pid = ui::find_shown(&lv_chart_class);
+  REQUIRE(pid != nullptr);
+  REQUIRE(pid != home);
+  const lv_area_t pid_area = ui::coords(pid);
+  app::redraw();
+  {
+    // Чёрные линии на 100° и 200° по шкале 0–350°, толщиной 1 px.
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_area_t c;
+    lv_obj_get_content_coords(pid, &c);
+    const int h = c.y2 - c.y1 + 1;
+    for (int deg : {100, 200}) {
+      CAPTURE(deg);
+      const int y = c.y1 + h * (350 - deg) / 350;
+      int rows = 0;
+      for (int yy = y - 3; yy <= y + 3; yy++) {
+        int n = 0;
+        for (int x = c.x1; x <= c.x2; x++) n += fake_hw::pixel(x, yy).full == lv_color_black().full;
+        rows += n > (c.x2 - c.x1 + 1) / 2;
+      }
+      CHECK(rows == 1);
+    }
+    // Верхняя цифра — 350, у верхнего края: в колонке шкалы над 300 есть текст.
+    const uint32_t bg = fake_hw::pixel(pid_area.x2 - 2, c.y1).full;  // правее цифр
+    int text = 0;
+    for (int y = c.y1 - 5; y <= c.y1 + 5; y++)
+      for (int x = c.x2 + 1; x < pid_area.x2 - 2; x++) text += fake_hw::pixel(x, y).full != bg;
+    CHECK(text > 10);
+  }
+  CHECK(pid_area.x1 == home_area.x1);
+  CHECK(pid_area.x2 == home_area.x2);
+  CHECK(pid_area.y2 == home_area.y2);
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  // tick[]: 0 — основная ось Y (слева), 2 — вторая (справа), см. get_tick_gsc в lv_chart.c.
+  const lv_chart_t *p = (const lv_chart_t *)pid, *h = (const lv_chart_t *)home;
+  CHECK(!p->tick[0].label_en);
+  CHECK(p->tick[2].label_en);
+  CHECK(p->tick[2].draw_size == h->tick[2].draw_size);
+  CHECK(p->hdiv_cnt == 8);  // линии сетки через 50°: 0, 50, …, 350
+  CHECK(p->vdiv_cnt == 0);
+  CHECK(lv_chart_get_type(pid) == lv_chart_get_type(home));
+  CHECK(p->ymax[0] == 350);  // выше, чем на Home (330)
+  CHECK(p->ymax[1] == 350);
+  CHECK(lv_obj_get_style_text_font(pid, LV_PART_TICKS) == lv_obj_get_style_text_font(home, LV_PART_TICKS));
+  CHECK(lv_obj_get_style_radius(pid, 0) == lv_obj_get_style_radius(home, 0));
 }
