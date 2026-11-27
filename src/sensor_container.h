@@ -82,6 +82,17 @@ class SensorContainer {
   void set_color(lv_color_t color);
   static lv_coord_t tile_width();  // a tile's width on screen
   static constexpr lv_coord_t tile_gap() { return 6; }  // between tiles, Home and Extrude alike
+  // График температур под плитками (Home, PID): вид плиток, слева вровень с
+  // ними, диапазон 0–max_temp° (кратно 10, от 210 до 990), шкала справа через 50°;
+  // вместе со шкалой шириной с четыре плитки.
+  static void style_chart(lv_obj_t *chart, int32_t max_temp);
+  // Новый диапазон 0–max_temp° графика после style_chart: шкала и линии сетки.
+  static void set_chart_max(lv_obj_t *chart, int32_t max_temp);
+  // Верх шкалы графика Home: настройка System (/chart_max_temp, один из
+  // chart_max_options), без неё 330° у C5 (больше одного экструдера), иначе 300°.
+  static int32_t chart_max_temp();
+  // Варианты настройки по возрастанию (выпадающий список в System).
+  static const std::vector<int32_t> &chart_max_options();
 
   // The tiles' temperature font, also the numpad's entered value: the two
   // always match.

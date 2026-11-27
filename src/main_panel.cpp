@@ -57,6 +57,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
 #ifdef GUPPY_FF5M
                   , [this](bool enabled) { print_status_panel.set_clock_enabled(enabled); }
                   , [this]() { refresh_filament_colors(); }
+                  , [this]() { SensorContainer::set_chart_max(temp_chart, SensorContainer::chart_max_temp()); }
 #endif
                   )
   , main_cont(lv_obj_create(main_tab))
@@ -123,6 +124,10 @@ PrinterTunePanel& MainPanel::get_tune_panel() {
 
 void MainPanel::init(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
+#ifdef GUPPY_FF5M
+  // Экструдеры уже известны: верх шкалы по умолчанию зависит от их числа (C5).
+  SensorContainer::set_chart_max(temp_chart, SensorContainer::chart_max_temp());
+#endif
   homing_panel.update_motion_status();
   for (const auto &el : sensors) {
     auto target_value = j[json::json_pointer(fmt::format("/result/status/{}/target", el.first))];
@@ -347,7 +352,11 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_grid_cell(temp_chart, LV_GRID_ALIGN_END, 0, 2, LV_GRID_ALIGN_END, 2, 1);
     lv_chart_set_axis_tick(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 6, 5, true, 50);
 
+#ifdef GUPPY_FF5M
+    SensorContainer::style_chart(temp_chart, SensorContainer::chart_max_temp());
+#else
     lv_chart_set_div_line_count(temp_chart, 3, 8);
+#endif
     lv_chart_set_point_count(temp_chart, 500);
     lv_chart_set_zoom_x(temp_chart, 5000);
     lv_obj_scroll_to_x(temp_chart, LV_COORD_MAX, LV_ANIM_OFF);

@@ -9,6 +9,9 @@
 #include "lv_drivers/display/fbdev.h"
 #endif
 #include "guppyscreen.h"
+#ifdef GUPPY_FF5M
+#include "sensor_container.h"
+#endif
 
 #include <algorithm>
 #include <iterator>
@@ -64,6 +67,7 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
 #ifdef GUPPY_FF5M
                             , std::function<void(bool)> clock_changed_cb
                             , std::function<void()> filament_colors_changed_cb
+                            , std::function<void()> chart_max_changed_cb
 #endif
                             )
   : ws(c)
@@ -96,6 +100,9 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   , filament_colors_cont(lv_obj_create(left_cont))
   , filament_colors_toggle(lv_switch_create(filament_colors_cont))
   , filament_colors_changed(std::move(filament_colors_changed_cb))
+  , chart_max_cont(lv_obj_create(left_cont))
+  , chart_max_dd(lv_dropdown_create(chart_max_cont))
+  , chart_max_changed(std::move(chart_max_changed_cb))
 #endif
 
 #ifndef GUPPY_FF5M
@@ -260,6 +267,17 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   lv_obj_add_event_cb(filament_colors_toggle, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
   lv_obj_add_flag(filament_colors_cont, LV_OBJ_FLAG_HIDDEN);
+
+  lv_obj_set_size(chart_max_cont, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(chart_max_cont, 0, 0);
+  l = lv_label_create(chart_max_cont);
+  lv_label_set_text(l, _("Max graph temperature"));
+  lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_align(chart_max_dd, LV_ALIGN_RIGHT_MID, 0, 0);
+  lv_dropdown_set_options(chart_max_dd, fmt::format("{}", fmt::join(SensorContainer::chart_max_options(), "\n")).c_str());
+  show_chart_max();
+  lv_obj_add_event_cb(chart_max_dd, &SysInfoPanel::_handle_callback, LV_EVENT_VALUE_CHANGED, this);
+  lv_obj_move_to_index(chart_max_cont, lv_obj_get_index(ll_cont) + 1);  // строкой под «Log level»
 #endif
 
 #ifndef GUPPY_FF5M
@@ -327,6 +345,7 @@ void SysInfoPanel::foreground() {
     lv_obj_clear_flag(filament_colors_cont, LV_OBJ_FLAG_HIDDEN);
   else
     lv_obj_add_flag(filament_colors_cont, LV_OBJ_FLAG_HIDDEN);
+  show_chart_max();  // по умолчанию зависит от числа экструдеров, известного после подключения
 #endif
 
   auto ifaces = KUtils::get_interfaces();
@@ -339,6 +358,15 @@ void SysInfoPanel::foreground() {
   lv_label_set_text(network_label, fmt::format("{}\n\nGuppyScreen\n\tVersion: " GS_VERSION,
                                                fmt::join(network_detail, "\n")).c_str());
 }
+
+#ifdef GUPPY_FF5M
+void SysInfoPanel::show_chart_max() {
+  const auto &options = SensorContainer::chart_max_options();
+  // chart_max_temp всегда один из вариантов.
+  const auto it = std::find(options.begin(), options.end(), SensorContainer::chart_max_temp());
+  lv_dropdown_set_selected(chart_max_dd, std::distance(options.begin(), it));
+}
+#endif
 
 void SysInfoPanel::handle_callback(lv_event_t *e)
 {
@@ -381,6 +409,11 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       conf->set<bool>("/use_filament_colors", lv_obj_has_state(filament_colors_toggle, LV_STATE_CHECKED));
       conf->save();
       filament_colors_changed();
+    } else if (obj == chart_max_dd) {
+      // Варианты списка — chart_max_options по порядку.
+      conf->set<int32_t>("/chart_max_temp", SensorContainer::chart_max_options()[lv_dropdown_get_selected(chart_max_dd)]);
+      conf->save();
+      chart_max_changed();
     }
 #endif
     else if (obj == display_sleep_dd) {

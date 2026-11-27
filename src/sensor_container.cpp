@@ -1,11 +1,17 @@
 #include "sensor_container.h"
 #include "spdlog/spdlog.h"
+#include "config.h"
+#include "state.h"
+
+#include <algorithm>
 
 #include <set>
 #include <string>
 
 LV_FONT_DECLARE(notosemi_22_digits);
 LV_FONT_DECLARE(notosemi_16);
+
+static constexpr lv_coord_t chart_label_gap = 4;
 
 // Датчики с точками, ещё не добавленными в график.
 static std::set<SensorContainer *> with_pending;
@@ -203,6 +209,90 @@ const lv_font_t *SensorContainer::temperature_font() {
 
 lv_coord_t SensorContainer::tile_width() {
   return 84 * ((double)lv_disp_get_physical_hor_res(NULL) / 800.0);
+}
+
+void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
+  lv_obj_set_style_line_color(chart, lv_color_black(), 0);
+  lv_obj_set_style_line_width(chart, 1, 0);
+  lv_obj_set_style_text_font(chart, &notosemi_20, LV_PART_TICKS);
+  lv_obj_set_style_text_letter_space(chart, 0, LV_PART_TICKS);
+  // Шкала внутри графика, справа от температурных кривых.
+  const lv_coord_t text_px = lv_txt_get_width("300", 3, &notosemi_20, 0, LV_TEXT_FLAG_NONE);
+  lv_obj_set_style_pad_right(chart, text_px + 2 * chart_label_gap, 0);
+  lv_chart_set_div_line_count(chart, 0, 0);
+  lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 0, 0, false, 0);
+  lv_chart_set_axis_tick(chart, LV_CHART_AXIS_SECONDARY_Y, 0, 0, 0, 0, false, 0);
+  set_chart_max(chart, max_temp);
+  // Фон над областью графика выше на половину строки (верхняя цифра у края
+  // целиком на фоне), область графика прежняя.
+  const lv_coord_t half_line = lv_font_get_line_height(&notosemi_20) / 2 + 1;
+  lv_obj_set_width(chart, 4 * tile_width() + 3 * tile_gap());
+  lv_obj_update_layout(chart);  // высота задана в процентах: узнать её в пикселях
+  lv_obj_set_height(chart, lv_obj_get_height(chart) + half_line - lv_obj_get_style_pad_top(chart, 0));
+  lv_obj_set_style_pad_top(chart, half_line, 0);
+  lv_obj_set_grid_cell(chart, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_END, 2, 1);
+  // График растянут по X (zoom) и прокручен к последним точкам: без этого
+  // LVGL рисует полосу прокрутки штрихом у нижней цифры шкалы.
+  lv_obj_set_scrollbar_mode(chart, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_add_event_cb(chart, [](lv_event_t *e) {
+    lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
+    // Рисуем сетку и шкалу один раз до температурных кривых, без скрытых делений.
+    if (!lv_obj_draw_part_check_type(dsc, &lv_chart_class, LV_CHART_DRAW_PART_DIV_LINE_INIT)) return;
+    lv_obj_t *obj = lv_event_get_current_target(e);
+    const int32_t top = ((const lv_chart_t *)obj)->ymax[0];
+    lv_area_t plot;
+    lv_obj_get_content_coords(obj, &plot);
+    const int32_t h = lv_area_get_height(&plot);
+    const lv_coord_t y0 = plot.y1 - lv_obj_get_scroll_top(obj);
+    if (h <= 0 || top <= 200) return;
+
+    for (int32_t deg = 100; deg < top; deg += 100) {
+      const lv_coord_t y = y0 + h - h * deg / top;
+      const lv_point_t p1 = {plot.x1, y}, p2 = {plot.x2, y};
+      lv_draw_line(dsc->draw_ctx, dsc->line_dsc, &p1, &p2);
+    }
+
+    lv_area_t area;
+    lv_obj_get_coords(obj, &area);
+    area.x1 = plot.x2 + 1;
+    area.x2 -= chart_label_gap;
+    if (dsc->draw_ctx->clip_area->x2 < area.x1 || dsc->draw_ctx->clip_area->x1 > area.x2) return;
+    lv_draw_label_dsc_t label;
+    lv_draw_label_dsc_init(&label);
+    lv_obj_init_draw_label_dsc(obj, LV_PART_TICKS, &label);
+    label.align = LV_TEXT_ALIGN_RIGHT;
+    const lv_coord_t line_height = lv_font_get_line_height(label.font);
+    for (int32_t deg = 50; deg <= top; deg += 50) {
+      const lv_coord_t y = y0 + h - h * deg / top;
+      area.y1 = y - line_height / 2;
+      area.y2 = area.y1 + line_height - 1;
+      if (area.y2 < dsc->draw_ctx->clip_area->y1 || area.y1 > dsc->draw_ctx->clip_area->y2) continue;
+      char text[4];
+      lv_snprintf(text, sizeof(text), "%" LV_PRId32, deg);
+      lv_draw_label(dsc->draw_ctx, &label, &area, text, NULL);
+    }
+  }, LV_EVENT_DRAW_PART_BEGIN, NULL);
+}
+
+void SensorContainer::set_chart_max(lv_obj_t *chart, int32_t max_temp) {
+  LV_ASSERT(max_temp % 10 == 0 && max_temp > 200 && max_temp < 1000);
+  lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_Y, 0, max_temp);
+  lv_chart_set_range(chart, LV_CHART_AXIS_SECONDARY_Y, 0, max_temp);
+}
+
+const std::vector<int32_t> &SensorContainer::chart_max_options() {
+  static const std::vector<int32_t> options = {280, 300, 320, 330, 350};
+  return options;
+}
+
+int32_t SensorContainer::chart_max_temp() {
+  const json v = Config::get_instance()->get_json("/chart_max_temp");
+  if (v.is_number_integer()) {
+    const int32_t t = v.get<int32_t>();
+    const auto &o = chart_max_options();
+    if (std::find(o.begin(), o.end(), t) != o.end()) return t;
+  }
+  return State::get_instance()->get_extruders().size() > 1 ? 330 : 300;
 }
 
 void SensorContainer::set_color(lv_color_t color) {

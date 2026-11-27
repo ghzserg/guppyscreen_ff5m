@@ -6,7 +6,9 @@
 #include "doctest/doctest.h"
 
 #include "app.h"
+#include "fake_hw.h"
 #include "fake_moonraker.h"
+#include "ink.h"
 #include "ui.h"
 
 #include "guppyscreen.h"
@@ -334,4 +336,199 @@ TEST_CASE("Home's print status shows a new print state at once") {
   // Без ожидания секундного обновления.
   CHECK_MESSAGE(app::wait_until([] { return ui::find_label("Status: paused", ui::Match::Contains) != nullptr; }, 300),
                 ui::dump_screen());
+}
+
+namespace {
+
+// График Home со шкалой 0–top°: чёрные линии на 100° и 200°, цифры через 50°
+// справа. Приложение уже запущено, Home на экране.
+void check_home_chart(int top) {
+  CAPTURE(top);
+  // Плитка часов (она же статус печати) и график Home.
+  lv_obj_t *colon = ui::find_label(":");
+  REQUIRE_MESSAGE(colon != nullptr, ui::dump_screen());
+  struct { lv_obj_t *clock, *chart; } t;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    t = {lv_obj_get_parent(colon), ui::find_in(Nav::get().root(Nav::HOME), &lv_chart_class)};
+  }
+  REQUIRE(t.chart != nullptr);
+  app::redraw();
+  const lv_area_t clock = ui::coords(t.clock), plot = ui::coords(t.chart);
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  const lv_chart_t *chart = (const lv_chart_t *)t.chart;
+  CHECK(chart->hdiv_cnt == 0);
+  CHECK(chart->vdiv_cnt == 0);
+  CHECK(!chart->tick[0].label_en);
+  CHECK(!chart->tick[2].label_en);
+  CHECK(chart->tick[0].major_cnt == 0);
+  CHECK(chart->tick[2].major_cnt == 0);
+  const lv_font_t *font = lv_obj_get_style_text_font(t.chart, LV_PART_TICKS);
+  CHECK(lv_font_get_line_height(font) == 26);  // Noto SemiBold 20 px
+  CHECK(lv_obj_get_style_text_letter_space(t.chart, LV_PART_TICKS) == 0);
+  // Шкала справа внутри графика, график слева вровень с плитками, шириной с плитку часов.
+  CHECK(plot.x1 == clock.x1);
+  CHECK(plot.x2 == clock.x2);
+  // Исходный серый цвет темы.
+  CHECK(lv_color_to32(lv_obj_get_style_text_color(t.chart, LV_PART_TICKS)) ==
+        lv_color_to32(lv_palette_main(LV_PALETTE_GREY)));
+  lv_area_t c;
+  lv_obj_get_content_coords(t.chart, &c);
+  // Шкала на фоне графика: у правого края колонки тот же цвет, что в пустом
+  // месте графика (выше линии 200°, над кривыми).
+  const int y_empty = c.y1 + (c.y2 - c.y1) / 6;
+  CHECK(c.x2 < clock.x2 - 20);  // справа от графика место под цифры
+  // Над областью графика половина строки фона, как у Home без шкалы.
+  CHECK(c.y1 - plot.y1 >= lv_font_get_line_height(lv_obj_get_style_text_font(t.chart, LV_PART_TICKS)) / 2);
+  CHECK(fake_hw::pixel(clock.x2 - 2, y_empty).full == fake_hw::pixel(c.x1 + 2, y_empty).full);
+  const lv_color_t line = lv_obj_get_style_line_color(t.chart, LV_PART_MAIN);
+  // Доля пикселей строки цвета линии сетки (график температур занимает лишь несколько).
+  auto share = [&](int y, lv_color_t colour) {
+    int n = 0;
+    for (int x = c.x1; x <= c.x2; x++) n += fake_hw::pixel(x, y).full == colour.full;
+    return (double)n / (c.x2 - c.x1 + 1);
+  };
+  auto line_share = [&](int y) { return share(y, line); };
+  const int h = c.y2 - c.y1 + 1;
+  // Линии через 100° — чёрные, 1 px толщиной.
+  for (int deg = 100; deg < top; deg += 100) {
+    CAPTURE(deg);
+    const int y = c.y1 + h * (top - deg) / top;
+    int rows = 0;
+    for (int yy = y - 3; yy <= y + 3; yy++) rows += share(yy, lv_color_black()) > 0.5;
+    CHECK(rows == 1);
+  }
+  for (int deg = (top > 300 ? 310 : 300); deg <= top; deg += 10) {  // от 300° до верха: ни серой, ни чёрной линии
+    CAPTURE(deg);
+    const int y = c.y1 + h * (top - deg) / top;
+    CHECK(line_share(y) < 0.1);
+    CHECK(share(y, lv_color_black()) < 0.1);
+  }
+  for (int y = c.y2 - 2; y <= c.y2 + 1; y++) {  // 0°: ни серой, ни чёрной линии
+    CAPTURE(y);
+    CHECK(line_share(y) < 0.1);
+    CHECK(share(y, lv_color_black()) < 0.1);
+  }
+  CHECK(line_share(c.y1 + h / 2) < 0.1);  // 150°, как было раньше
+  // Цифры шкалы через 50° вровень по правому краю: 50 кончается там же, где 250 и 150.
+  const uint32_t bg = fake_hw::pixel(clock.x2 - 2, y_empty).full;
+  // До скругления и рамки графика (тема): они не фон.
+  const int x_end = plot.x2 - std::max(lv_obj_get_style_radius(t.chart, 0), lv_obj_get_style_border_width(t.chart, 0));
+  const int y_end = plot.y2 - lv_obj_get_style_border_width(t.chart, 0);  // над нижней рамкой
+  auto label_right = [&](int deg) {
+    const int y = c.y1 + (h - 1) * (top - deg) / top;
+    int right = -1;
+    for (int yy = y - 5; yy <= std::min(y + 5, y_end); yy++)  // ниже графика — фон экрана
+      for (int x = c.x2 + 1; x <= x_end; x++)
+        if (fake_hw::pixel(x, yy).full != bg) right = std::max(right, x);
+    return right;
+  };
+  const int right = label_right(250);  // 250 на шкале при любом верхе
+  CHECK(right > c.x2);
+  for (int deg = 50; deg <= top; deg += 50) {
+    CAPTURE(deg);
+    CHECK(label_right(deg) == right);
+  }
+  CHECK(chart->ymax[0] == top);
+  CHECK(chart->ymax[1] == top);
+  if (top < 300) {  // над верхом шкалы цифр нет: ни 300, ни других
+    const int y250 = c.y1 + (h - 1) * (top - 250) / top;
+    const lv_area_t above = {c.x2 + 1, (lv_coord_t)(plot.y1 + lv_obj_get_style_border_width(t.chart, 0)),  // под рамкой
+                             (lv_coord_t)x_end, (lv_coord_t)(y250 - 11)};
+    CHECK(ink::rows(above, above.x1, above.x2, [&](int, int) { lv_color_t b; b.full = bg; return b; }).top == -1);
+  }
+  // У нижнего края шкалы пусто: ни цифры 0, ни полосы прокрутки растянутого графика.
+  const int y0 = c.y1 + h - 1;
+  CHECK(label_right(0) == -1);
+  for (int x = c.x2 + 1; x <= x_end; x++)
+    for (int y = y0 - 3; y <= std::min(y0 + 3, y_end); y++) {
+      CAPTURE(x);
+      CAPTURE(y);
+      CHECK(fake_hw::pixel(x, y).full == bg);
+    }
+}
+
+}  // namespace
+
+TEST_CASE("Home's chart has black grid lines at 100 and 200 degrees and its scale by 50 on the right") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  check_home_chart(300);  // AD5M: по умолчанию до 300°
+}
+
+namespace {
+
+// Settings → System: выпадающий список «Max graph temperature».
+lv_obj_t *open_chart_max_setting() {
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("System");
+  lv_obj_t *row = ui::label_container("Max graph temperature");
+  REQUIRE_MESSAGE(row != nullptr, ui::dump_screen());
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_t *dd = ui::find_in(row, &lv_dropdown_class);
+  REQUIRE(dd != nullptr);
+  return dd;
+}
+
+// Выбранный пункт списка. Держать блокировку LVGL.
+std::string selected(lv_obj_t *dd) {
+  char buf[16];
+  lv_dropdown_get_selected_str(dd, buf, sizeof(buf));
+  return buf;
+}
+
+}  // namespace
+
+TEST_CASE("Home's chart on the C5 Pro goes up to 330 degrees by default") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  app::start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+  app::wait_ready(moonraker);
+  check_home_chart(330);  // несколько экструдеров: C5
+  lv_obj_t *dd = open_chart_max_setting();
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  CHECK(selected(dd) == "330");
+}
+
+TEST_CASE("System's Max graph temperature sets the top of Home's chart and persists") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  app::start(moonraker);
+  app::wait_ready(moonraker);
+  lv_obj_t *dd = open_chart_max_setting();
+  // Строка сразу под «Log level».
+  lv_obj_t *row = ui::label_container("Max graph temperature"), *log_level = ui::label_container("Log level");
+  REQUIRE(log_level != nullptr);
+  CHECK(ui::coords(row).y1 > ui::coords(log_level).y2);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_get_index(row) == lv_obj_get_index(log_level) + 1);
+    CHECK(std::string(lv_dropdown_get_options(dd)) == "280\n300\n320\n330\n350");
+    CHECK(selected(dd) == "300");  // AD5M: по умолчанию 300
+    // Выбор в списке: то же, что нажатие на пункт.
+    lv_dropdown_set_selected(dd, 2);
+    lv_event_send(dd, LV_EVENT_VALUE_CHANGED, NULL);
+  }
+  ui::tap_tab(Nav::HOME);
+  check_home_chart(320);
+  dd = open_chart_max_setting();
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    lv_dropdown_set_selected(dd, 4);
+    lv_event_send(dd, LV_EVENT_VALUE_CHANGED, NULL);
+  }
+  CHECK(Config::get_instance()->get_json("/chart_max_temp") == 350);
+  CHECK(json::parse(std::ifstream(app::dir() + "/guppyconfig.json"))["chart_max_temp"] == 350);
+  ui::tap_tab(Nav::HOME);
+  check_home_chart(350);
+}
+
+TEST_CASE("a saved Max graph temperature sets Home's chart at start") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  app::start(moonraker, [] {
+    json config = app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro");
+    config["chart_max_temp"] = 280;
+    return config;
+  }());
+  app::wait_ready(moonraker);
+  check_home_chart(280);  // настройка, а не 330 по умолчанию для C5
 }
