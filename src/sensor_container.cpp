@@ -216,7 +216,6 @@ void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
   lv_obj_set_style_line_width(chart, 1, 0);
   lv_obj_set_style_text_font(chart, &notosemi_20, LV_PART_TICKS);
   lv_obj_set_style_text_letter_space(chart, 0, LV_PART_TICKS);
-  lv_obj_set_style_text_color(chart, lv_obj_get_style_text_color(chart, LV_PART_MAIN), LV_PART_TICKS);
   // Шкала внутри графика, справа от температурных кривых.
   const lv_coord_t text_px = lv_txt_get_width("300", 3, &notosemi_20, 0, LV_TEXT_FLAG_NONE);
   lv_obj_set_style_pad_right(chart, text_px + 2 * chart_label_gap, 0);
@@ -247,7 +246,7 @@ void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
     const lv_coord_t y0 = plot.y1 - lv_obj_get_scroll_top(obj);
     if (h <= 0 || top <= 200) return;
 
-    for (int32_t deg : {100, 200}) {
+    for (int32_t deg = 100; deg < top; deg += 100) {
       const lv_coord_t y = y0 + h - h * deg / top;
       const lv_point_t p1 = {plot.x1, y}, p2 = {plot.x2, y};
       lv_draw_line(dsc->draw_ctx, dsc->line_dsc, &p1, &p2);

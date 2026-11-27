@@ -369,9 +369,9 @@ void check_home_chart(int top) {
   // Шкала справа внутри графика, график слева вровень с плитками, шириной с плитку часов.
   CHECK(plot.x1 == clock.x1);
   CHECK(plot.x2 == clock.x2);
-  // Цифры цвета текста, а не серые темы.
+  // Исходный серый цвет темы.
   CHECK(lv_color_to32(lv_obj_get_style_text_color(t.chart, LV_PART_TICKS)) ==
-        lv_color_to32(lv_obj_get_style_text_color(t.chart, LV_PART_MAIN)));
+        lv_color_to32(lv_palette_main(LV_PALETTE_GREY)));
   lv_area_t c;
   lv_obj_get_content_coords(t.chart, &c);
   // Шкала на фоне графика: у правого края колонки тот же цвет, что в пустом
@@ -390,15 +390,15 @@ void check_home_chart(int top) {
   };
   auto line_share = [&](int y) { return share(y, line); };
   const int h = c.y2 - c.y1 + 1;
-  // 100° и 200° — чёрные, 1 px толщиной.
-  for (int deg : {100, 200}) {
+  // Линии через 100° — чёрные, 1 px толщиной.
+  for (int deg = 100; deg < top; deg += 100) {
     CAPTURE(deg);
     const int y = c.y1 + h * (top - deg) / top;
     int rows = 0;
     for (int yy = y - 3; yy <= y + 3; yy++) rows += share(yy, lv_color_black()) > 0.5;
     CHECK(rows == 1);
   }
-  for (int deg = 300; deg <= top; deg += 10) {  // от 300° до верха: ни серой, ни чёрной линии
+  for (int deg = (top > 300 ? 310 : 300); deg <= top; deg += 10) {  // от 300° до верха: ни серой, ни чёрной линии
     CAPTURE(deg);
     const int y = c.y1 + h * (top - deg) / top;
     CHECK(line_share(y) < 0.1);
