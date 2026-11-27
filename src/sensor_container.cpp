@@ -214,11 +214,11 @@ lv_coord_t SensorContainer::tile_width() {
 void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
   lv_obj_set_style_line_color(chart, lv_color_black(), 0);
   lv_obj_set_style_line_width(chart, 1, 0);
-  lv_obj_set_style_text_font(chart, &notosemi_16, LV_PART_TICKS);
-  lv_obj_set_style_text_letter_space(chart, 1, LV_PART_TICKS);
+  lv_obj_set_style_text_font(chart, &notosemi_20, LV_PART_TICKS);
+  lv_obj_set_style_text_letter_space(chart, 0, LV_PART_TICKS);
   lv_obj_set_style_text_color(chart, lv_obj_get_style_text_color(chart, LV_PART_MAIN), LV_PART_TICKS);
   // Шкала внутри графика, справа от температурных кривых.
-  const lv_coord_t text_px = lv_txt_get_width("300", 3, &notosemi_16, 1, LV_TEXT_FLAG_NONE);
+  const lv_coord_t text_px = lv_txt_get_width("300", 3, &notosemi_20, 0, LV_TEXT_FLAG_NONE);
   lv_obj_set_style_pad_right(chart, text_px + 2 * chart_label_gap, 0);
   lv_chart_set_div_line_count(chart, 0, 0);
   lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 0, 0, false, 0);
@@ -226,7 +226,7 @@ void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
   set_chart_max(chart, max_temp);
   // Фон над областью графика выше на половину строки (верхняя цифра у края
   // целиком на фоне), область графика прежняя.
-  const lv_coord_t half_line = lv_font_get_line_height(&notosemi_16) / 2 + 1;
+  const lv_coord_t half_line = lv_font_get_line_height(&notosemi_20) / 2 + 1;
   lv_obj_set_width(chart, 4 * tile_width() + 3 * tile_gap());
   lv_obj_update_layout(chart);  // высота задана в процентах: узнать её в пикселях
   lv_obj_set_height(chart, lv_obj_get_height(chart) + half_line - lv_obj_get_style_pad_top(chart, 0));

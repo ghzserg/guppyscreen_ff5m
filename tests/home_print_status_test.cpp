@@ -364,8 +364,8 @@ void check_home_chart(int top) {
   CHECK(chart->tick[0].major_cnt == 0);
   CHECK(chart->tick[2].major_cnt == 0);
   const lv_font_t *font = lv_obj_get_style_text_font(t.chart, LV_PART_TICKS);
-  CHECK(lv_font_get_line_height(font) == 21);  // Noto SemiBold 16 px
-  CHECK(lv_obj_get_style_text_letter_space(t.chart, LV_PART_TICKS) == 1);
+  CHECK(lv_font_get_line_height(font) == 26);  // Noto SemiBold 20 px
+  CHECK(lv_obj_get_style_text_letter_space(t.chart, LV_PART_TICKS) == 0);
   // Шкала справа внутри графика, график слева вровень с плитками, шириной с плитку часов.
   CHECK(plot.x1 == clock.x1);
   CHECK(plot.x2 == clock.x2);
