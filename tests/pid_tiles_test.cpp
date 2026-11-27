@@ -447,11 +447,11 @@ TEST_CASE("the PID screen's chart looks and sits as Home's") {
   CHECK(pid_area.y2 == home_area.y2);
   std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
   // tick[]: 0 — основная ось Y (слева), 2 — вторая (справа), см. get_tick_gsc в lv_chart.c.
-  const lv_chart_t *p = (const lv_chart_t *)pid, *h = (const lv_chart_t *)home;
+  const lv_chart_t *p = (const lv_chart_t *)pid;
   CHECK(!p->tick[0].label_en);
-  CHECK(p->tick[2].label_en);
-  CHECK(p->tick[2].draw_size == h->tick[2].draw_size);
-  CHECK(p->hdiv_cnt == 8);  // линии сетки через 50°: 0, 50, …, 350
+  CHECK(!p->tick[2].label_en);
+  CHECK(p->tick[2].major_cnt == 0);
+  CHECK(p->hdiv_cnt == 0);
   CHECK(p->vdiv_cnt == 0);
   CHECK(lv_chart_get_type(pid) == lv_chart_get_type(home));
   CHECK(p->ymax[0] == 350);  // выше, чем на Home (330)

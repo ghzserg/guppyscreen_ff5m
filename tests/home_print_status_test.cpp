@@ -18,7 +18,6 @@
 #include <ctime>
 #include <cstring>
 #include <fstream>
-#include <numeric>
 
 namespace {
 
@@ -357,13 +356,17 @@ void check_home_chart(int top) {
   app::redraw();
   const lv_area_t clock = ui::coords(t.clock), plot = ui::coords(t.chart);
   std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
-  CHECK(((lv_chart_t *)t.chart)->vdiv_cnt == 0);  // без вертикальных линий
-  CHECK(lv_font_get_line_height(lv_obj_get_style_text_font(t.chart, LV_PART_TICKS)) == 20);  // DejaVu Sans Mono 14 px
-  // Шкала справа внутри графика, график слева вровень с плитками, шириной с плитку часов.
-  // tick[]: 0 — основная ось Y (слева), 2 — вторая (справа), см. get_tick_gsc в lv_chart.c.
   const lv_chart_t *chart = (const lv_chart_t *)t.chart;
+  CHECK(chart->hdiv_cnt == 0);
+  CHECK(chart->vdiv_cnt == 0);
   CHECK(!chart->tick[0].label_en);
-  CHECK(chart->tick[2].label_en);
+  CHECK(!chart->tick[2].label_en);
+  CHECK(chart->tick[0].major_cnt == 0);
+  CHECK(chart->tick[2].major_cnt == 0);
+  const lv_font_t *font = lv_obj_get_style_text_font(t.chart, LV_PART_TICKS);
+  CHECK(lv_font_get_line_height(font) == 21);  // Noto SemiBold 16 px
+  CHECK(lv_obj_get_style_text_letter_space(t.chart, LV_PART_TICKS) == 1);
+  // Шкала справа внутри графика, график слева вровень с плитками, шириной с плитку часов.
   CHECK(plot.x1 == clock.x1);
   CHECK(plot.x2 == clock.x2);
   // Цифры цвета текста, а не серые темы.
@@ -422,15 +425,12 @@ void check_home_chart(int top) {
   };
   const int right = label_right(250);  // 250 на шкале при любом верхе
   CHECK(right > c.x2);
-  for (int deg : {50, 150}) {
+  for (int deg = 50; deg <= top; deg += 50) {
     CAPTURE(deg);
     CHECK(label_right(deg) == right);
   }
-  // Деления через 10° (0, 10, …, top), цифры только у кратных 50.
-  CHECK(chart->tick[2].major_cnt == top / std::gcd(top, 50) + 1);  // делений через 50° или 10°
   CHECK(chart->ymax[0] == top);
   CHECK(chart->ymax[1] == top);
-  if (top % 50 == 0) CHECK(label_right(top) == right);
   if (top < 300) {  // над верхом шкалы цифр нет: ни 300, ни других
     const int y250 = c.y1 + (h - 1) * (top - 250) / top;
     const lv_area_t above = {c.x2 + 1, (lv_coord_t)(plot.y1 + lv_obj_get_style_border_width(t.chart, 0)),  // под рамкой
@@ -505,6 +505,14 @@ TEST_CASE("System's Max graph temperature sets the top of Home's chart and persi
     CHECK(std::string(lv_dropdown_get_options(dd)) == "280\n300\n320\n330\n350");
     CHECK(selected(dd) == "300");  // AD5M: по умолчанию 300
     // Выбор в списке: то же, что нажатие на пункт.
+    lv_dropdown_set_selected(dd, 2);
+    lv_event_send(dd, LV_EVENT_VALUE_CHANGED, NULL);
+  }
+  ui::tap_tab(Nav::HOME);
+  check_home_chart(320);
+  dd = open_chart_max_setting();
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     lv_dropdown_set_selected(dd, 4);
     lv_event_send(dd, LV_EVENT_VALUE_CHANGED, NULL);
   }

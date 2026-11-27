@@ -17,6 +17,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: ../print_panel.cpp:74
+msgid " A-Z"
+msgstr " A-Z"
+
+#: ../print_panel.cpp:73
+msgid " Changed"
+msgstr " Modificado"
+
+#: ../print_panel.cpp:72
+msgid " Refresh"
+msgstr " Actualizar"
+
 #: ../guppyscreen.cpp:108 ../guppyscreen.cpp:284 ../init_panel.cpp:27
 msgid " Waiting for the Klipper launch..."
 msgstr " Esperando el inicio de Klipper..."
@@ -577,15 +589,6 @@ msgstr "mm"
 #: ../print_status_panel.cpp:840 ../utils.cpp:281
 msgid "s"
 msgstr "s"
-
-#~ msgid " A-Z"
-#~ msgstr " A-Z"
-
-#~ msgid " Changed"
-#~ msgstr " Modificado"
-
-#~ msgid " Refresh"
-#~ msgstr " Actualizar"
 
 #~ msgid "External circulation"
 #~ msgstr "Circulación externa"

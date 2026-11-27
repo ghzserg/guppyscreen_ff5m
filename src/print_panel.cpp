@@ -56,9 +56,8 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_pad_all(left_cont, 0, 0);
 
   // file view buttons
-  auto set_sort_label = [](lv_obj_t *btn, const char *symbol, const char *key) {
+  auto set_sort_label = [](lv_obj_t *btn, const char *symbol, const char *key, const char *text) {
     lv_obj_t *label = lv_label_create(btn);
-    const char *text = _(key);
     const lv_font_t *font = lv_obj_get_style_text_font(label, LV_PART_MAIN);
     lv_font_glyph_dsc_t glyph;
     for (uint32_t i = 0; text[i];) {
@@ -70,9 +69,9 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_label_set_text_fmt(label, "%s%s", symbol, text);
     lv_obj_center(label);
   };
-  set_sort_label(refresh_btn, LV_SYMBOL_REFRESH, " Refresh");
-  set_sort_label(modified_sort_btn, LV_SYMBOL_LIST, " Changed");
-  set_sort_label(az_sort_btn, LV_SYMBOL_LIST, " A-Z");
+  set_sort_label(refresh_btn, LV_SYMBOL_REFRESH, " Refresh", _(" Refresh"));
+  set_sort_label(modified_sort_btn, LV_SYMBOL_LIST, " Changed", _(" Changed"));
+  set_sort_label(az_sort_btn, LV_SYMBOL_LIST, " A-Z", _(" A-Z"));
 
   lv_obj_add_event_cb(refresh_btn, &PrintPanel::_handle_btns, LV_EVENT_SHORT_CLICKED, this);
   lv_obj_add_event_cb(modified_sort_btn, &PrintPanel::_handle_btns, LV_EVENT_SHORT_CLICKED, this);

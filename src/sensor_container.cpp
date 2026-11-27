@@ -4,21 +4,14 @@
 #include "state.h"
 
 #include <algorithm>
-#include <numeric>
 
 #include <set>
 #include <string>
 
 LV_FONT_DECLARE(notosemi_22_digits);
 LV_FONT_DECLARE(notosemi_16);
-LV_FONT_DECLARE(dejavusans_mono_14);
 
-// Шаг делений шкалы графика и его линий сетки, °: наибольший, при котором на
-// делениях и верх шкалы, и цифры через 50 (у 300 и 350 — 50, у 280, 320, 330 — 10).
-static int32_t chart_step(int32_t max_temp) { return std::gcd(max_temp, (int32_t)50); }
-
-// Половина строки цифр шкалы: на столько они выходят за деление вверх и вниз.
-static lv_coord_t chart_half_line() { return lv_font_get_line_height(&dejavusans_mono_14) / 2 + 1; }
+static constexpr lv_coord_t chart_label_gap = 4;
 
 // Датчики с точками, ещё не добавленными в график.
 static std::set<SensorContainer *> with_pending;
@@ -219,25 +212,21 @@ lv_coord_t SensorContainer::tile_width() {
 }
 
 void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
-  // Только горизонтальные линии, на 100° и 200°, чёрные толщиной 1 px: из
-  // вертикальных при растянутом по X графике видна лишь крайняя справа.
   lv_obj_set_style_line_color(chart, lv_color_black(), 0);
-  // Цифры шкалы мельче (тема: 16 px) и цвета текста, а не серые.
-  lv_obj_set_style_text_font(chart, &dejavusans_mono_14, LV_PART_TICKS);
+  lv_obj_set_style_line_width(chart, 1, 0);
+  lv_obj_set_style_text_font(chart, &notosemi_16, LV_PART_TICKS);
+  lv_obj_set_style_text_letter_space(chart, 1, LV_PART_TICKS);
   lv_obj_set_style_text_color(chart, lv_obj_get_style_text_color(chart, LV_PART_MAIN), LV_PART_TICKS);
-  // Шкала справа (вторая ось Y с тем же диапазоном) внутри графика, на его
-  // фоне: LVGL ставит подписи за правым краем через отступ pad_right(TICKS),
-  // отрицательный отступ возвращает их внутрь, а pad_right графика оставляет
-  // под ними место. График в ячейке сетки родителя (столбцы 0–1, строка 2),
-  // слева вровень с плитками, шириной с четыре плитки.
-  const lv_coord_t text_px = lv_txt_get_width("300", 3, &dejavusans_mono_14, 0, LV_TEXT_FLAG_NONE), gap = 4;
-  lv_obj_set_style_pad_right(chart, -(text_px + gap) - 1, LV_PART_TICKS);  // от x2 + 1
-  lv_obj_set_style_pad_right(chart, text_px + 2 * gap, 0);
-  lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 7, 5, false, 0);
+  // Шкала внутри графика, справа от температурных кривых.
+  const lv_coord_t text_px = lv_txt_get_width("300", 3, &notosemi_16, 1, LV_TEXT_FLAG_NONE);
+  lv_obj_set_style_pad_right(chart, text_px + 2 * chart_label_gap, 0);
+  lv_chart_set_div_line_count(chart, 0, 0);
+  lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 0, 0, false, 0);
+  lv_chart_set_axis_tick(chart, LV_CHART_AXIS_SECONDARY_Y, 0, 0, 0, 0, false, 0);
   set_chart_max(chart, max_temp);
   // Фон над областью графика выше на половину строки (верхняя цифра у края
   // целиком на фоне), область графика прежняя.
-  const lv_coord_t half_line = chart_half_line();
+  const lv_coord_t half_line = lv_font_get_line_height(&notosemi_16) / 2 + 1;
   lv_obj_set_width(chart, 4 * tile_width() + 3 * tile_gap());
   lv_obj_update_layout(chart);  // высота задана в процентах: узнать её в пикселях
   lv_obj_set_height(chart, lv_obj_get_height(chart) + half_line - lv_obj_get_style_pad_top(chart, 0));
@@ -246,48 +235,50 @@ void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
   // График растянут по X (zoom) и прокручен к последним точкам: без этого
   // LVGL рисует полосу прокрутки штрихом у нижней цифры шкалы.
   lv_obj_set_scrollbar_mode(chart, LV_SCROLLBAR_MODE_OFF);
-  lv_event_cb_t draw_part = [](lv_event_t *e) {
+  lv_obj_add_event_cb(chart, [](lv_event_t *e) {
     lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
-    if (dsc->type == LV_CHART_DRAW_PART_TICK_LABEL && dsc->id == LV_CHART_AXIS_SECONDARY_Y && dsc->text != NULL &&
-        lv_event_get_code(e) == LV_EVENT_DRAW_PART_BEGIN) {
-      // LVGL ставит подписи второй оси от левого края: дополнить пробелами до
-      // трёх знаков, шрифт моноширинный — 50 и 100 встанут вровень по правому
-      // краю. Нуля нет: он у нижнего края, наполовину за ним.
-      if (dsc->value == 0 || dsc->value % 50 != 0)
-        dsc->text[0] = '\0';
-      else
-        lv_snprintf(dsc->text, dsc->text_length, "%3" LV_PRId32, dsc->value);
-      return;
+    // Рисуем сетку и шкалу один раз до температурных кривых, без скрытых делений.
+    if (dsc->type != LV_CHART_DRAW_PART_DIV_LINE_INIT) return;
+    lv_obj_t *obj = lv_event_get_current_target(e);
+    const int32_t top = ((const lv_chart_t *)obj)->ymax[0];
+    lv_area_t plot;
+    lv_obj_get_content_coords(obj, &plot);
+    const int32_t h = lv_area_get_height(&plot);
+    const lv_coord_t y0 = plot.y1 - lv_obj_get_scroll_top(obj);
+    if (h <= 0 || top <= 200) return;
+
+    for (int32_t deg : {100, 200}) {
+      const lv_coord_t y = y0 + h - h * deg / top;
+      const lv_point_t p1 = {plot.x1, y}, p2 = {plot.x2, y};
+      lv_draw_line(dsc->draw_ctx, dsc->line_dsc, &p1, &p2);
     }
-    // id линии сверху вниз: 0 — max_temp°, 1 — на шаг ниже, …, последняя — 0°.
-    if (dsc->type != LV_CHART_DRAW_PART_DIV_LINE_HOR) return;
-    static lv_draw_line_dsc_t saved;  // line_dsc общий для всех линий: после каждой вернуть
-    if (lv_event_get_code(e) == LV_EVENT_DRAW_PART_END) {
-      *dsc->line_dsc = saved;
-      return;
+
+    lv_area_t area;
+    lv_obj_get_coords(obj, &area);
+    area.x1 = plot.x2 + 1;
+    area.x2 -= chart_label_gap;
+    if (dsc->draw_ctx->clip_area->x2 < area.x1 || dsc->draw_ctx->clip_area->x1 > area.x2) return;
+    lv_draw_label_dsc_t label;
+    lv_draw_label_dsc_init(&label);
+    lv_obj_init_draw_label_dsc(obj, LV_PART_TICKS, &label);
+    label.align = LV_TEXT_ALIGN_RIGHT;
+    const lv_coord_t line_height = lv_font_get_line_height(label.font);
+    for (int32_t deg = 50; deg <= top; deg += 50) {
+      const lv_coord_t y = y0 + h - h * deg / top;
+      area.y1 = y - line_height / 2;
+      area.y2 = area.y1 + line_height - 1;
+      if (area.y2 < dsc->draw_ctx->clip_area->y1 || area.y1 > dsc->draw_ctx->clip_area->y2) continue;
+      char text[4];
+      lv_snprintf(text, sizeof(text), "%" LV_PRId32, deg);
+      lv_draw_label(dsc->draw_ctx, &label, &area, text, NULL);
     }
-    saved = *dsc->line_dsc;
-    const int32_t max_temp = ((const lv_chart_t *)lv_event_get_current_target(e))->ymax[LV_CHART_AXIS_SECONDARY_Y];
-    const int32_t deg = max_temp - (int32_t)dsc->id * chart_step(max_temp);
-    if (deg != 100 && deg != 200) dsc->line_dsc->opa = LV_OPA_TRANSP;
-  };
-  lv_obj_add_event_cb(chart, draw_part, LV_EVENT_DRAW_PART_BEGIN, NULL);
-  lv_obj_add_event_cb(chart, draw_part, LV_EVENT_DRAW_PART_END, NULL);
+  }, LV_EVENT_DRAW_PART_BEGIN, NULL);
 }
 
 void SensorContainer::set_chart_max(lv_obj_t *chart, int32_t max_temp) {
-  // Шкала 0–max_temp°, цифры через 50° (верхняя — max_temp, если кратна 50: у 330 это 300).
-  // LVGL делит высоту поровну на деления и линии сетки: их по одной на каждый
-  // шаг (chart_step), видны только нужные (обработчик в style_chart).
-  // Цифры шкалы не длиннее трёх знаков, линии 100° и 200° ниже верха.
   LV_ASSERT(max_temp % 10 == 0 && max_temp > 200 && max_temp < 1000);
-  const int32_t count = max_temp / chart_step(max_temp) + 1;
-  lv_chart_set_div_line_count(chart, count, 0);
   lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_Y, 0, max_temp);
   lv_chart_set_range(chart, LV_CHART_AXIS_SECONDARY_Y, 0, max_temp);
-  // Подписи у каждого деления, цифры оставлены только у кратных 50. draw_size —
-  // запас рисования подписей на половину строки за краями.
-  lv_chart_set_axis_tick(chart, LV_CHART_AXIS_SECONDARY_Y, 0, 0, count, 1, true, chart_half_line());
 }
 
 const std::vector<int32_t> &SensorContainer::chart_max_options() {
