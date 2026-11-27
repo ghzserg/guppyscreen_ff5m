@@ -70,7 +70,8 @@ static json test_config(int moonraker_port) {
   };
 }
 
-void start(FakeMoonraker &moonraker, const json &config_patch) {
+void start(FakeMoonraker &moonraker, const json &config_patch,
+           const std::function<void(const std::string &dir, json &config)> &setup) {
   if (!temp_dir.empty()) {
     throw std::logic_error("app::start() can be called only once per process");
   }
@@ -88,6 +89,7 @@ void start(FakeMoonraker &moonraker, const json &config_patch) {
   const std::string config_path = temp_dir + "/guppyconfig.json";
   json config = test_config(moonraker.port());
   config.merge_patch(config_patch);
+  if (setup) setup(temp_dir, config);
   std::ofstream(config_path) << config.dump(2);
   MESSAGE("app dir: " << temp_dir);
 

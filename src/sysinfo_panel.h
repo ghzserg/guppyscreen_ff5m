@@ -54,6 +54,11 @@ class SysInfoPanel {
   lv_obj_t *clock_toggle_cont;
   lv_obj_t *clock_toggle;
   std::function<void(bool)> clock_changed;
+  lv_obj_t *bg_cont;
+  lv_obj_t *bg_dd;
+  std::vector<std::string> bg_names;  // варианты bg_dd после None и Translucent: backgrounds/*.png
+  std::string bg_text;  // поле bg_dd: первые 7 символов показанного
+  void update_bg_dd();
   lv_obj_t *filament_colors_cont;
   lv_obj_t *filament_colors_toggle;
   std::function<void()> filament_colors_changed;

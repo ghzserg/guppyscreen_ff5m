@@ -1,4 +1,5 @@
 #include "macros_panel.h"
+#include "guppyscreen.h"
 #include "state.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
@@ -169,6 +170,7 @@ void MacrosPanel::populate() {
   // The items hold what they need; fetch again for the next build.
   fetched = false;
   std::map<std::string, std::map<std::string, std::string>>().swap(macros);
+  GuppyScreen::apply_bg_texture(top_cont);
 
   if (lv_obj_has_state(show_hide_switch, LV_STATE_CHECKED)) {
     for (const auto &m : macro_items) {

@@ -1,0 +1,29 @@
+--- a/src/draw/sw/lv_draw_sw_rect.c
++++ b/src/draw/sw/lv_draw_sw_rect.c
+@@ -379,15 +379,20 @@
+                 lv_draw_img(draw_ctx, &img_dsc, &area, dsc->bg_img_src);
+             }
+             else {
++                /*Плитки на сетке от начала координат экрана, а не объекта:
++                 *соседние и вложенные объекты с той же плиткой стыкуются
++                 *без швов. Рисуются только плитки, попавшие в область
++                 *отсечения.*/
++                lv_coord_t w = header.w, h = header.h;
+                 lv_area_t area;
+-                area.y1 = coords->y1;
+-                area.y2 = area.y1 + header.h - 1;
++                area.y1 = clip_area.y1 - ((clip_area.y1 % h) + h) % h;
++                area.y2 = area.y1 + h - 1;
+ 
+-                for(; area.y1 <= coords->y2; area.y1 += header.h, area.y2 += header.h) {
++                for(; area.y1 <= clip_area.y2; area.y1 += h, area.y2 += h) {
+ 
+-                    area.x1 = coords->x1;
+-                    area.x2 = area.x1 + header.w - 1;
+-                    for(; area.x1 <= coords->x2; area.x1 += header.w, area.x2 += header.w) {
++                    area.x1 = clip_area.x1 - ((clip_area.x1 % w) + w) % w;
++                    area.x2 = area.x1 + w - 1;
++                    for(; area.x1 <= clip_area.x2; area.x1 += w, area.x2 += w) {
+                         lv_draw_img(draw_ctx, &img_dsc, &area, dsc->bg_img_src);
+                     }
+                 }

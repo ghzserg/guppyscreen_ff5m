@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-27 15:27+0100\n"
+"POT-Creation-Date: 2026-11-27 17:46+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,19 +16,19 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../print_panel.cpp:74
+#: ../print_panel.cpp:75
 msgid " A-Z"
 msgstr " A-Z（排序）"
 
-#: ../print_panel.cpp:73
+#: ../print_panel.cpp:74
 msgid " Changed"
 msgstr " 已更改"
 
-#: ../print_panel.cpp:72
+#: ../print_panel.cpp:73
 msgid " Refresh"
 msgstr " 刷新"
 
-#: ../guppyscreen.cpp:108 ../guppyscreen.cpp:284 ../init_panel.cpp:27
+#: ../guppyscreen.cpp:135 ../guppyscreen.cpp:544 ../init_panel.cpp:28
 msgid " Waiting for the Klipper launch..."
 msgstr " 等待Klipper启动..."
 
@@ -49,11 +49,11 @@ msgstr "加速度（毫米/秒²）"
 msgid "Acceleration to Deceleration (mm/s2)"
 msgstr "加速至减速（毫米/秒²）"
 
-#: ../bedmesh_panel.cpp:628
+#: ../bedmesh_panel.cpp:632
 msgid "Adjustment"
 msgstr "转动"
 
-#: ../bedmesh_panel.cpp:424
+#: ../bedmesh_panel.cpp:428
 msgid "Algorithm"
 msgstr "算法"
 
@@ -61,7 +61,11 @@ msgstr "算法"
 msgid "Attention!"
 msgstr "注意！"
 
-#: ../bedmesh_panel.cpp:117 ../pid_panel.cpp:26
+#: ../sysinfo_panel.cpp:271
+msgid "Background"
+msgstr "背景"
+
+#: ../bedmesh_panel.cpp:121 ../pid_panel.cpp:26
 msgid "Bed"
 msgstr "热床"
 
@@ -73,16 +77,16 @@ msgstr "热床网格校准"
 msgid "Belts/Shake"
 msgstr "皮带校准/抖动"
 
-#: ../inputshaper_panel.cpp:516
+#: ../inputshaper_panel.cpp:519
 #, c++-format
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "最佳整形器为{} @ {:.2f} Hz\n"
 
-#: ../sysinfo_panel.cpp:167
+#: ../sysinfo_panel.cpp:175
 msgid "Brightness"
 msgstr "亮度"
 
-#: ../bedmesh_panel.cpp:47 ../inputshaper_panel.cpp:70
+#: ../bedmesh_panel.cpp:48 ../inputshaper_panel.cpp:71
 msgid "Calibrate"
 msgstr "校准"
 
@@ -94,8 +98,8 @@ msgstr "校准 VFA"
 msgid "Calibrate extruders"
 msgstr "校准 extruders"
 
-#: ../bedmesh_panel.cpp:188 ../button_container.cpp:130 ../print_panel.cpp:135
-#: ../print_status_panel.cpp:67 ../switch_container.cpp:98
+#: ../bedmesh_panel.cpp:192 ../button_container.cpp:130 ../print_panel.cpp:138
+#: ../print_status_panel.cpp:68 ../switch_container.cpp:98
 msgid "Cancel"
 msgstr "取消"
 
@@ -103,7 +107,7 @@ msgstr "取消"
 msgid "Change WEB"
 msgstr "切换网页界面"
 
-#: ../bedmesh_panel.cpp:46
+#: ../bedmesh_panel.cpp:47
 msgid "Clean"
 msgstr "清理"
 
@@ -111,19 +115,19 @@ msgstr "清理"
 msgid "Clear nozzle"
 msgstr "清理喷嘴"
 
-#: ../sysinfo_panel.cpp:253
+#: ../sysinfo_panel.cpp:261
 msgid "Clock"
 msgstr "时钟"
 
-#: ../bedmesh_panel.cpp:657
+#: ../bedmesh_panel.cpp:661
 msgid "Clockwise"
 msgstr "顺时针"
 
-#: ../bedmesh_panel.cpp:557 ../prompt_panel.cpp:207 ../prompt_panel.cpp:393
+#: ../bedmesh_panel.cpp:561 ../prompt_panel.cpp:207 ../prompt_panel.cpp:393
 msgid "Close"
 msgstr "关闭"
 
-#: ../bedmesh_panel.cpp:48
+#: ../bedmesh_panel.cpp:49
 msgid "Cold"
 msgstr "冷床模式"
 
@@ -135,41 +139,41 @@ msgstr "检测到配置更改"
 msgid "Console"
 msgstr ""
 
-#: ../extruder_panel.cpp:44
+#: ../extruder_panel.cpp:45
 msgid "Cool down"
 msgstr "冷却"
 
-#: ../print_panel.cpp:400 ../print_panel.cpp:409
+#: ../print_panel.cpp:403 ../print_panel.cpp:412
 msgid "Could not delete the file."
 msgstr "无法删除文件。"
 
-#: ../bedmesh_panel.cpp:657
+#: ../bedmesh_panel.cpp:661
 msgid "Counterclockwise"
 msgstr "逆时针"
 
-#: ../print_panel.cpp:33
+#: ../print_panel.cpp:34
 msgid "Delete"
 msgstr "删除"
 
-#: ../print_panel.cpp:381
+#: ../print_panel.cpp:384
 #, c++-format
 msgid "Delete file \"{}\"?"
 msgstr "删除文件“{}”？"
 
-#: ../print_status_panel.cpp:68
+#: ../print_status_panel.cpp:69
 msgid "Do you want to cancel the print?"
 msgstr "是否取消打印？"
 
-#: ../nav.cpp:283
+#: ../nav.cpp:298
 msgid "Do you want to emergency stop?"
 msgstr "是否紧急停止？"
 
-#: ../print_status_panel.cpp:916
+#: ../print_status_panel.cpp:924
 #, c++-format
 msgid "ETA: {}"
 msgstr "预计剩余时间：{}"
 
-#: ../mini_print_status.cpp:59 ../mini_print_status.cpp:220
+#: ../mini_print_status.cpp:68 ../mini_print_status.cpp:237
 #, c++-format
 msgid ""
 "ETA: {}\n"
@@ -178,11 +182,11 @@ msgstr ""
 "预计剩余时间：{}\n"
 "状态：{}"
 
-#: ../sysinfo_panel.cpp:220
+#: ../sysinfo_panel.cpp:228
 msgid "Emergency stop confirmation"
 msgstr "紧急停止确认"
 
-#: ../belts_calibration_panel.cpp:37
+#: ../belts_calibration_panel.cpp:38
 msgid "Excitate"
 msgstr "激励频率"
 
@@ -202,19 +206,19 @@ msgstr ""
 msgid "Extrude"
 msgstr "挤出"
 
-#: ../bedmesh_panel.cpp:115 ../extruder_panel.cpp:28 ../pid_panel.cpp:24
+#: ../bedmesh_panel.cpp:119 ../extruder_panel.cpp:29 ../pid_panel.cpp:24
 msgid "Extruder"
 msgstr "挤出机"
 
-#: ../extruder_panel.cpp:29
+#: ../extruder_panel.cpp:30
 msgid "Extruder temperature"
 msgstr "挤出机温度"
 
-#: ../extruder_panel.cpp:31
+#: ../extruder_panel.cpp:32
 msgid "Extrusion length"
 msgstr "挤出长度"
 
-#: ../extruder_panel.cpp:33
+#: ../extruder_panel.cpp:34
 msgid "Extrusion speed (mm/s)"
 msgstr "挤出速度（毫米/秒）"
 
@@ -222,11 +226,11 @@ msgstr "挤出速度（毫米/秒）"
 msgid "Fans"
 msgstr "风扇"
 
-#: ../sysinfo_panel.cpp:263
+#: ../sysinfo_panel.cpp:280
 msgid "Filament colors"
 msgstr "耗材颜色"
 
-#: ../main_panel.cpp:81 ../print_status_panel.cpp:63
+#: ../main_panel.cpp:81 ../print_status_panel.cpp:64
 #: ../printertune_panel.cpp:46
 msgid "Fine Tune"
 msgstr "精细调整"
@@ -247,11 +251,11 @@ msgstr "流量+"
 msgid "Flow-"
 msgstr "流量-"
 
-#: ../belts_calibration_panel.cpp:69
+#: ../belts_calibration_panel.cpp:71
 msgid "Frequency"
 msgstr "频率"
 
-#: ../inputshaper_panel.cpp:145
+#: ../inputshaper_panel.cpp:148
 msgid "Graph"
 msgstr "图表"
 
@@ -275,11 +279,11 @@ msgstr ""
 msgid "Klipper Restart"
 msgstr "Klipper重启"
 
-#: ../print_status_panel.cpp:61 ../printertune_panel.cpp:48
+#: ../print_status_panel.cpp:62 ../printertune_panel.cpp:48
 msgid "Limits"
 msgstr "运动限制"
 
-#: ../extruder_panel.cpp:40
+#: ../extruder_panel.cpp:41
 msgid "Load"
 msgstr "加载耗材"
 
@@ -287,7 +291,7 @@ msgstr "加载耗材"
 msgid "Load Cell"
 msgstr "称重传感器"
 
-#: ../sysinfo_panel.cpp:194
+#: ../sysinfo_panel.cpp:202
 msgid "Log level"
 msgstr "日志等级"
 
@@ -300,15 +304,15 @@ msgstr "宏指令"
 msgid "Max"
 msgstr "最大"
 
-#: ../sysinfo_panel.cpp:274
+#: ../sysinfo_panel.cpp:291
 msgid "Max graph temperature"
 msgstr "图表最高温度"
 
-#: ../bedmesh_panel.cpp:557
+#: ../bedmesh_panel.cpp:561
 msgid "Measure again"
 msgstr "重新测量"
 
-#: ../bedmesh_panel.cpp:576
+#: ../bedmesh_panel.cpp:580
 msgid "Measuring bed screws…"
 msgstr "正在测量热床螺丝位置..."
 
@@ -324,7 +328,7 @@ msgstr "关闭电机"
 msgid "Multiplier Step"
 msgstr "步进倍数"
 
-#: ../bedmesh_panel.cpp:626 ../spoolman_panel.cpp:140
+#: ../bedmesh_panel.cpp:630 ../spoolman_panel.cpp:140
 msgid "Name"
 msgstr "名称"
 
@@ -332,19 +336,23 @@ msgstr "名称"
 msgid "Native screen"
 msgstr "原生屏幕"
 
-#: ../sysinfo_panel.cpp:352
+#: ../sysinfo_panel.cpp:372
 msgid "Network"
 msgstr "网络"
 
-#: ../bedmesh_panel.cpp:606 ../bedmesh_panel.cpp:609
+#: ../bedmesh_panel.cpp:610 ../bedmesh_panel.cpp:613
 msgid "No screw adjustment results."
 msgstr "没有螺丝调节结果。"
 
-#: ../bedmesh_panel.cpp:653
+#: ../bedmesh_panel.cpp:657
 msgid "No turn"
 msgstr "无需转动"
 
-#: ../sysinfo_panel.cpp:241
+#: ../sysinfo_panel.cpp:394
+msgid "None"
+msgstr "无"
+
+#: ../sysinfo_panel.cpp:249
 #, fuzzy
 msgid "Object exclusion confirmation"
 msgstr "紧急停止确认"
@@ -365,7 +373,7 @@ msgstr "PID热床"
 msgid "PID Extruder"
 msgstr "PID挤出机"
 
-#: ../print_status_panel.cpp:65
+#: ../print_status_panel.cpp:66
 msgid "Pause"
 msgstr "暂停"
 
@@ -373,23 +381,23 @@ msgstr "暂停"
 msgid "Power Off"
 msgstr "关机"
 
-#: ../print_panel.cpp:32
+#: ../print_panel.cpp:33
 msgid "Print"
 msgstr "打印"
 
-#: ../print_panel.cpp:143
+#: ../print_panel.cpp:146
 msgid "Printing..."
 msgstr "打印中..."
 
-#: ../print_panel.cpp:139
+#: ../print_panel.cpp:142
 msgid "Queue"
 msgstr "队列"
 
-#: ../bedmesh_panel.cpp:333 ../bedmesh_panel.cpp:352 ../bedmesh_panel.cpp:417
+#: ../bedmesh_panel.cpp:337 ../bedmesh_panel.cpp:356 ../bedmesh_panel.cpp:421
 msgid "Range"
 msgstr "范围"
 
-#: ../bedmesh_panel.cpp:651
+#: ../bedmesh_panel.cpp:655
 msgid "Reference"
 msgstr "基准"
 
@@ -413,7 +421,7 @@ msgstr ""
 "剩余\n"
 "重量"
 
-#: ../extruder_panel.cpp:437
+#: ../extruder_panel.cpp:439
 msgid "Remove"
 msgstr "移除"
 
@@ -427,11 +435,11 @@ msgstr "重置"
 msgid "Restore Print"
 msgstr "恢复打印"
 
-#: ../print_status_panel.cpp:66
+#: ../print_status_panel.cpp:67
 msgid "Resume"
 msgstr "继续"
 
-#: ../print_status_panel.cpp:64 ../printertune_panel.cpp:49
+#: ../print_status_panel.cpp:65 ../printertune_panel.cpp:49
 msgid "Retract"
 msgstr "回抽"
 
@@ -443,27 +451,27 @@ msgstr "回抽长度"
 msgid "Retract Speed"
 msgstr "回抽速度"
 
-#: ../bedmesh_panel.cpp:45 ../bedmesh_panel.cpp:185 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:46 ../bedmesh_panel.cpp:189 ../inputshaper_panel.cpp:72
 msgid "Save"
 msgstr "保存"
 
-#: ../bedmesh_panel.cpp:179
+#: ../bedmesh_panel.cpp:183
 msgid "Saving the profile will restart the printer."
 msgstr "保存配置将重启打印机。"
 
-#: ../sysinfo_panel.cpp:139
+#: ../sysinfo_panel.cpp:147
 msgid "Screen off"
 msgstr "息屏"
 
-#: ../bedmesh_panel.cpp:636
+#: ../bedmesh_panel.cpp:640
 msgid "Screw"
 msgstr "螺丝"
 
-#: ../bedmesh_panel.cpp:139 ../bedmesh_panel.cpp:507
+#: ../bedmesh_panel.cpp:143 ../bedmesh_panel.cpp:511
 msgid "Screw adjustment"
 msgstr "螺丝调整"
 
-#: ../belts_calibration_panel.cpp:36
+#: ../belts_calibration_panel.cpp:37
 msgid "Shake Belts"
 msgstr "皮带抖动测试"
 
@@ -471,11 +479,11 @@ msgstr "皮带抖动测试"
 msgid "Show Archived"
 msgstr "显示已归档"
 
-#: ../macros_panel.cpp:27
+#: ../macros_panel.cpp:28
 msgid "Show Hidden"
 msgstr "显示隐藏项"
 
-#: ../print_panel.cpp:131
+#: ../print_panel.cpp:134
 msgid "Show task"
 msgstr "显示任务"
 
@@ -503,11 +511,15 @@ msgstr "停止"
 msgid "System"
 msgstr "系统"
 
+#: ../sysinfo_panel.cpp:394
+msgid "Translucent"
+msgstr "半透明"
+
 #: ../homing_panel.cpp:32
 msgid "Travel distance (mm)"
 msgstr "移动距离（毫米）"
 
-#: ../extruder_panel.cpp:41
+#: ../extruder_panel.cpp:42
 msgid "Unload"
 msgstr "卸载耗材"
 
@@ -538,15 +550,15 @@ msgstr ""
 "时间：{}\n"
 "大小：{} MB"
 
-#: ../init_panel.cpp:29
+#: ../init_panel.cpp:30
 msgid "Welcome to Guppy Screen. Use the settings to add your printer."
 msgstr "欢迎使用 Guppy Screen。请在设置中添加您的打印机。"
 
-#: ../inputshaper_panel.cpp:87
+#: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"
 msgstr "X轴频率响应"
 
-#: ../inputshaper_panel.cpp:97
+#: ../inputshaper_panel.cpp:99
 msgid "Y Frequency Response"
 msgstr "Y轴频率响应"
 
@@ -562,7 +574,7 @@ msgstr "d "
 msgid "h "
 msgstr "h "
 
-#: ../print_status_panel.cpp:411 ../print_status_panel.cpp:1009
+#: ../print_status_panel.cpp:419 ../print_status_panel.cpp:1017
 msgid "m"
 msgstr "m"
 
@@ -572,20 +584,20 @@ msgstr "min "
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
 #: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
-#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:89
-#: ../print_status_panel.cpp:90 ../print_status_panel.cpp:407
-#: ../print_status_panel.cpp:408 ../print_status_panel.cpp:451
-#: ../print_status_panel.cpp:565 ../print_status_panel.cpp:778
-#: ../print_status_panel.cpp:784 ../print_status_panel.cpp:840
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:90
+#: ../print_status_panel.cpp:91 ../print_status_panel.cpp:415
+#: ../print_status_panel.cpp:416 ../print_status_panel.cpp:459
+#: ../print_status_panel.cpp:573 ../print_status_panel.cpp:786
+#: ../print_status_panel.cpp:792 ../print_status_panel.cpp:848
 msgid "mm"
 msgstr "mm"
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
-#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:90
-#: ../print_status_panel.cpp:96 ../print_status_panel.cpp:407
-#: ../print_status_panel.cpp:408 ../print_status_panel.cpp:409
-#: ../print_status_panel.cpp:451 ../print_status_panel.cpp:778
-#: ../print_status_panel.cpp:840 ../utils.cpp:281
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:91
+#: ../print_status_panel.cpp:97 ../print_status_panel.cpp:415
+#: ../print_status_panel.cpp:416 ../print_status_panel.cpp:417
+#: ../print_status_panel.cpp:459 ../print_status_panel.cpp:786
+#: ../print_status_panel.cpp:848 ../utils.cpp:281
 msgid "s"
 msgstr "s"
 

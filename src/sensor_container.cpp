@@ -1,4 +1,5 @@
 #include "sensor_container.h"
+#include "guppyscreen.h"
 #include "spdlog/spdlog.h"
 #include "config.h"
 #include "state.h"
@@ -212,6 +213,8 @@ lv_coord_t SensorContainer::tile_width() {
 }
 
 void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
+  // Как плитки датчиков: полупрозрачный, без рамки и скруглений (кроме режима None).
+  GuppyScreen::tile(chart);
   lv_obj_set_style_line_color(chart, lv_color_black(), 0);
   lv_obj_set_style_line_width(chart, 1, 0);
   lv_obj_set_style_text_font(chart, &notosemi_20, LV_PART_TICKS);
@@ -321,6 +324,7 @@ void SensorContainer::as_tile() {
   // fill the 356 px temperature column.
   lv_obj_set_style_border_side(sensor_cont, LV_BORDER_SIDE_BOTTOM, LV_PART_MAIN);
   lv_obj_set_size(sensor_cont, tile_width(), 78 * scale);
+  GuppyScreen::tint(sensor_cont);
 
   // Top: the icon, the target and the current temperature stacked right of it.
   lv_img_set_zoom(sensor_img, 128);  // the 64 px icons at 32 px

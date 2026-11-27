@@ -1,4 +1,5 @@
 #include "init_panel.h"
+#include "guppyscreen.h"
 #include "utils.h"
 #include "state.h"
 #include "config.h"
@@ -120,6 +121,7 @@ void InitPanel::connected(KWebSocketClient &ws) {
                             std::lock_guard<std::mutex> lock(this->lv_lock);
                             lv_obj_add_flag(this->cont, LV_OBJ_FLAG_HIDDEN);
                             lv_obj_move_background(this->cont);
+                            GuppyScreen::apply_bg_texture();  // виджеты, созданные при подключении
 
                           });
         }

@@ -1,6 +1,7 @@
 #include "bedmesh_panel.h"
 #include "config.h"
 #include "nav.h"
+#include "guppyscreen.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -88,6 +89,9 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_border_width(profile_cont, 0, 0);
   lv_obj_clear_flag(profile_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(profile_cont, LV_FLEX_FLOW_COLUMN);
+#ifdef GUPPY_FF5M
+  for (lv_obj_t *t : {profile_cont, profile_table, profile_info}) GuppyScreen::tint_table(t);
+#endif
 
   // profile table
   lv_table_set_col_width(profile_table, 0, 260 * scale);

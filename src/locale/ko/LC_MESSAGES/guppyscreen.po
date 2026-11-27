@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-27 15:27+0100\n"
+"POT-Creation-Date: 2026-11-27 17:46+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,19 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../print_panel.cpp:74
+#: ../print_panel.cpp:75
 msgid " A-Z"
 msgstr " A-Z"
 
-#: ../print_panel.cpp:73
+#: ../print_panel.cpp:74
 msgid " Changed"
 msgstr " 변경됨"
 
-#: ../print_panel.cpp:72
+#: ../print_panel.cpp:73
 msgid " Refresh"
 msgstr " 새로고침"
 
-#: ../guppyscreen.cpp:108 ../guppyscreen.cpp:284 ../init_panel.cpp:27
+#: ../guppyscreen.cpp:135 ../guppyscreen.cpp:544 ../init_panel.cpp:28
 msgid " Waiting for the Klipper launch..."
 msgstr " Klipper 실행 대기 중..."
 
@@ -50,11 +50,11 @@ msgstr "가속 (mm/s²)"
 msgid "Acceleration to Deceleration (mm/s2)"
 msgstr "가속에서 감속까지 (mm/s²)"
 
-#: ../bedmesh_panel.cpp:628
+#: ../bedmesh_panel.cpp:632
 msgid "Adjustment"
 msgstr "회전"
 
-#: ../bedmesh_panel.cpp:424
+#: ../bedmesh_panel.cpp:428
 msgid "Algorithm"
 msgstr "알고리즘"
 
@@ -62,7 +62,11 @@ msgstr "알고리즘"
 msgid "Attention!"
 msgstr "주의!"
 
-#: ../bedmesh_panel.cpp:117 ../pid_panel.cpp:26
+#: ../sysinfo_panel.cpp:271
+msgid "Background"
+msgstr "배경"
+
+#: ../bedmesh_panel.cpp:121 ../pid_panel.cpp:26
 msgid "Bed"
 msgstr "베드"
 
@@ -74,16 +78,16 @@ msgstr "베드 메쉬"
 msgid "Belts/Shake"
 msgstr "벨트/흔들림"
 
-#: ../inputshaper_panel.cpp:516
+#: ../inputshaper_panel.cpp:519
 #, c++-format
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "최적의 셰이퍼는 {} 입니다 @ {:.2f} Hz\n"
 
-#: ../sysinfo_panel.cpp:167
+#: ../sysinfo_panel.cpp:175
 msgid "Brightness"
 msgstr "밝기"
 
-#: ../bedmesh_panel.cpp:47 ../inputshaper_panel.cpp:70
+#: ../bedmesh_panel.cpp:48 ../inputshaper_panel.cpp:71
 msgid "Calibrate"
 msgstr "보정"
 
@@ -95,8 +99,8 @@ msgstr "보정 VFA"
 msgid "Calibrate extruders"
 msgstr "보정 extruders"
 
-#: ../bedmesh_panel.cpp:188 ../button_container.cpp:130 ../print_panel.cpp:135
-#: ../print_status_panel.cpp:67 ../switch_container.cpp:98
+#: ../bedmesh_panel.cpp:192 ../button_container.cpp:130 ../print_panel.cpp:138
+#: ../print_status_panel.cpp:68 ../switch_container.cpp:98
 msgid "Cancel"
 msgstr "취소"
 
@@ -104,7 +108,7 @@ msgstr "취소"
 msgid "Change WEB"
 msgstr "WEB 변경"
 
-#: ../bedmesh_panel.cpp:46
+#: ../bedmesh_panel.cpp:47
 msgid "Clean"
 msgstr "청소"
 
@@ -112,19 +116,19 @@ msgstr "청소"
 msgid "Clear nozzle"
 msgstr "노즐 청소"
 
-#: ../sysinfo_panel.cpp:253
+#: ../sysinfo_panel.cpp:261
 msgid "Clock"
 msgstr "시계"
 
-#: ../bedmesh_panel.cpp:657
+#: ../bedmesh_panel.cpp:661
 msgid "Clockwise"
 msgstr "시계 방향"
 
-#: ../bedmesh_panel.cpp:557 ../prompt_panel.cpp:207 ../prompt_panel.cpp:393
+#: ../bedmesh_panel.cpp:561 ../prompt_panel.cpp:207 ../prompt_panel.cpp:393
 msgid "Close"
 msgstr "닫기"
 
-#: ../bedmesh_panel.cpp:48
+#: ../bedmesh_panel.cpp:49
 msgid "Cold"
 msgstr "차가움"
 
@@ -136,41 +140,41 @@ msgstr "설정 변경이 감지되었습니다"
 msgid "Console"
 msgstr ""
 
-#: ../extruder_panel.cpp:44
+#: ../extruder_panel.cpp:45
 msgid "Cool down"
 msgstr "냉각"
 
-#: ../print_panel.cpp:400 ../print_panel.cpp:409
+#: ../print_panel.cpp:403 ../print_panel.cpp:412
 msgid "Could not delete the file."
 msgstr "파일을 삭제할 수 없습니다."
 
-#: ../bedmesh_panel.cpp:657
+#: ../bedmesh_panel.cpp:661
 msgid "Counterclockwise"
 msgstr "반시계 방향"
 
-#: ../print_panel.cpp:33
+#: ../print_panel.cpp:34
 msgid "Delete"
 msgstr "삭제"
 
-#: ../print_panel.cpp:381
+#: ../print_panel.cpp:384
 #, c++-format
 msgid "Delete file \"{}\"?"
 msgstr "파일 \"{}\"을(를) 삭제하시겠습니까?"
 
-#: ../print_status_panel.cpp:68
+#: ../print_status_panel.cpp:69
 msgid "Do you want to cancel the print?"
 msgstr "인쇄를 취소하시겠습니까?"
 
-#: ../nav.cpp:283
+#: ../nav.cpp:298
 msgid "Do you want to emergency stop?"
 msgstr "긴급 정지를 하시겠습니까?"
 
-#: ../print_status_panel.cpp:916
+#: ../print_status_panel.cpp:924
 #, c++-format
 msgid "ETA: {}"
 msgstr "ETA: {}"
 
-#: ../mini_print_status.cpp:59 ../mini_print_status.cpp:220
+#: ../mini_print_status.cpp:68 ../mini_print_status.cpp:237
 #, c++-format
 msgid ""
 "ETA: {}\n"
@@ -179,11 +183,11 @@ msgstr ""
 "ETA: {}\n"
 "상태: {}"
 
-#: ../sysinfo_panel.cpp:220
+#: ../sysinfo_panel.cpp:228
 msgid "Emergency stop confirmation"
 msgstr "긴급 정지 확인"
 
-#: ../belts_calibration_panel.cpp:37
+#: ../belts_calibration_panel.cpp:38
 msgid "Excitate"
 msgstr "격려"
 
@@ -203,19 +207,19 @@ msgstr ""
 msgid "Extrude"
 msgstr "압출"
 
-#: ../bedmesh_panel.cpp:115 ../extruder_panel.cpp:28 ../pid_panel.cpp:24
+#: ../bedmesh_panel.cpp:119 ../extruder_panel.cpp:29 ../pid_panel.cpp:24
 msgid "Extruder"
 msgstr "압출기"
 
-#: ../extruder_panel.cpp:29
+#: ../extruder_panel.cpp:30
 msgid "Extruder temperature"
 msgstr "압출기 온도"
 
-#: ../extruder_panel.cpp:31
+#: ../extruder_panel.cpp:32
 msgid "Extrusion length"
 msgstr "압출 길이"
 
-#: ../extruder_panel.cpp:33
+#: ../extruder_panel.cpp:34
 msgid "Extrusion speed (mm/s)"
 msgstr "압출 속도(mm/s)"
 
@@ -223,11 +227,11 @@ msgstr "압출 속도(mm/s)"
 msgid "Fans"
 msgstr "팬"
 
-#: ../sysinfo_panel.cpp:263
+#: ../sysinfo_panel.cpp:280
 msgid "Filament colors"
 msgstr "필라멘트 색상"
 
-#: ../main_panel.cpp:81 ../print_status_panel.cpp:63
+#: ../main_panel.cpp:81 ../print_status_panel.cpp:64
 #: ../printertune_panel.cpp:46
 msgid "Fine Tune"
 msgstr "세밀 조정"
@@ -248,11 +252,11 @@ msgstr "유량+"
 msgid "Flow-"
 msgstr "유량-"
 
-#: ../belts_calibration_panel.cpp:69
+#: ../belts_calibration_panel.cpp:71
 msgid "Frequency"
 msgstr "주파수"
 
-#: ../inputshaper_panel.cpp:145
+#: ../inputshaper_panel.cpp:148
 msgid "Graph"
 msgstr "그래프"
 
@@ -276,11 +280,11 @@ msgstr ""
 msgid "Klipper Restart"
 msgstr "Klipper 재시작"
 
-#: ../print_status_panel.cpp:61 ../printertune_panel.cpp:48
+#: ../print_status_panel.cpp:62 ../printertune_panel.cpp:48
 msgid "Limits"
 msgstr "제한"
 
-#: ../extruder_panel.cpp:40
+#: ../extruder_panel.cpp:41
 msgid "Load"
 msgstr "로드"
 
@@ -288,7 +292,7 @@ msgstr "로드"
 msgid "Load Cell"
 msgstr "로드 셀"
 
-#: ../sysinfo_panel.cpp:194
+#: ../sysinfo_panel.cpp:202
 msgid "Log level"
 msgstr "로그 레벨"
 
@@ -301,15 +305,15 @@ msgstr "매크로"
 msgid "Max"
 msgstr "최대"
 
-#: ../sysinfo_panel.cpp:274
+#: ../sysinfo_panel.cpp:291
 msgid "Max graph temperature"
 msgstr "그래프 최고 온도"
 
-#: ../bedmesh_panel.cpp:557
+#: ../bedmesh_panel.cpp:561
 msgid "Measure again"
 msgstr "다시 측정"
 
-#: ../bedmesh_panel.cpp:576
+#: ../bedmesh_panel.cpp:580
 msgid "Measuring bed screws…"
 msgstr "베드 나사 위치 측정 중..."
 
@@ -325,7 +329,7 @@ msgstr "모터 끄기"
 msgid "Multiplier Step"
 msgstr "승수 단계"
 
-#: ../bedmesh_panel.cpp:626 ../spoolman_panel.cpp:140
+#: ../bedmesh_panel.cpp:630 ../spoolman_panel.cpp:140
 msgid "Name"
 msgstr "이름"
 
@@ -333,19 +337,23 @@ msgstr "이름"
 msgid "Native screen"
 msgstr "네이티브 스크린"
 
-#: ../sysinfo_panel.cpp:352
+#: ../sysinfo_panel.cpp:372
 msgid "Network"
 msgstr "네트워크"
 
-#: ../bedmesh_panel.cpp:606 ../bedmesh_panel.cpp:609
+#: ../bedmesh_panel.cpp:610 ../bedmesh_panel.cpp:613
 msgid "No screw adjustment results."
 msgstr "나사 조정 결과가 없습니다."
 
-#: ../bedmesh_panel.cpp:653
+#: ../bedmesh_panel.cpp:657
 msgid "No turn"
 msgstr "돌리지 않음"
 
-#: ../sysinfo_panel.cpp:241
+#: ../sysinfo_panel.cpp:394
+msgid "None"
+msgstr "없음"
+
+#: ../sysinfo_panel.cpp:249
 #, fuzzy
 msgid "Object exclusion confirmation"
 msgstr "긴급 정지 확인"
@@ -366,7 +374,7 @@ msgstr "PID 베드"
 msgid "PID Extruder"
 msgstr "PID 압출기"
 
-#: ../print_status_panel.cpp:65
+#: ../print_status_panel.cpp:66
 msgid "Pause"
 msgstr "일시정지"
 
@@ -374,23 +382,23 @@ msgstr "일시정지"
 msgid "Power Off"
 msgstr "전원 끄기"
 
-#: ../print_panel.cpp:32
+#: ../print_panel.cpp:33
 msgid "Print"
 msgstr "인쇄"
 
-#: ../print_panel.cpp:143
+#: ../print_panel.cpp:146
 msgid "Printing..."
 msgstr "인쇄 중..."
 
-#: ../print_panel.cpp:139
+#: ../print_panel.cpp:142
 msgid "Queue"
 msgstr "대기열"
 
-#: ../bedmesh_panel.cpp:333 ../bedmesh_panel.cpp:352 ../bedmesh_panel.cpp:417
+#: ../bedmesh_panel.cpp:337 ../bedmesh_panel.cpp:356 ../bedmesh_panel.cpp:421
 msgid "Range"
 msgstr "범위"
 
-#: ../bedmesh_panel.cpp:651
+#: ../bedmesh_panel.cpp:655
 msgid "Reference"
 msgstr "기준"
 
@@ -414,7 +422,7 @@ msgstr ""
 "남은\n"
 "무게"
 
-#: ../extruder_panel.cpp:437
+#: ../extruder_panel.cpp:439
 msgid "Remove"
 msgstr "분리"
 
@@ -428,11 +436,11 @@ msgstr "리셋"
 msgid "Restore Print"
 msgstr "인쇄 복원"
 
-#: ../print_status_panel.cpp:66
+#: ../print_status_panel.cpp:67
 msgid "Resume"
 msgstr "재개"
 
-#: ../print_status_panel.cpp:64 ../printertune_panel.cpp:49
+#: ../print_status_panel.cpp:65 ../printertune_panel.cpp:49
 msgid "Retract"
 msgstr "리트랙트"
 
@@ -444,27 +452,27 @@ msgstr "리트랙션 길이"
 msgid "Retract Speed"
 msgstr "리트랙션 속도"
 
-#: ../bedmesh_panel.cpp:45 ../bedmesh_panel.cpp:185 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:46 ../bedmesh_panel.cpp:189 ../inputshaper_panel.cpp:72
 msgid "Save"
 msgstr "저장"
 
-#: ../bedmesh_panel.cpp:179
+#: ../bedmesh_panel.cpp:183
 msgid "Saving the profile will restart the printer."
 msgstr "프로파일을 저장하면 프린터가 재시작됩니다."
 
-#: ../sysinfo_panel.cpp:139
+#: ../sysinfo_panel.cpp:147
 msgid "Screen off"
 msgstr "화면 끄기"
 
-#: ../bedmesh_panel.cpp:636
+#: ../bedmesh_panel.cpp:640
 msgid "Screw"
 msgstr "나사"
 
-#: ../bedmesh_panel.cpp:139 ../bedmesh_panel.cpp:507
+#: ../bedmesh_panel.cpp:143 ../bedmesh_panel.cpp:511
 msgid "Screw adjustment"
 msgstr "나사 조정"
 
-#: ../belts_calibration_panel.cpp:36
+#: ../belts_calibration_panel.cpp:37
 msgid "Shake Belts"
 msgstr "벨트를 흔들기"
 
@@ -472,11 +480,11 @@ msgstr "벨트를 흔들기"
 msgid "Show Archived"
 msgstr "보관 항목 표시"
 
-#: ../macros_panel.cpp:27
+#: ../macros_panel.cpp:28
 msgid "Show Hidden"
 msgstr "숨긴 항목 표시"
 
-#: ../print_panel.cpp:131
+#: ../print_panel.cpp:134
 msgid "Show task"
 msgstr "작업 보기"
 
@@ -504,11 +512,15 @@ msgstr "정지"
 msgid "System"
 msgstr "시스템"
 
+#: ../sysinfo_panel.cpp:394
+msgid "Translucent"
+msgstr "반투명"
+
 #: ../homing_panel.cpp:32
 msgid "Travel distance (mm)"
 msgstr "이동 거리 (mm)"
 
-#: ../extruder_panel.cpp:41
+#: ../extruder_panel.cpp:42
 msgid "Unload"
 msgstr "언로드"
 
@@ -539,15 +551,15 @@ msgstr ""
 "시간: {}\n"
 "크기: {} MB"
 
-#: ../init_panel.cpp:29
+#: ../init_panel.cpp:30
 msgid "Welcome to Guppy Screen. Use the settings to add your printer."
 msgstr "Guppy Screen에 오신 것을 환영합니다. 설정에서 프린터를 추가하세요."
 
-#: ../inputshaper_panel.cpp:87
+#: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"
 msgstr "X축 주파수 응답"
 
-#: ../inputshaper_panel.cpp:97
+#: ../inputshaper_panel.cpp:99
 msgid "Y Frequency Response"
 msgstr "Y축 주파수 응답"
 
@@ -563,7 +575,7 @@ msgstr "d "
 msgid "h "
 msgstr "h "
 
-#: ../print_status_panel.cpp:411 ../print_status_panel.cpp:1009
+#: ../print_status_panel.cpp:419 ../print_status_panel.cpp:1017
 msgid "m"
 msgstr "m"
 
@@ -573,20 +585,20 @@ msgstr "min "
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
 #: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
-#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:89
-#: ../print_status_panel.cpp:90 ../print_status_panel.cpp:407
-#: ../print_status_panel.cpp:408 ../print_status_panel.cpp:451
-#: ../print_status_panel.cpp:565 ../print_status_panel.cpp:778
-#: ../print_status_panel.cpp:784 ../print_status_panel.cpp:840
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:90
+#: ../print_status_panel.cpp:91 ../print_status_panel.cpp:415
+#: ../print_status_panel.cpp:416 ../print_status_panel.cpp:459
+#: ../print_status_panel.cpp:573 ../print_status_panel.cpp:786
+#: ../print_status_panel.cpp:792 ../print_status_panel.cpp:848
 msgid "mm"
 msgstr "mm"
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
-#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:90
-#: ../print_status_panel.cpp:96 ../print_status_panel.cpp:407
-#: ../print_status_panel.cpp:408 ../print_status_panel.cpp:409
-#: ../print_status_panel.cpp:451 ../print_status_panel.cpp:778
-#: ../print_status_panel.cpp:840 ../utils.cpp:281
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:91
+#: ../print_status_panel.cpp:97 ../print_status_panel.cpp:415
+#: ../print_status_panel.cpp:416 ../print_status_panel.cpp:417
+#: ../print_status_panel.cpp:459 ../print_status_panel.cpp:786
+#: ../print_status_panel.cpp:848 ../utils.cpp:281
 msgid "s"
 msgstr "s"
 

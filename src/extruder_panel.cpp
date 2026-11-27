@@ -1,5 +1,6 @@
 #include "extruder_panel.h"
 #include "nav.h"
+#include "guppyscreen.h"
 #include "state.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
@@ -425,6 +426,7 @@ void ExtruderPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &
   if (nozzle_tiles.selectable()) {
     lv_obj_add_flag(tools_btnmatrix, LV_OBJ_FLAG_HIDDEN);
     remove_tool_tile = lv_obj_create(nozzle_tiles.get_container());
+    GuppyScreen::tint(remove_tool_tile);  // как плитки сопел рядом
     lv_obj_set_size(remove_tool_tile, SensorContainer::tile_width(),
                     78 * ((double)lv_disp_get_physical_hor_res(NULL) / 800.0));
     lv_obj_set_style_pad_all(remove_tool_tile, 0, 0);

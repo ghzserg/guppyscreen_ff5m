@@ -97,6 +97,8 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   , clock_toggle_cont(lv_obj_create(left_cont))
   , clock_toggle(lv_switch_create(clock_toggle_cont))
   , clock_changed(std::move(clock_changed_cb))
+  , bg_cont(lv_obj_create(left_cont))
+  , bg_dd(lv_dropdown_create(bg_cont))
   , filament_colors_cont(lv_obj_create(left_cont))
   , filament_colors_toggle(lv_switch_create(filament_colors_cont))
   , filament_colors_changed(std::move(filament_colors_changed_cb))
@@ -126,6 +128,12 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   lv_obj_set_size(left_cont, LV_PCT(60), LV_PCT(100));
   lv_obj_set_flex_flow(left_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(left_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+#ifdef GUPPY_FF5M
+  // Списки на 32% шире ширины LVGL по умолчанию (LV_DPI_DEF), отступы колонки
+  // вдвое меньше: значение не налезает на стрелку.
+  lv_obj_set_style_pad_all(left_cont, lv_obj_get_style_pad_left(left_cont, 0) / 2, 0);
+  for (lv_obj_t *dd : {display_sleep_dd, disp_brightness_dd, loglevel_dd, bg_dd}) lv_obj_set_width(dd, LV_DPI_DEF * 33 / 25);
+#endif
 
   lv_obj_clear_flag(right_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(right_cont, LV_PCT(40), LV_PCT(100));
@@ -257,6 +265,15 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   lv_obj_add_event_cb(clock_toggle, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
 
+  lv_obj_set_size(bg_cont, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(bg_cont, 0, 0);
+  l = lv_label_create(bg_cont);
+  lv_label_set_text(l, _("Background") /* "Фон" */);
+  lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
+  lv_obj_align(bg_dd, LV_ALIGN_RIGHT_MID, 0, 0);
+  lv_obj_add_event_cb(bg_dd, &SysInfoPanel::_handle_callback,
+                      LV_EVENT_VALUE_CHANGED, this);
+
   lv_obj_set_size(filament_colors_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(filament_colors_cont, 0, 0);
   l = lv_label_create(filament_colors_cont);
@@ -278,6 +295,7 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   show_chart_max();
   lv_obj_add_event_cb(chart_max_dd, &SysInfoPanel::_handle_callback, LV_EVENT_VALUE_CHANGED, this);
   lv_obj_move_to_index(chart_max_cont, lv_obj_get_index(ll_cont) + 1);  // строкой под «Log level»
+  lv_obj_move_to_index(bg_cont, lv_obj_get_index(chart_max_cont) + 1);  // под «Max graph temperature»
 #endif
 
 #ifndef GUPPY_FF5M
@@ -346,6 +364,7 @@ void SysInfoPanel::foreground() {
   else
     lv_obj_add_flag(filament_colors_cont, LV_OBJ_FLAG_HIDDEN);
   show_chart_max();  // по умолчанию зависит от числа экструдеров, известного после подключения
+  update_bg_dd();  // файлы могли загрузить через Fluidd/Mainsail
 #endif
 
   auto ifaces = KUtils::get_interfaces();
@@ -365,6 +384,27 @@ void SysInfoPanel::show_chart_max() {
   // chart_max_temp всегда один из вариантов.
   const auto it = std::find(options.begin(), options.end(), SensorContainer::chart_max_temp());
   lv_dropdown_set_selected(chart_max_dd, std::distance(options.begin(), it));
+}
+
+// None, Translucent, затем backgrounds/*.png.
+void SysInfoPanel::update_bg_dd() {
+  bg_names = GuppyScreen::background_files();
+  const std::string file = fs::path(GuppyScreen::background_file()).filename().string();
+  const GuppyScreen::BgMode mode = GuppyScreen::background_mode();
+  std::string options = _("None") + std::string("\n") + _("Translucent") /* "Полупрозрачный" */;
+  uint16_t selected = mode == GuppyScreen::BG_TRANSLUCENT;
+  for (size_t i = 0; i < bg_names.size(); i++) {
+    options += "\n" + bg_names[i];
+    if (mode == GuppyScreen::BG_TILE && bg_names[i] == file) selected = 2 + i;
+  }
+  lv_dropdown_set_options(bg_dd, options.c_str());
+  lv_dropdown_set_selected(bg_dd, selected);
+  // В поле только первые 7 символов (UTF-8), в раскрытом списке имена полные.
+  char buf[64];
+  lv_dropdown_get_selected_str(bg_dd, buf, sizeof(buf));
+  bg_text = buf;
+  if (_lv_txt_get_encoded_length(buf) > 7) bg_text.resize(_lv_txt_encoded_get_byte_id(buf, 7));
+  lv_dropdown_set_text(bg_dd, bg_text.c_str());  // хранит указатель, не копию
 }
 #endif
 
@@ -405,6 +445,12 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       conf->set<bool>("/show_clock", enabled);
       conf->save();
       clock_changed(enabled);
+    } else if (obj == bg_dd) {
+      uint16_t i = lv_dropdown_get_selected(bg_dd);
+      // Негодный файл не меняет фон.
+      if (i < 2) GuppyScreen::set_background(i ? GuppyScreen::BG_TRANSLUCENT : GuppyScreen::BG_THEME);
+      else GuppyScreen::set_background(GuppyScreen::BG_TILE, bg_names[i - 2]);  // после None и Translucent
+      update_bg_dd();  // выбор и короткое имя в поле — по фону, который показан
     } else if (obj == filament_colors_toggle) {
       conf->set<bool>("/use_filament_colors", lv_obj_has_state(filament_colors_toggle, LV_STATE_CHECKED));
       conf->save();

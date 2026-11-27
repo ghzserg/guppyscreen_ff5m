@@ -1,5 +1,6 @@
 #include "inputshaper_panel.h"
 #include "nav.h"
+#include "guppyscreen.h"
 #include "state.h"
 #include "utils.h"
 #include "config.h"
@@ -88,6 +89,7 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   lv_obj_align(graph_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
   lv_obj_set_style_pad_all(xgraph_cont, 0, 0);
+  GuppyScreen::own_bg(xgraph_cont);
   lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_add_event_cb(xgraph_cont, &InputShaperPanel::_handle_image_clicked,
@@ -98,6 +100,7 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l, PromptPan
   lv_obj_align(graph_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
   lv_obj_set_style_pad_all(ygraph_cont, 0, 0);
+  GuppyScreen::own_bg(ygraph_cont);
   lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_add_event_cb(ygraph_cont, &InputShaperPanel::_handle_image_clicked,

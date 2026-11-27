@@ -340,6 +340,31 @@ TEST_CASE("Home's print status shows a new print state at once") {
 
 namespace {
 
+// Плитка часов (она же статус печати) и график Home.
+struct HomeTiles { lv_obj_t *clock; lv_obj_t *chart; };
+
+HomeTiles home_tiles() {
+  lv_obj_t *colon = ui::find_label(":");
+  REQUIRE_MESSAGE(colon != nullptr, ui::dump_screen());
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  lv_obj_t *chart = ui::find_in(Nav::get().root(Nav::HOME), &lv_chart_class);
+  REQUIRE(chart != nullptr);
+  return {lv_obj_get_parent(colon), chart};
+}
+
+void check_see_through(lv_obj_t *tile) {
+  CHECK(lv_obj_get_style_bg_opa(tile, 0) == LV_OPA_20);
+  // Рамки нет или она прозрачна (у статуса печати 2 px, чтобы содержимое не сдвигалось).
+  CHECK((lv_obj_get_style_border_width(tile, 0) == 0 || lv_obj_get_style_border_opa(tile, 0) == LV_OPA_TRANSP));
+  CHECK(lv_obj_get_style_radius(tile, 0) == 0);
+}
+
+void start_with_background(FakeMoonraker &moonraker, const char *background) {
+  app::start(moonraker, json::object(),
+             [=](const std::string &, json &config) { if (background) config["background"] = background; });
+  app::wait_ready(moonraker);
+}
+
 // График Home со шкалой 0–top°: чёрные линии на 100° и 200°, цифры через 50°
 // справа. Приложение уже запущено, Home на экране.
 void check_home_chart(int top) {
@@ -449,6 +474,85 @@ void check_home_chart(int top) {
 }
 
 }  // namespace
+
+TEST_CASE("with the translucent background Home's tiles and chart are see-through like the sensor tiles") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_with_background(moonraker, "translucent");
+  HomeTiles t = home_tiles();
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    check_see_through(t.clock);
+    check_see_through(t.chart);
+    CHECK(lv_obj_get_style_bg_opa(Nav::get().bar(), 0) == LV_OPA_20);
+  }
+  print_on_home(moonraker);
+  lv_obj_t *line = status_line();
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  check_see_through(line);
+}
+
+TEST_CASE("with no background Home looks as upstream and switches to translucent and back") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_with_background(moonraker, nullptr);  // не задан: None
+  HomeTiles t = home_tiles();
+  auto check_upstream = [&](bool printing) {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(GuppyScreen::background_mode() == GuppyScreen::BG_THEME);
+    CHECK(lv_obj_get_style_bg_opa(t.clock, 0) == LV_OPA_COVER);
+    CHECK(lv_obj_get_style_border_width(t.clock, 0) == 2);
+    CHECK(lv_obj_get_style_radius(t.clock, 0) == 4);
+    // Во время печати серый, как в upstream; без печати цвет карточки темы.
+    const bool grey = lv_color_to32(lv_obj_get_style_bg_color(t.clock, 0)) != lv_color_to32(lv_color_hex(0x282B30));
+    CHECK(grey == printing);
+    CHECK(lv_obj_get_style_bg_opa(t.chart, 0) == LV_OPA_COVER);
+    CHECK(lv_obj_get_style_radius(t.chart, 0) == 4);  // как у плитки статуса, не 7 px темы
+    CHECK(lv_obj_get_style_bg_opa(Nav::get().bar(), 0) != LV_OPA_20);
+  };
+  // Содержимое плитки стоит на одном месте в обоих режимах.
+  auto content_top = [&] {
+    lv_obj_update_layout(t.clock);
+    lv_area_t a;
+    lv_obj_get_content_coords(t.clock, &a);
+    return a.y1;
+  };
+  check_upstream(false);
+
+  print_on_home(moonraker);
+  REQUIRE(status_line() == t.clock);
+  check_upstream(true);
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    const lv_coord_t top = content_top();
+    GuppyScreen::set_background(GuppyScreen::BG_TRANSLUCENT);
+    check_see_through(t.clock);
+    check_see_through(t.chart);
+    CHECK(content_top() == top);
+    GuppyScreen::set_background(GuppyScreen::BG_THEME);
+  }
+  check_upstream(true);
+}
+
+TEST_CASE("the print screen's value cells are framed with no background and see-through when translucent") {
+  FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
+  start_with_background(moonraker, nullptr);
+  moonraker.push_status({{"print_stats", {{"filename", "cube.gcode"}, {"state", "printing"}}}});
+  app::settle(moonraker);
+  ui::tap_tab(Nav::PRINT);
+  app::settle(moonraker);
+  lv_obj_t *cell = ui::label_container("0 mm/s");
+  REQUIRE_MESSAGE(cell != nullptr, ui::dump_screen());
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  // None: рамка 2 px и скругление 4, как у ImageLabel в upstream.
+  CHECK(lv_obj_get_style_bg_opa(cell, 0) == LV_OPA_COVER);
+  CHECK(lv_obj_get_style_border_width(cell, 0) == 2);
+  CHECK(lv_obj_get_style_border_opa(cell, 0) == LV_OPA_COVER);
+  CHECK(lv_obj_get_style_radius(cell, 0) == 4);
+  // Полупрозрачный: рамка прозрачна, но та же ширина — содержимое не сдвигается.
+  GuppyScreen::set_background(GuppyScreen::BG_TRANSLUCENT);
+  CHECK(lv_obj_get_style_bg_opa(cell, 0) == LV_OPA_20);
+  CHECK(lv_obj_get_style_border_width(cell, 0) == 2);
+  CHECK(lv_obj_get_style_border_opa(cell, 0) == LV_OPA_TRANSP);
+}
 
 TEST_CASE("Home's chart has black grid lines at 100 and 200 degrees and its scale by 50 on the right") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));

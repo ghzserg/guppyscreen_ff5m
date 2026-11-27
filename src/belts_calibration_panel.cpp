@@ -1,6 +1,7 @@
 #include "belts_calibration_panel.h"
 #include "state.h"
 #include "nav.h"
+#include "guppyscreen.h"
 #include "utils.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
@@ -46,6 +47,7 @@ BeltsCalibrationPanel::BeltsCalibrationPanel(KWebSocketClient &c, std::mutex &l)
 
   lv_obj_set_style_pad_all(graph_cont, 0, 0);
   lv_obj_add_flag(graph_cont, LV_OBJ_FLAG_CLICKABLE);
+  GuppyScreen::own_bg(graph_cont);
   lv_obj_clear_flag(graph_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_add_event_cb(graph_cont, &BeltsCalibrationPanel::_handle_image_clicked,
                       LV_EVENT_SHORT_CLICKED, this);

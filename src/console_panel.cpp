@@ -1,4 +1,5 @@
 #include "console_panel.h"
+#include "guppyscreen.h"
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
@@ -65,6 +66,9 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
 
   lv_obj_add_event_cb(macro_list, &ConsolePanel::_handle_select_macro, LV_EVENT_ALL, this);
   lv_obj_set_scroll_dir(macro_list, LV_DIR_TOP | LV_DIR_BOTTOM);
+#ifdef GUPPY_FF5M
+  GuppyScreen::tint_table(macro_list);
+#endif
 
   lv_obj_t *label = lv_label_create(input);
   lv_obj_set_style_text_font(label, &notosemi_16, LV_STATE_DEFAULT);

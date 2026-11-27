@@ -51,7 +51,7 @@ TEST_CASE("homing panel sends G28") {
 
 **`app::`** (`tests/harness/app.h`)
 - `fixture(name)`: path of `tests/fixtures/<name>`.
-- `start(moonraker, config_patch = {})`: once per process. `config_patch` is merged into the test config (JSON merge patch), e.g. `{{"prompt_emergency_stop", false}}`.
+- `start(moonraker, config_patch = {}, setup = nullptr)`: once per process. `config_patch` is merged into the test config (JSON merge patch), e.g. `{{"prompt_emergency_stop", false}}`. `setup(dir, config)`, if given, runs before the app starts: it can put files into the app's directory (e.g. `backgrounds/*.png`) and change `guppyconfig.json`.
 - `wait_ready(moonraker)`: fails the test if startup doesn't finish in 10 s. Logs the requests the fixture didn't cover.
 - `pump(ms)`: run the LVGL loop for `ms`.
 - `wait_until(pred, timeout_ms = 5000)`: run the LVGL loop until `pred()` is true; returns `false` on timeout.

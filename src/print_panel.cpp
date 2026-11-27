@@ -1,5 +1,6 @@
 #include "print_panel.h"
 #include "nav.h"
+#include "guppyscreen.h"
 #include "file_panel.h"
 #include "state.h"
 #include "utils.h"
@@ -90,6 +91,9 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_add_event_cb(file_table, &PrintPanel::_handle_callback, LV_EVENT_ALL, this);
   lv_obj_set_scrollbar_mode(file_table, LV_SCROLLBAR_MODE_ON);
   lv_obj_set_scroll_dir(file_table, LV_DIR_TOP | LV_DIR_BOTTOM);
+#ifdef GUPPY_FF5M
+  GuppyScreen::tint_table(file_table);
+#endif
 
   lv_obj_set_size(file_view, LV_PCT(50), LV_PCT(100));
   lv_obj_clear_flag(file_view, LV_OBJ_FLAG_SCROLLABLE);

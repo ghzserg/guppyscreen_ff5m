@@ -29,7 +29,10 @@ json zmod_sensors(const std::string &config, const std::string &printer, const s
 // Write a test config pointing at `moonraker`, then run GuppyScreen::init().
 // Config, themes and logs go to a fresh temporary directory. `config_patch`
 // is merged into the test config (JSON merge patch).
-void start(FakeMoonraker &moonraker, const json &config_patch = json::object());
+// `setup`, если задан, выполняется до запуска приложения: может положить файлы
+// в каталог приложения и поправить guppyconfig.json.
+void start(FakeMoonraker &moonraker, const json &config_patch = json::object(),
+           const std::function<void(const std::string &dir, json &config)> &setup = nullptr);
 
 // Directory start() created (contains guppyconfig.json, guppyscreen.log, ...).
 const std::string &dir();

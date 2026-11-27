@@ -5,6 +5,7 @@
 #include "retract_panel.h"
 #include "exclude_panel.h"
 #include "pid_panel.h"
+#include "guppyscreen.h"
 #include "state.h"
 #include "config.h"
 #include "utils.h"
@@ -156,6 +157,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
                             &print_acceleration, &elapsed, &filament}) {
     lv_obj_t *box = value->get_container();
     lv_obj_t *label = value->get_label();
+    // Рамка ImageLabel (2 px) в режиме None как в upstream, в полупрозрачном прозрачна.
+    GuppyScreen::tile(box);
+    // Ячейки во всю высоту строки, между ними 2 px (pad_row и pad_column ниже).
+    lv_obj_set_style_pad_hor(box, 8, 0);  // ImageLabel: 5
+    lv_obj_set_style_grid_cell_y_align(box, LV_GRID_ALIGN_STRETCH, 0);
     lv_obj_set_flex_flow(box, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(box, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(box, 6, 0);
@@ -164,6 +170,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_label_set_long_mode(label, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_style_text_font(label, SensorContainer::temperature_font(), 0);
   }
+  lv_obj_set_style_pad_row(detail_cont, 2, 0);
+  lv_obj_set_style_pad_column(detail_cont, 2, 0);
 #endif
 
 #ifdef GUPPY_FF5M

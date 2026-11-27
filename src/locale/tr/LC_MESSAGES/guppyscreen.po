@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: buildroot 2024.11.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-27 15:27+0100\n"
+"POT-Creation-Date: 2026-11-27 17:46+0100\n"
 "PO-Revision-Date: 2025-04-16 14:44+0500\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,19 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: ../print_panel.cpp:74
+#: ../print_panel.cpp:75
 msgid " A-Z"
 msgstr " A-Z"
 
-#: ../print_panel.cpp:73
+#: ../print_panel.cpp:74
 msgid " Changed"
 msgstr " Değiştirildi"
 
-#: ../print_panel.cpp:72
+#: ../print_panel.cpp:73
 msgid " Refresh"
 msgstr " Yenile"
 
-#: ../guppyscreen.cpp:108 ../guppyscreen.cpp:284 ../init_panel.cpp:27
+#: ../guppyscreen.cpp:135 ../guppyscreen.cpp:544 ../init_panel.cpp:28
 msgid " Waiting for the Klipper launch..."
 msgstr " Klipper başlatılması bekleniyor..."
 
@@ -50,11 +50,11 @@ msgstr "İvme (mm/s²)"
 msgid "Acceleration to Deceleration (mm/s2)"
 msgstr "İvmelenmeden Yavaşlamaya (mm/s²)"
 
-#: ../bedmesh_panel.cpp:628
+#: ../bedmesh_panel.cpp:632
 msgid "Adjustment"
 msgstr "Dönüş"
 
-#: ../bedmesh_panel.cpp:424
+#: ../bedmesh_panel.cpp:428
 msgid "Algorithm"
 msgstr "Algoritma"
 
@@ -62,7 +62,11 @@ msgstr "Algoritma"
 msgid "Attention!"
 msgstr "Dikkat!"
 
-#: ../bedmesh_panel.cpp:117 ../pid_panel.cpp:26
+#: ../sysinfo_panel.cpp:271
+msgid "Background"
+msgstr "Arka plan"
+
+#: ../bedmesh_panel.cpp:121 ../pid_panel.cpp:26
 msgid "Bed"
 msgstr "Tabla"
 
@@ -74,16 +78,16 @@ msgstr "Tabla Mesh"
 msgid "Belts/Shake"
 msgstr "Kayışlar/Titreşim"
 
-#: ../inputshaper_panel.cpp:516
+#: ../inputshaper_panel.cpp:519
 #, c++-format
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr "En iyi şekillendirici {} @ {:.2f} Hz\n"
 
-#: ../sysinfo_panel.cpp:167
+#: ../sysinfo_panel.cpp:175
 msgid "Brightness"
 msgstr "Parlaklık"
 
-#: ../bedmesh_panel.cpp:47 ../inputshaper_panel.cpp:70
+#: ../bedmesh_panel.cpp:48 ../inputshaper_panel.cpp:71
 msgid "Calibrate"
 msgstr "Kalibre Et"
 
@@ -95,8 +99,8 @@ msgstr "Kalibre VFA"
 msgid "Calibrate extruders"
 msgstr "Kalibre extruders"
 
-#: ../bedmesh_panel.cpp:188 ../button_container.cpp:130 ../print_panel.cpp:135
-#: ../print_status_panel.cpp:67 ../switch_container.cpp:98
+#: ../bedmesh_panel.cpp:192 ../button_container.cpp:130 ../print_panel.cpp:138
+#: ../print_status_panel.cpp:68 ../switch_container.cpp:98
 msgid "Cancel"
 msgstr "İptal"
 
@@ -104,7 +108,7 @@ msgstr "İptal"
 msgid "Change WEB"
 msgstr "WEB'i Değiştir"
 
-#: ../bedmesh_panel.cpp:46
+#: ../bedmesh_panel.cpp:47
 msgid "Clean"
 msgstr "Temizle"
 
@@ -112,19 +116,19 @@ msgstr "Temizle"
 msgid "Clear nozzle"
 msgstr "Nozulu Temizle"
 
-#: ../sysinfo_panel.cpp:253
+#: ../sysinfo_panel.cpp:261
 msgid "Clock"
 msgstr "Saat"
 
-#: ../bedmesh_panel.cpp:657
+#: ../bedmesh_panel.cpp:661
 msgid "Clockwise"
 msgstr "Saat yönünde"
 
-#: ../bedmesh_panel.cpp:557 ../prompt_panel.cpp:207 ../prompt_panel.cpp:393
+#: ../bedmesh_panel.cpp:561 ../prompt_panel.cpp:207 ../prompt_panel.cpp:393
 msgid "Close"
 msgstr "Kapat"
 
-#: ../bedmesh_panel.cpp:48
+#: ../bedmesh_panel.cpp:49
 msgid "Cold"
 msgstr "Soğuk"
 
@@ -136,41 +140,41 @@ msgstr "Yapılandırma değişikliği algılandı"
 msgid "Console"
 msgstr ""
 
-#: ../extruder_panel.cpp:44
+#: ../extruder_panel.cpp:45
 msgid "Cool down"
 msgstr "Soğut"
 
-#: ../print_panel.cpp:400 ../print_panel.cpp:409
+#: ../print_panel.cpp:403 ../print_panel.cpp:412
 msgid "Could not delete the file."
 msgstr "Dosya silinemedi."
 
-#: ../bedmesh_panel.cpp:657
+#: ../bedmesh_panel.cpp:661
 msgid "Counterclockwise"
 msgstr "Saat yönünün tersine"
 
-#: ../print_panel.cpp:33
+#: ../print_panel.cpp:34
 msgid "Delete"
 msgstr "Sil"
 
-#: ../print_panel.cpp:381
+#: ../print_panel.cpp:384
 #, c++-format
 msgid "Delete file \"{}\"?"
 msgstr "«{}» dosyası silinsin mi?"
 
-#: ../print_status_panel.cpp:68
+#: ../print_status_panel.cpp:69
 msgid "Do you want to cancel the print?"
 msgstr "Yazdırmayı iptal etmek istiyor musunuz?"
 
-#: ../nav.cpp:283
+#: ../nav.cpp:298
 msgid "Do you want to emergency stop?"
 msgstr "Acil durdurma yapmak istiyor musunuz?"
 
-#: ../print_status_panel.cpp:916
+#: ../print_status_panel.cpp:924
 #, c++-format
 msgid "ETA: {}"
 msgstr "Tah. Süre: {}"
 
-#: ../mini_print_status.cpp:59 ../mini_print_status.cpp:220
+#: ../mini_print_status.cpp:68 ../mini_print_status.cpp:237
 #, c++-format
 msgid ""
 "ETA: {}\n"
@@ -179,11 +183,11 @@ msgstr ""
 "Tah. Süre: {}\n"
 "Durum: {}"
 
-#: ../sysinfo_panel.cpp:220
+#: ../sysinfo_panel.cpp:228
 msgid "Emergency stop confirmation"
 msgstr "Acil durdurma onayı"
 
-#: ../belts_calibration_panel.cpp:37
+#: ../belts_calibration_panel.cpp:38
 msgid "Excitate"
 msgstr "Uyar"
 
@@ -203,19 +207,19 @@ msgstr ""
 msgid "Extrude"
 msgstr "Ekstrüde Et"
 
-#: ../bedmesh_panel.cpp:115 ../extruder_panel.cpp:28 ../pid_panel.cpp:24
+#: ../bedmesh_panel.cpp:119 ../extruder_panel.cpp:29 ../pid_panel.cpp:24
 msgid "Extruder"
 msgstr "Ekstrüder"
 
-#: ../extruder_panel.cpp:29
+#: ../extruder_panel.cpp:30
 msgid "Extruder temperature"
 msgstr "Ekstrüder Sıcaklığı"
 
-#: ../extruder_panel.cpp:31
+#: ../extruder_panel.cpp:32
 msgid "Extrusion length"
 msgstr "Ekstrüzyon Uzunluğu"
 
-#: ../extruder_panel.cpp:33
+#: ../extruder_panel.cpp:34
 msgid "Extrusion speed (mm/s)"
 msgstr "Ekstrüzyon Hızı (mm/s)"
 
@@ -223,11 +227,11 @@ msgstr "Ekstrüzyon Hızı (mm/s)"
 msgid "Fans"
 msgstr "Fanlar"
 
-#: ../sysinfo_panel.cpp:263
+#: ../sysinfo_panel.cpp:280
 msgid "Filament colors"
 msgstr "Filament renkleri"
 
-#: ../main_panel.cpp:81 ../print_status_panel.cpp:63
+#: ../main_panel.cpp:81 ../print_status_panel.cpp:64
 #: ../printertune_panel.cpp:46
 msgid "Fine Tune"
 msgstr "İnce Ayarlar"
@@ -248,11 +252,11 @@ msgstr "Akış+"
 msgid "Flow-"
 msgstr "Akış-"
 
-#: ../belts_calibration_panel.cpp:69
+#: ../belts_calibration_panel.cpp:71
 msgid "Frequency"
 msgstr "Frekans"
 
-#: ../inputshaper_panel.cpp:145
+#: ../inputshaper_panel.cpp:148
 msgid "Graph"
 msgstr "Grafik"
 
@@ -276,11 +280,11 @@ msgstr ""
 msgid "Klipper Restart"
 msgstr "Klipper'ı Yeniden Başlat"
 
-#: ../print_status_panel.cpp:61 ../printertune_panel.cpp:48
+#: ../print_status_panel.cpp:62 ../printertune_panel.cpp:48
 msgid "Limits"
 msgstr "Limitler"
 
-#: ../extruder_panel.cpp:40
+#: ../extruder_panel.cpp:41
 msgid "Load"
 msgstr "Yükle"
 
@@ -288,7 +292,7 @@ msgstr "Yükle"
 msgid "Load Cell"
 msgstr "Yük Hücresi"
 
-#: ../sysinfo_panel.cpp:194
+#: ../sysinfo_panel.cpp:202
 msgid "Log level"
 msgstr "Log Seviyesi"
 
@@ -301,15 +305,15 @@ msgstr "Makro"
 msgid "Max"
 msgstr "Maks"
 
-#: ../sysinfo_panel.cpp:274
+#: ../sysinfo_panel.cpp:291
 msgid "Max graph temperature"
 msgstr "Grafik maks. sıcaklığı"
 
-#: ../bedmesh_panel.cpp:557
+#: ../bedmesh_panel.cpp:561
 msgid "Measure again"
 msgstr "Yeniden ölç"
 
-#: ../bedmesh_panel.cpp:576
+#: ../bedmesh_panel.cpp:580
 msgid "Measuring bed screws…"
 msgstr "Tabla vidaları ölçülüyor..."
 
@@ -325,7 +329,7 @@ msgstr "Motorları Kapat"
 msgid "Multiplier Step"
 msgstr "Çarpan Adımı"
 
-#: ../bedmesh_panel.cpp:626 ../spoolman_panel.cpp:140
+#: ../bedmesh_panel.cpp:630 ../spoolman_panel.cpp:140
 msgid "Name"
 msgstr "İsim"
 
@@ -333,19 +337,23 @@ msgstr "İsim"
 msgid "Native screen"
 msgstr "Yerel Ekran"
 
-#: ../sysinfo_panel.cpp:352
+#: ../sysinfo_panel.cpp:372
 msgid "Network"
 msgstr "Ağ"
 
-#: ../bedmesh_panel.cpp:606 ../bedmesh_panel.cpp:609
+#: ../bedmesh_panel.cpp:610 ../bedmesh_panel.cpp:613
 msgid "No screw adjustment results."
 msgstr "Vida ayarı sonucu yok."
 
-#: ../bedmesh_panel.cpp:653
+#: ../bedmesh_panel.cpp:657
 msgid "No turn"
 msgstr "Çevirmeyin"
 
-#: ../sysinfo_panel.cpp:241
+#: ../sysinfo_panel.cpp:394
+msgid "None"
+msgstr "Yok"
+
+#: ../sysinfo_panel.cpp:249
 #, fuzzy
 msgid "Object exclusion confirmation"
 msgstr "Acil durdurma onayı"
@@ -366,7 +374,7 @@ msgstr "PID Tabla"
 msgid "PID Extruder"
 msgstr "PID Ekstrüder"
 
-#: ../print_status_panel.cpp:65
+#: ../print_status_panel.cpp:66
 msgid "Pause"
 msgstr "Duraklat"
 
@@ -374,23 +382,23 @@ msgstr "Duraklat"
 msgid "Power Off"
 msgstr "Gücü Kapat"
 
-#: ../print_panel.cpp:32
+#: ../print_panel.cpp:33
 msgid "Print"
 msgstr "Yazdır"
 
-#: ../print_panel.cpp:143
+#: ../print_panel.cpp:146
 msgid "Printing..."
 msgstr "Yazdırılıyor..."
 
-#: ../print_panel.cpp:139
+#: ../print_panel.cpp:142
 msgid "Queue"
 msgstr "Kuyruk"
 
-#: ../bedmesh_panel.cpp:333 ../bedmesh_panel.cpp:352 ../bedmesh_panel.cpp:417
+#: ../bedmesh_panel.cpp:337 ../bedmesh_panel.cpp:356 ../bedmesh_panel.cpp:421
 msgid "Range"
 msgstr "Aralık"
 
-#: ../bedmesh_panel.cpp:651
+#: ../bedmesh_panel.cpp:655
 msgid "Reference"
 msgstr "Referans"
 
@@ -414,7 +422,7 @@ msgstr ""
 "Kalan\n"
 "Ağırlık"
 
-#: ../extruder_panel.cpp:437
+#: ../extruder_panel.cpp:439
 msgid "Remove"
 msgstr "Çıkar"
 
@@ -428,11 +436,11 @@ msgstr "Sıfırla"
 msgid "Restore Print"
 msgstr "Yazdırmayı Sürdür"
 
-#: ../print_status_panel.cpp:66
+#: ../print_status_panel.cpp:67
 msgid "Resume"
 msgstr "Devam Et"
 
-#: ../print_status_panel.cpp:64 ../printertune_panel.cpp:49
+#: ../print_status_panel.cpp:65 ../printertune_panel.cpp:49
 msgid "Retract"
 msgstr "Geri Çek"
 
@@ -444,27 +452,27 @@ msgstr "Geri Çekme Uzunluğu"
 msgid "Retract Speed"
 msgstr "Geri Çekme Hızı"
 
-#: ../bedmesh_panel.cpp:45 ../bedmesh_panel.cpp:185 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:46 ../bedmesh_panel.cpp:189 ../inputshaper_panel.cpp:72
 msgid "Save"
 msgstr "Kaydet"
 
-#: ../bedmesh_panel.cpp:179
+#: ../bedmesh_panel.cpp:183
 msgid "Saving the profile will restart the printer."
 msgstr "Profili kaydetmek yazıcıyı yeniden başlatır."
 
-#: ../sysinfo_panel.cpp:139
+#: ../sysinfo_panel.cpp:147
 msgid "Screen off"
 msgstr "Ekranı Kapat"
 
-#: ../bedmesh_panel.cpp:636
+#: ../bedmesh_panel.cpp:640
 msgid "Screw"
 msgstr "Vida"
 
-#: ../bedmesh_panel.cpp:139 ../bedmesh_panel.cpp:507
+#: ../bedmesh_panel.cpp:143 ../bedmesh_panel.cpp:511
 msgid "Screw adjustment"
 msgstr "Vida Ayarı"
 
-#: ../belts_calibration_panel.cpp:36
+#: ../belts_calibration_panel.cpp:37
 msgid "Shake Belts"
 msgstr "Kayışları Sars"
 
@@ -472,11 +480,11 @@ msgstr "Kayışları Sars"
 msgid "Show Archived"
 msgstr "Arşivlenmişleri Göster"
 
-#: ../macros_panel.cpp:27
+#: ../macros_panel.cpp:28
 msgid "Show Hidden"
 msgstr "Gizlileri Göster"
 
-#: ../print_panel.cpp:131
+#: ../print_panel.cpp:134
 msgid "Show task"
 msgstr "Görevi Göster"
 
@@ -504,11 +512,15 @@ msgstr "Dur"
 msgid "System"
 msgstr "Sistem"
 
+#: ../sysinfo_panel.cpp:394
+msgid "Translucent"
+msgstr "Yarı saydam"
+
 #: ../homing_panel.cpp:32
 msgid "Travel distance (mm)"
 msgstr "Hareket Mesafesi (mm)"
 
-#: ../extruder_panel.cpp:41
+#: ../extruder_panel.cpp:42
 msgid "Unload"
 msgstr "Boşalt"
 
@@ -539,15 +551,15 @@ msgstr ""
 "Süre: {}\n"
 "Boyut: {} MB"
 
-#: ../init_panel.cpp:29
+#: ../init_panel.cpp:30
 msgid "Welcome to Guppy Screen. Use the settings to add your printer."
 msgstr "Guppy Screen'e hoş geldiniz. Yazıcınızı ayarlardan ekleyin."
 
-#: ../inputshaper_panel.cpp:87
+#: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"
 msgstr "X Frekans Tepkisi"
 
-#: ../inputshaper_panel.cpp:97
+#: ../inputshaper_panel.cpp:99
 msgid "Y Frequency Response"
 msgstr "Y Frekans Tepkisi"
 
@@ -563,7 +575,7 @@ msgstr "g "
 msgid "h "
 msgstr "s "
 
-#: ../print_status_panel.cpp:411 ../print_status_panel.cpp:1009
+#: ../print_status_panel.cpp:419 ../print_status_panel.cpp:1017
 msgid "m"
 msgstr "m"
 
@@ -573,20 +585,20 @@ msgstr "d "
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
 #: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
-#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:89
-#: ../print_status_panel.cpp:90 ../print_status_panel.cpp:407
-#: ../print_status_panel.cpp:408 ../print_status_panel.cpp:451
-#: ../print_status_panel.cpp:565 ../print_status_panel.cpp:778
-#: ../print_status_panel.cpp:784 ../print_status_panel.cpp:840
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:90
+#: ../print_status_panel.cpp:91 ../print_status_panel.cpp:415
+#: ../print_status_panel.cpp:416 ../print_status_panel.cpp:459
+#: ../print_status_panel.cpp:573 ../print_status_panel.cpp:786
+#: ../print_status_panel.cpp:792 ../print_status_panel.cpp:848
 msgid "mm"
 msgstr "mm"
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
-#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:90
-#: ../print_status_panel.cpp:96 ../print_status_panel.cpp:407
-#: ../print_status_panel.cpp:408 ../print_status_panel.cpp:409
-#: ../print_status_panel.cpp:451 ../print_status_panel.cpp:778
-#: ../print_status_panel.cpp:840 ../utils.cpp:281
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:91
+#: ../print_status_panel.cpp:97 ../print_status_panel.cpp:415
+#: ../print_status_panel.cpp:416 ../print_status_panel.cpp:417
+#: ../print_status_panel.cpp:459 ../print_status_panel.cpp:786
+#: ../print_status_panel.cpp:848 ../utils.cpp:281
 msgid "s"
 msgstr "sn"
 

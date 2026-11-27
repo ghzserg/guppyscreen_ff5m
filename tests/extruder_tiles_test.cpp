@@ -71,6 +71,19 @@ TEST_CASE("the C5 Pro extruder screen shows a tile per nozzle with its temperatu
   CHECK(remove.y2 == last_tool.y2);
 }
 
+// С полупрозрачным фоном плитка Remove подкрашена, как плитки сопел рядом.
+TEST_CASE("the C5 Pro Remove tile is tinted like the nozzle tiles with the translucent background") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  json config = app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro");
+  config["background"] = "translucent";
+  open_extruder_screen(moonraker, config);
+  lv_obj_t *remove = tile("Remove"), *t3 = tile("T3");
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  CHECK(lv_obj_get_style_bg_opa(remove, 0) == LV_OPA_20);
+  CHECK(lv_obj_get_style_bg_opa(remove, 0) == lv_obj_get_style_bg_opa(t3, 0));
+  CHECK(lv_color_to32(lv_obj_get_style_bg_color(remove, 0)) == lv_color_to32(lv_obj_get_style_bg_color(t3, 0)));
+}
+
 // Нажатие на плитку сразу отправляет команду переключения инструмента.
 TEST_CASE("a tap on a C5 Pro nozzle tile selects and switches the tool immediately") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));

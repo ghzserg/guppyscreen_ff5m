@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-27 15:27+0100\n"
+"POT-Creation-Date: 2026-11-27 17:46+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,19 +17,19 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../print_panel.cpp:74
+#: ../print_panel.cpp:75
 msgid " A-Z"
 msgstr ""
 
-#: ../print_panel.cpp:73
+#: ../print_panel.cpp:74
 msgid " Changed"
 msgstr ""
 
-#: ../print_panel.cpp:72
+#: ../print_panel.cpp:73
 msgid " Refresh"
 msgstr ""
 
-#: ../guppyscreen.cpp:108 ../guppyscreen.cpp:284 ../init_panel.cpp:27
+#: ../guppyscreen.cpp:135 ../guppyscreen.cpp:544 ../init_panel.cpp:28
 msgid " Waiting for the Klipper launch..."
 msgstr ""
 
@@ -50,11 +50,11 @@ msgstr ""
 msgid "Acceleration to Deceleration (mm/s2)"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:628
+#: ../bedmesh_panel.cpp:632
 msgid "Adjustment"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:424
+#: ../bedmesh_panel.cpp:428
 msgid "Algorithm"
 msgstr ""
 
@@ -62,7 +62,11 @@ msgstr ""
 msgid "Attention!"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:117 ../pid_panel.cpp:26
+#: ../sysinfo_panel.cpp:271
+msgid "Background"
+msgstr ""
+
+#: ../bedmesh_panel.cpp:121 ../pid_panel.cpp:26
 msgid "Bed"
 msgstr ""
 
@@ -74,16 +78,16 @@ msgstr ""
 msgid "Belts/Shake"
 msgstr ""
 
-#: ../inputshaper_panel.cpp:516
+#: ../inputshaper_panel.cpp:519
 #, c++-format
 msgid "Best shaper is {} @ {:.2f} Hz\n"
 msgstr ""
 
-#: ../sysinfo_panel.cpp:167
+#: ../sysinfo_panel.cpp:175
 msgid "Brightness"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:47 ../inputshaper_panel.cpp:70
+#: ../bedmesh_panel.cpp:48 ../inputshaper_panel.cpp:71
 msgid "Calibrate"
 msgstr ""
 
@@ -95,8 +99,8 @@ msgstr ""
 msgid "Calibrate extruders"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:188 ../button_container.cpp:130 ../print_panel.cpp:135
-#: ../print_status_panel.cpp:67 ../switch_container.cpp:98
+#: ../bedmesh_panel.cpp:192 ../button_container.cpp:130 ../print_panel.cpp:138
+#: ../print_status_panel.cpp:68 ../switch_container.cpp:98
 msgid "Cancel"
 msgstr ""
 
@@ -104,7 +108,7 @@ msgstr ""
 msgid "Change WEB"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:46
+#: ../bedmesh_panel.cpp:47
 msgid "Clean"
 msgstr ""
 
@@ -112,19 +116,19 @@ msgstr ""
 msgid "Clear nozzle"
 msgstr ""
 
-#: ../sysinfo_panel.cpp:253
+#: ../sysinfo_panel.cpp:261
 msgid "Clock"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:657
+#: ../bedmesh_panel.cpp:661
 msgid "Clockwise"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:557 ../prompt_panel.cpp:207 ../prompt_panel.cpp:393
+#: ../bedmesh_panel.cpp:561 ../prompt_panel.cpp:207 ../prompt_panel.cpp:393
 msgid "Close"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:48
+#: ../bedmesh_panel.cpp:49
 msgid "Cold"
 msgstr ""
 
@@ -136,52 +140,52 @@ msgstr ""
 msgid "Console"
 msgstr ""
 
-#: ../extruder_panel.cpp:44
+#: ../extruder_panel.cpp:45
 msgid "Cool down"
 msgstr ""
 
-#: ../print_panel.cpp:400 ../print_panel.cpp:409
+#: ../print_panel.cpp:403 ../print_panel.cpp:412
 msgid "Could not delete the file."
 msgstr ""
 
-#: ../bedmesh_panel.cpp:657
+#: ../bedmesh_panel.cpp:661
 msgid "Counterclockwise"
 msgstr ""
 
-#: ../print_panel.cpp:33
+#: ../print_panel.cpp:34
 msgid "Delete"
 msgstr ""
 
-#: ../print_panel.cpp:381
+#: ../print_panel.cpp:384
 #, c++-format
 msgid "Delete file \"{}\"?"
 msgstr ""
 
-#: ../print_status_panel.cpp:68
+#: ../print_status_panel.cpp:69
 msgid "Do you want to cancel the print?"
 msgstr ""
 
-#: ../nav.cpp:283
+#: ../nav.cpp:298
 msgid "Do you want to emergency stop?"
 msgstr ""
 
-#: ../print_status_panel.cpp:916
+#: ../print_status_panel.cpp:924
 #, c++-format
 msgid "ETA: {}"
 msgstr ""
 
-#: ../mini_print_status.cpp:59 ../mini_print_status.cpp:220
+#: ../mini_print_status.cpp:68 ../mini_print_status.cpp:237
 #, c++-format
 msgid ""
 "ETA: {}\n"
 "Status: {}"
 msgstr ""
 
-#: ../sysinfo_panel.cpp:220
+#: ../sysinfo_panel.cpp:228
 msgid "Emergency stop confirmation"
 msgstr ""
 
-#: ../belts_calibration_panel.cpp:37
+#: ../belts_calibration_panel.cpp:38
 msgid "Excitate"
 msgstr ""
 
@@ -201,19 +205,19 @@ msgstr ""
 msgid "Extrude"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:115 ../extruder_panel.cpp:28 ../pid_panel.cpp:24
+#: ../bedmesh_panel.cpp:119 ../extruder_panel.cpp:29 ../pid_panel.cpp:24
 msgid "Extruder"
 msgstr ""
 
-#: ../extruder_panel.cpp:29
+#: ../extruder_panel.cpp:30
 msgid "Extruder temperature"
 msgstr ""
 
-#: ../extruder_panel.cpp:31
+#: ../extruder_panel.cpp:32
 msgid "Extrusion length"
 msgstr ""
 
-#: ../extruder_panel.cpp:33
+#: ../extruder_panel.cpp:34
 msgid "Extrusion speed (mm/s)"
 msgstr ""
 
@@ -221,11 +225,11 @@ msgstr ""
 msgid "Fans"
 msgstr ""
 
-#: ../sysinfo_panel.cpp:263
+#: ../sysinfo_panel.cpp:280
 msgid "Filament colors"
 msgstr ""
 
-#: ../main_panel.cpp:81 ../print_status_panel.cpp:63
+#: ../main_panel.cpp:81 ../print_status_panel.cpp:64
 #: ../printertune_panel.cpp:46
 msgid "Fine Tune"
 msgstr ""
@@ -246,11 +250,11 @@ msgstr ""
 msgid "Flow-"
 msgstr ""
 
-#: ../belts_calibration_panel.cpp:69
+#: ../belts_calibration_panel.cpp:71
 msgid "Frequency"
 msgstr ""
 
-#: ../inputshaper_panel.cpp:145
+#: ../inputshaper_panel.cpp:148
 msgid "Graph"
 msgstr ""
 
@@ -274,11 +278,11 @@ msgstr ""
 msgid "Klipper Restart"
 msgstr ""
 
-#: ../print_status_panel.cpp:61 ../printertune_panel.cpp:48
+#: ../print_status_panel.cpp:62 ../printertune_panel.cpp:48
 msgid "Limits"
 msgstr ""
 
-#: ../extruder_panel.cpp:40
+#: ../extruder_panel.cpp:41
 msgid "Load"
 msgstr ""
 
@@ -286,7 +290,7 @@ msgstr ""
 msgid "Load Cell"
 msgstr ""
 
-#: ../sysinfo_panel.cpp:194
+#: ../sysinfo_panel.cpp:202
 msgid "Log level"
 msgstr ""
 
@@ -298,15 +302,15 @@ msgstr ""
 msgid "Max"
 msgstr ""
 
-#: ../sysinfo_panel.cpp:274
+#: ../sysinfo_panel.cpp:291
 msgid "Max graph temperature"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:557
+#: ../bedmesh_panel.cpp:561
 msgid "Measure again"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:576
+#: ../bedmesh_panel.cpp:580
 msgid "Measuring bed screws…"
 msgstr ""
 
@@ -322,7 +326,7 @@ msgstr ""
 msgid "Multiplier Step"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:626 ../spoolman_panel.cpp:140
+#: ../bedmesh_panel.cpp:630 ../spoolman_panel.cpp:140
 msgid "Name"
 msgstr ""
 
@@ -330,19 +334,23 @@ msgstr ""
 msgid "Native screen"
 msgstr ""
 
-#: ../sysinfo_panel.cpp:352
+#: ../sysinfo_panel.cpp:372
 msgid "Network"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:606 ../bedmesh_panel.cpp:609
+#: ../bedmesh_panel.cpp:610 ../bedmesh_panel.cpp:613
 msgid "No screw adjustment results."
 msgstr ""
 
-#: ../bedmesh_panel.cpp:653
+#: ../bedmesh_panel.cpp:657
 msgid "No turn"
 msgstr ""
 
-#: ../sysinfo_panel.cpp:241
+#: ../sysinfo_panel.cpp:394
+msgid "None"
+msgstr ""
+
+#: ../sysinfo_panel.cpp:249
 msgid "Object exclusion confirmation"
 msgstr ""
 
@@ -362,7 +370,7 @@ msgstr ""
 msgid "PID Extruder"
 msgstr ""
 
-#: ../print_status_panel.cpp:65
+#: ../print_status_panel.cpp:66
 msgid "Pause"
 msgstr ""
 
@@ -370,23 +378,23 @@ msgstr ""
 msgid "Power Off"
 msgstr ""
 
-#: ../print_panel.cpp:32
+#: ../print_panel.cpp:33
 msgid "Print"
 msgstr ""
 
-#: ../print_panel.cpp:143
+#: ../print_panel.cpp:146
 msgid "Printing..."
 msgstr ""
 
-#: ../print_panel.cpp:139
+#: ../print_panel.cpp:142
 msgid "Queue"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:333 ../bedmesh_panel.cpp:352 ../bedmesh_panel.cpp:417
+#: ../bedmesh_panel.cpp:337 ../bedmesh_panel.cpp:356 ../bedmesh_panel.cpp:421
 msgid "Range"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:651
+#: ../bedmesh_panel.cpp:655
 msgid "Reference"
 msgstr ""
 
@@ -406,7 +414,7 @@ msgid ""
 "Weight"
 msgstr ""
 
-#: ../extruder_panel.cpp:437
+#: ../extruder_panel.cpp:439
 msgid "Remove"
 msgstr ""
 
@@ -420,11 +428,11 @@ msgstr ""
 msgid "Restore Print"
 msgstr ""
 
-#: ../print_status_panel.cpp:66
+#: ../print_status_panel.cpp:67
 msgid "Resume"
 msgstr ""
 
-#: ../print_status_panel.cpp:64 ../printertune_panel.cpp:49
+#: ../print_status_panel.cpp:65 ../printertune_panel.cpp:49
 msgid "Retract"
 msgstr ""
 
@@ -436,27 +444,27 @@ msgstr ""
 msgid "Retract Speed"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:45 ../bedmesh_panel.cpp:185 ../inputshaper_panel.cpp:71
+#: ../bedmesh_panel.cpp:46 ../bedmesh_panel.cpp:189 ../inputshaper_panel.cpp:72
 msgid "Save"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:179
+#: ../bedmesh_panel.cpp:183
 msgid "Saving the profile will restart the printer."
 msgstr ""
 
-#: ../sysinfo_panel.cpp:139
+#: ../sysinfo_panel.cpp:147
 msgid "Screen off"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:636
+#: ../bedmesh_panel.cpp:640
 msgid "Screw"
 msgstr ""
 
-#: ../bedmesh_panel.cpp:139 ../bedmesh_panel.cpp:507
+#: ../bedmesh_panel.cpp:143 ../bedmesh_panel.cpp:511
 msgid "Screw adjustment"
 msgstr ""
 
-#: ../belts_calibration_panel.cpp:36
+#: ../belts_calibration_panel.cpp:37
 msgid "Shake Belts"
 msgstr ""
 
@@ -464,11 +472,11 @@ msgstr ""
 msgid "Show Archived"
 msgstr ""
 
-#: ../macros_panel.cpp:27
+#: ../macros_panel.cpp:28
 msgid "Show Hidden"
 msgstr ""
 
-#: ../print_panel.cpp:131
+#: ../print_panel.cpp:134
 msgid "Show task"
 msgstr ""
 
@@ -496,11 +504,15 @@ msgstr ""
 msgid "System"
 msgstr ""
 
+#: ../sysinfo_panel.cpp:394
+msgid "Translucent"
+msgstr ""
+
 #: ../homing_panel.cpp:32
 msgid "Travel distance (mm)"
 msgstr ""
 
-#: ../extruder_panel.cpp:41
+#: ../extruder_panel.cpp:42
 msgid "Unload"
 msgstr ""
 
@@ -528,15 +540,15 @@ msgid ""
 "Size: {} MB"
 msgstr ""
 
-#: ../init_panel.cpp:29
+#: ../init_panel.cpp:30
 msgid "Welcome to Guppy Screen. Use the settings to add your printer."
 msgstr ""
 
-#: ../inputshaper_panel.cpp:87
+#: ../inputshaper_panel.cpp:88
 msgid "X Frequency Response"
 msgstr ""
 
-#: ../inputshaper_panel.cpp:97
+#: ../inputshaper_panel.cpp:99
 msgid "Y Frequency Response"
 msgstr ""
 
@@ -552,7 +564,7 @@ msgstr ""
 msgid "h "
 msgstr ""
 
-#: ../print_status_panel.cpp:411 ../print_status_panel.cpp:1009
+#: ../print_status_panel.cpp:419 ../print_status_panel.cpp:1017
 msgid "m"
 msgstr ""
 
@@ -562,19 +574,19 @@ msgstr ""
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:60 ../finetune_panel.cpp:61
 #: ../finetune_panel.cpp:175 ../finetune_panel.cpp:180
-#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:89
-#: ../print_status_panel.cpp:90 ../print_status_panel.cpp:407
-#: ../print_status_panel.cpp:408 ../print_status_panel.cpp:451
-#: ../print_status_panel.cpp:565 ../print_status_panel.cpp:778
-#: ../print_status_panel.cpp:784 ../print_status_panel.cpp:840
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:90
+#: ../print_status_panel.cpp:91 ../print_status_panel.cpp:415
+#: ../print_status_panel.cpp:416 ../print_status_panel.cpp:459
+#: ../print_status_panel.cpp:573 ../print_status_panel.cpp:786
+#: ../print_status_panel.cpp:792 ../print_status_panel.cpp:848
 msgid "mm"
 msgstr ""
 
 #: ../finetune_panel.cpp:49 ../finetune_panel.cpp:61 ../finetune_panel.cpp:180
-#: ../print_status_panel.cpp:88 ../print_status_panel.cpp:90
-#: ../print_status_panel.cpp:96 ../print_status_panel.cpp:407
-#: ../print_status_panel.cpp:408 ../print_status_panel.cpp:409
-#: ../print_status_panel.cpp:451 ../print_status_panel.cpp:778
-#: ../print_status_panel.cpp:840 ../utils.cpp:281
+#: ../print_status_panel.cpp:89 ../print_status_panel.cpp:91
+#: ../print_status_panel.cpp:97 ../print_status_panel.cpp:415
+#: ../print_status_panel.cpp:416 ../print_status_panel.cpp:417
+#: ../print_status_panel.cpp:459 ../print_status_panel.cpp:786
+#: ../print_status_panel.cpp:848 ../utils.cpp:281
 msgid "s"
 msgstr ""

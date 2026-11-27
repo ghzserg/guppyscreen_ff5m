@@ -10,6 +10,7 @@
 #ifdef GUPPY_FF5M
 static const lv_coord_t THUMB_PX = 76;  // the thumbnail's width on Home
 static const lv_coord_t BAR_PX = SensorContainer::stripe_width();  // the progress bar
+lv_style_t MiniPrintStatus::style_printing;
 #endif
 
 MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
@@ -33,12 +34,18 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   , status("-/-")
   , eta("...")
 {
+#ifdef GUPPY_FF5M
+  // Полупрозрачный фон с прозрачной рамкой, как у плиток датчиков; вид режима None — см. set_look().
+  GuppyScreen::tile(cont);
+  lv_obj_add_style(cont, &style_printing, LV_STATE_USER_1);
+#else
   lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
   lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
                                   cur_bg, LV_OPA_10);
 
   lv_obj_set_style_bg_color(cont, mixed, 0);
   lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
+#endif
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
@@ -48,8 +55,10 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
 
-  lv_obj_set_style_border_width(cont, 2, 0);
+  lv_obj_set_style_border_width(cont, 2, 0);  // в полупрозрачном режиме рамка прозрачна (style_tile)
+#ifndef GUPPY_FF5M
   lv_obj_set_style_radius(cont, 4, 0);
+#endif
   lv_obj_set_size(cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
   lv_obj_add_flag(cont, LV_OBJ_FLAG_FLOATING);
 
@@ -136,30 +145,38 @@ MiniPrintStatus::~MiniPrintStatus() {
 }
 
 
+#ifdef GUPPY_FF5M
+// Полупрозрачный вид даёт GuppyScreen::tile(). В режиме None плитка выглядит
+// как в upstream: рамка 2 px, скругление 4 (из style_tile), фон темы, во время
+// печати серый (style_printing, состояние LV_STATE_USER_1).
+void MiniPrintStatus::init_look() { lv_style_init(&style_printing); }
+
+void MiniPrintStatus::set_look(bool translucent, lv_color_t card) {
+  lv_style_reset(&style_printing);
+  if (!translucent) {
+    lv_style_set_bg_color(&style_printing, lv_color_mix(lv_palette_main(LV_PALETTE_GREY), card, LV_OPA_10));
+    lv_style_set_bg_opa(&style_printing, LV_OPA_COVER);
+  }
+  lv_obj_report_style_change(&style_printing);
+}
+#endif
+
 void MiniPrintStatus::set_printing(bool printing) {
   if (printing) show(true);  // появляется с текущими значениями
 #ifdef GUPPY_FF5M
-  if (printing != lv_obj_has_flag(cont, LV_OBJ_FLAG_CLICKABLE)) {
-    if (printing) {
-      lv_color_t bg = lv_obj_get_style_bg_color(cont, 0);
-      lv_obj_set_style_bg_color(cont, lv_color_mix(lv_palette_main(LV_PALETTE_GREY), bg, LV_OPA_10), 0);
-      lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
-    } else {
-      lv_obj_remove_local_style_prop(cont, LV_STYLE_BG_COLOR, 0);
-      lv_obj_remove_local_style_prop(cont, LV_STYLE_BG_OPA, 0);
-    }
-  }
   if (printing) {
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
     for (auto *obj : {clock_hours, clock_minutes, clock_colon}) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
     for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_state(cont, LV_STATE_USER_1);  // style_printing
   } else {
     for (auto *obj : {thumb, progress_bar, status_label}) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
     for (auto *obj : {clock_hours, clock_minutes, clock_colon}) lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
     if (clock_enabled) lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
     else lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_state(cont, LV_STATE_USER_1);
   }
 #else
   if (printing) {

@@ -1,6 +1,7 @@
 #include "nav.h"
 
 #include "button_container.h"
+#include "guppyscreen.h"
 #include "websocket_client.h"  // _()
 #include "spdlog/spdlog.h"
 
@@ -55,6 +56,7 @@ Nav::Nav()
   , stop_(NULL)
 {
   plain(bar_);
+  GuppyScreen::tint(bar_);
   lv_obj_set_pos(bar_, 0, 0);
   lv_obj_set_size(bar_, BAR_WIDTH, LV_PCT(100));
 
@@ -203,6 +205,19 @@ void Nav::start() {
   for (lv_obj_t *o : others) {
     lv_obj_move_background(o);
   }
+  // Экран или диалог наверху получает фон панели: созданные или достроенные
+  // после обходов экрана (диалог Klipper, винты стола) иначе остались бы
+  // цвета карточки. Позже, после обработчика, который его показал и достраивает.
+  lv_obj_add_event_cb(content_, [](lv_event_t *e) {
+    static bool pending = false;
+    if (pending) return;
+    pending = true;
+    lv_async_call([](void *content) {
+      pending = false;
+      uint32_t n = lv_obj_get_child_cnt((lv_obj_t *)content);
+      if (n > 0) GuppyScreen::apply_bg_texture(lv_obj_get_child((lv_obj_t *)content, n - 1));
+    }, lv_event_get_target(e));
+  }, LV_EVENT_CHILD_CHANGED, NULL);
   activate(HOME);
 }
 

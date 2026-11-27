@@ -28,6 +28,9 @@ class MiniPrintStatus {
 #ifdef GUPPY_FF5M
   void update_clock(int hour, int minute);
   void set_clock_enabled(bool enabled);
+  // Вид плитки в режимах фона: полупрозрачный или как в upstream (`card` — цвет карточки темы).
+  static void init_look();  // один раз, до set_look()
+  static void set_look(bool translucent, lv_color_t card);
 #endif
 
  private:
@@ -41,6 +44,7 @@ class MiniPrintStatus {
   lv_obj_t *clock_minutes;
   lv_obj_t *clock_colon;
   bool clock_enabled = true;
+  static lv_style_t style_printing;  // режим None: серый фон во время печати
 #endif
   std::string status;
   std::string eta;
