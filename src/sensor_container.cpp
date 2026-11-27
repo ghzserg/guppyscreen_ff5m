@@ -238,7 +238,7 @@ void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
   lv_obj_add_event_cb(chart, [](lv_event_t *e) {
     lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
     // Рисуем сетку и шкалу один раз до температурных кривых, без скрытых делений.
-    if (dsc->type != LV_CHART_DRAW_PART_DIV_LINE_INIT) return;
+    if (!lv_obj_draw_part_check_type(dsc, &lv_chart_class, LV_CHART_DRAW_PART_DIV_LINE_INIT)) return;
     lv_obj_t *obj = lv_event_get_current_target(e);
     const int32_t top = ((const lv_chart_t *)obj)->ymax[0];
     lv_area_t plot;
