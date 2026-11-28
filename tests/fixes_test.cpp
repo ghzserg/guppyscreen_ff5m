@@ -125,7 +125,7 @@ TEST_CASE("the numpad closes when its sensor is rebuilt by a reconnect") {
   app::start(moonraker);
   app::wait_ready(moonraker);
 
-  ui::tap_label("Extruder");
+  ui::tap_label("T0");
   REQUIRE_MESSAGE(app::wait_until([] { return ui::find_shown(&lv_textarea_class) != nullptr; }), ui::dump_screen());
 
   moonraker.forget_requests();

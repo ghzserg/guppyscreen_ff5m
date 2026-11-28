@@ -36,25 +36,21 @@
         {
           "color": "red",
           "controllable": true,
-          "display_name": "T0",
           "id": "extruder"
         },
         {
           "color": "orange",
           "controllable": true,
-          "display_name": "T1",
           "id": "extruder1"
         },
         {
           "color": "yellow",
           "controllable": true,
-          "display_name": "T2",
           "id": "extruder2"
         },
         {
           "color": "green",
           "controllable": true,
-          "display_name": "T3",
           "id": "extruder3"
         },
         {

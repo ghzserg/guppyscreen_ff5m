@@ -9,6 +9,7 @@
 
 #include "guppyscreen.h"
 
+#include <fstream>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -36,10 +37,27 @@ void check_names_fit(const char *fixture, const json &patch, const std::vector<s
 
 TEST_CASE("AD5X sensor names fit their tiles") {
   check_names_fit("ad5x_basic.json", app::zmod_sensors("guppyconfig_ad5x.json", "AD5X"),
-                  {"Extruder", "Bed", "Head", "Weight"});
+                  {"T0", "Bed", "Head", "Weight"});
 }
 
 TEST_CASE("C5 Pro sensor names fit their tiles") {
   check_names_fit("c5pro_basic.json", app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"),
                   {"T0", "T1", "T2", "T3", "Bed", "Chamber"});
+}
+
+TEST_CASE("legacy nozzle names are ignored without changing saved configuration") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  auto config = app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro");
+  for (auto &sensor : config["printers"]["FF5M"]["monitored_sensors"]) {
+    if (sensor["id"] == "extruder" || sensor["id"] == "extruder2")
+      sensor["display_name"] = "Legacy nozzle";
+  }
+  app::start(moonraker, config);
+  app::wait_ready(moonraker);
+  CHECK(ui::find_label("Legacy nozzle") == nullptr);
+  for (const char *name : {"T0", "T1", "T2", "T3"})
+    CHECK(ui::find_label(name) != nullptr);
+  const auto saved = json::parse(std::ifstream(app::dir() + "/guppyconfig.json"));
+  const auto &sensors = saved.at("printers").at("FF5M").at("monitored_sensors");
+  CHECK(sensors == config.at("printers").at("FF5M").at("monitored_sensors"));
 }

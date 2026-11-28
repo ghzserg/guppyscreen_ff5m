@@ -504,9 +504,7 @@ void MainPanel::create_sensors(json &temp_sensors) {
   for (auto &sensor : temp_sensors.items()) {
     int tool = NozzleTiles::tool_of(sensor.key());
     if (tool >= 0) {
-      const std::string name = sensor.value()["display_name"].template get<std::string>();
-      nozzles.push_back({sensor.key(), _(name.c_str()), colors[sensor.key()],
-                         tool});
+      nozzles.push_back({sensor.key(), colors[sensor.key()], tool});
       default_tool_colors[sensor.key()] = colors[sensor.key()];
     }
   }
@@ -559,7 +557,14 @@ void MainPanel::create_sensors(json &temp_sensors) {
 
 #endif
 
-    std::string display_name = sensor.value()["display_name"].template get<std::string>();
+#ifdef GUPPY_FF5M
+    const int tool = NozzleTiles::tool_of(key);
+    const std::string display_name = tool >= 0
+        ? "T" + std::to_string(tool)
+        : _(sensor.value()["display_name"].template get<std::string>().c_str());
+#else
+    const std::string display_name = _(sensor.value()["display_name"].template get<std::string>().c_str());
+#endif
 
     const void* sensor_img = &heater;
     if (key.rfind("extruder", 0) == 0) {
@@ -582,7 +587,7 @@ void MainPanel::create_sensors(json &temp_sensors) {
     lv_obj_t *sensor_parent = temp_cont;
 #endif
     sensors.insert({key, std::make_shared<SensorContainer>(ws, sensor_parent, sensor_img, 150,
-                           _(display_name.c_str()), color_code, controllable, false, numpad, key,
+                           display_name.c_str(), color_code, controllable, false, numpad, key,
                            temp_chart, temp_series)});
 #ifdef GUPPY_FF5M
     sensors[key]->as_tile();

@@ -24,7 +24,6 @@
         {
           "color": "red",
           "controllable": true,
-          "display_name": "Extruder",
           "id": "extruder"
         },
         {

@@ -39,7 +39,7 @@ TEST_CASE("startup shows heater temperatures from Klipper") {
   app::wait_ready(moonraker);
 
   // Fixture: extruder 31.2 / 0, bed 27.8 / 0. The UI shows whole degrees.
-  auto extruder = ui::row_texts("Extruder");
+  auto extruder = ui::row_texts("T0");
   INFO("Extruder row: " << ui::join(extruder) << "; screen: " << ui::dump_screen());
   CHECK(contains(extruder, "31"));
 
@@ -56,10 +56,10 @@ TEST_CASE("status update changes the shown temperature and target") {
   moonraker.push_status({{"extruder", {{"temperature", 215.4}, {"target", 220.0}}}});
 
   bool updated = app::wait_until([] {
-    auto row = ui::row_texts("Extruder");
+    auto row = ui::row_texts("T0");
     return contains(row, "215") && contains(row, "220");
   });
-  CHECK_MESSAGE(updated, "Extruder row: " << ui::join(ui::row_texts("Extruder")));
+  CHECK_MESSAGE(updated, "Extruder row: " << ui::join(ui::row_texts("T0")));
 }
 
 TEST_CASE("homing panel sends G28") {

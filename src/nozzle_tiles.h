@@ -24,7 +24,6 @@ class NozzleTiles {
  public:
   struct Nozzle {
     std::string id;  // extruder, extruder1, ...
-    std::string name;
     lv_color_t color;
     int tool;  // 0 for extruder, N for extruderN
   };

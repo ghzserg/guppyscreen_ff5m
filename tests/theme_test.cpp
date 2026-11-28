@@ -20,8 +20,8 @@ TEST_CASE("built-in theme changes live and is saved without theme files") {
   app::wait_ready(moonraker);
   CHECK_FALSE(std::filesystem::exists(app::dir() + "/themes/green.json"));
 
-  auto *extruder = ui::tile("Extruder");
-  ui::tap_label("Extruder");
+  auto *extruder = ui::tile("T0");
+  ui::tap_label("T0");
   CHECK(ui::has_bg(extruder, LV_PALETTE_GREEN));
   {
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
@@ -48,6 +48,6 @@ TEST_CASE("built-in theme changes live and is saved without theme files") {
   CHECK(json::parse(config).at("theme") == "pink");
   CHECK_FALSE(std::filesystem::exists(app::dir() + "/themes/pink.json"));
   ui::tap_tab(Nav::HOME);
-  ui::tap_label("Extruder");
+  ui::tap_label("T0");
   CHECK(ui::has_bg(extruder, LV_PALETTE_PINK));
 }

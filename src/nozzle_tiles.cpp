@@ -36,7 +36,8 @@ void NozzleTiles::create(const std::vector<Nozzle> &nozzles, SensorContainer &re
   shown = -1;
   on_tap = std::move(cb);
   for (const Nozzle &n : nozzles) {
-    auto tile = std::make_unique<SensorContainer>(ws, cont, &extruder, 150, n.name.c_str(), n.color,
+    const std::string name = "T" + std::to_string(n.tool);
+    auto tile = std::make_unique<SensorContainer>(ws, cont, &extruder, 150, name.c_str(), n.color,
                                                    false, true, numpad, n.id, (lv_obj_t *)NULL, (lv_chart_series_t *)NULL);
     tile->as_tile();
     lv_obj_t *obj = tile->get_sensor();

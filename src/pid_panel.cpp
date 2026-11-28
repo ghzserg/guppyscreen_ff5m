@@ -22,7 +22,12 @@ PidPanel::PidPanel(KWebSocketClient &c, std::mutex &l)
   , temp_cont(lv_obj_create(cont))
   , tools_btnmatrix(NULL)
   , extruder_temp(ws, temp_cont, &extruder, 150,
-          _("Extruder") /* "Экструдер" */, lv_palette_main(LV_PALETTE_RED), true, true, numpad, "extruder", nullptr, nullptr, true)
+#ifdef GUPPY_FF5M
+          "T0",
+#else
+          _("Extruder") /* "Экструдер" */,
+#endif
+          lv_palette_main(LV_PALETTE_RED), true, true, numpad, "extruder", nullptr, nullptr, true)
   , heater_bed_temp(ws, temp_cont, &bed, 150,
           _("Bed") /* "Стол" */, lv_palette_main(LV_PALETTE_PURPLE), true, true, numpad,
  BED, nullptr, nullptr, true)
