@@ -340,7 +340,7 @@ TEST_CASE("Home's print status shows a new print state at once") {
 
 namespace {
 
-// График Home со шкалой 0–top°: чёрные линии на 100° и 200°, цифры через 50°
+// График Home со шкалой 0–top°: пунктир через 100°, цифры через 50°
 // справа. Приложение уже запущено, Home на экране.
 void check_home_chart(int top) {
   CAPTURE(top);
@@ -381,7 +381,7 @@ void check_home_chart(int top) {
   // Над областью графика половина строки фона, как у Home без шкалы.
   CHECK(c.y1 - plot.y1 >= lv_font_get_line_height(lv_obj_get_style_text_font(t.chart, LV_PART_TICKS)) / 2);
   CHECK(fake_hw::pixel(clock.x2 - 2, y_empty).full == fake_hw::pixel(c.x1 + 2, y_empty).full);
-  const lv_color_t line = lv_obj_get_style_line_color(t.chart, LV_PART_MAIN);
+  const lv_color_t line = lv_obj_get_style_text_color(t.chart, LV_PART_TICKS);
   // Доля пикселей строки цвета линии сетки (график температур занимает лишь несколько).
   auto share = [&](int y, lv_color_t colour) {
     int n = 0;
@@ -390,12 +390,21 @@ void check_home_chart(int top) {
   };
   auto line_share = [&](int y) { return share(y, line); };
   const int h = c.y2 - c.y1 + 1;
-  // Линии через 100° — чёрные, 1 px толщиной.
+  // Пунктир через 100° цветом шкалы, 1 px толщиной.
   for (int deg = 100; deg < top; deg += 100) {
     CAPTURE(deg);
     const int y = c.y1 + h * (top - deg) / top;
     int rows = 0;
-    for (int yy = y - 3; yy <= y + 3; yy++) rows += share(yy, lv_color_black()) > 0.5;
+    for (int yy = y - 3; yy <= y + 3; yy++) {
+      const double fraction = line_share(yy);
+      if (fraction < 0.35 || fraction > 0.75) continue;
+      int transitions = 0;
+      for (int x = c.x1 + 1; x <= c.x2; x++)
+        transitions += (fake_hw::pixel(x, yy).full == line.full) !=
+                       (fake_hw::pixel(x - 1, yy).full == line.full);
+      CHECK(transitions > (c.x2 - c.x1) / 8);
+      rows++;
+    }
     CHECK(rows == 1);
   }
   for (int deg = (top > 300 ? 310 : 300); deg <= top; deg += 10) {  // от 300° до верха: ни серой, ни чёрной линии
@@ -450,7 +459,7 @@ void check_home_chart(int top) {
 
 }  // namespace
 
-TEST_CASE("Home's chart has black grid lines at 100 and 200 degrees and its scale by 50 on the right") {
+TEST_CASE("Home's chart has dashed grid lines at 100 and 200 degrees and its scale by 50 on the right") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker);
   app::wait_ready(moonraker);
