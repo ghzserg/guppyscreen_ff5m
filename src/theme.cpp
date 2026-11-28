@@ -1,47 +1,23 @@
 #include "theme.h"
-#include "platform.h"
 
-#include <sys/stat.h>
-#include <fstream>
-#include <iomanip>
-#include <experimental/filesystem>
+namespace Theme {
+const std::array<Color, 6> colors{{
+  {"blue",   0x2196F3},
+  {"red",    0xF44336},
+  {"green",  0x4CAF50},
+  {"purple", 0x9C27B0},
+  {"pink",   0xE91E63},
+  {"yellow", 0xFFEB3B}
+}};
 
-namespace fs = std::experimental::filesystem;
+lv_style_t accent_bg;
+lv_style_t accent_outline;
 
-ThemeConfig *ThemeConfig::instance{NULL};
-
-ThemeConfig::ThemeConfig() {
-}
-
-ThemeConfig *ThemeConfig::get_instance() {
-  if (instance == NULL) {
-    instance = new ThemeConfig();
+uint32_t index(const nlohmann::json &value) {
+  if (value.is_string()) {
+    for (uint32_t i = 0; i < colors.size(); ++i)
+      if (value == colors[i].name) return i;
   }
-  return instance;
+  return 0;
 }
-
-void ThemeConfig::init(const std::string config_path) {
-  path = config_path;
-  struct stat buffer;
-
-  if (stat(config_path.c_str(), &buffer) == 0) {
-    data = json::parse(std::fstream(config_path));
-  } else {
-    data = {
-        {"primary_color", "0x2196F3"}, //blue
-        {"secondary_color", "0xF44336"} // red
-    };
-  }
-
-  std::ofstream o(config_path);
-  o << std::setw(2) << data << std::endl;
-}
-
-json &ThemeConfig::get_json(const std::string &json_path) {
-  return data[json::json_pointer(json_path)];
-}
-
-void ThemeConfig::save() {
-  std::ofstream o(path);
-  o << std::setw(2) << data << std::endl;
 }

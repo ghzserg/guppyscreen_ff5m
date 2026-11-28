@@ -591,6 +591,34 @@ msgstr "mm"
 msgid "s"
 msgstr "s"
 
+#: ../sysinfo_panel.cpp
+msgid "Theme"
+msgstr "Thème"
+
+#: ../sysinfo_panel.cpp
+msgid "Blue"
+msgstr "Bleu"
+
+#: ../sysinfo_panel.cpp
+msgid "Red"
+msgstr "Rouge"
+
+#: ../sysinfo_panel.cpp
+msgid "Green"
+msgstr "Vert"
+
+#: ../sysinfo_panel.cpp
+msgid "Purple"
+msgstr "Violet"
+
+#: ../sysinfo_panel.cpp
+msgid "Pink"
+msgstr "Rose"
+
+#: ../sysinfo_panel.cpp
+msgid "Yellow"
+msgstr "Jaune"
+
 #~ msgid "External circulation"
 #~ msgstr "Circulation externe"
 

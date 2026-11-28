@@ -1,4 +1,5 @@
 #include "guppyscreen.h"
+#include "theme.h"
 #include "nav.h"
 #include "prompt_panel.h"
 #include "state.h"
@@ -194,7 +195,7 @@ void PromptPanel::consume(json &j) {
         lv_obj_center(textfield);
 
         lv_obj_t *btn = lv_btn_create(footer_cont);
-        lv_obj_add_style(btn, &style_btn_blue, 0);
+        lv_obj_add_style(btn, &Theme::accent_bg, 0);
         lv_obj_set_size(btn, lv_pct(45), 32);
         lv_obj_set_style_max_width(btn, lv_pct(45), 0);
         lv_obj_set_style_min_width(btn, 32, 0);
@@ -413,7 +414,7 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_center(label_save);
                 lv_obj_add_event_cb(btn_save, _handle_callback_g28, LV_EVENT_SHORT_CLICKED, this);
 
-                lv_obj_add_style(btn, &style_btn_blue, 0);
+                lv_obj_add_style(btn, &Theme::accent_bg, 0);
                 lv_obj_add_event_cb(btn, _handle_callback_close, LV_EVENT_SHORT_CLICKED, this);
             } else if (message.find("FIRMWARE_RESTART") != std::string::npos || message.find("сопла о стол") != std::string::npos || message.find("Shutdown") != std::string::npos) {
                 lv_obj_t *btn_save = lv_btn_create(footer_cont);
@@ -432,7 +433,7 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_center(label_save);
                 lv_obj_add_event_cb(btn_save, _handle_callback_firmware_restart, LV_EVENT_SHORT_CLICKED, this);
 
-                lv_obj_add_style(btn, &style_btn_blue, 0);
+                lv_obj_add_style(btn, &Theme::accent_bg, 0);
                 lv_obj_add_event_cb(btn, _handle_callback_close, LV_EVENT_SHORT_CLICKED, this);
             } else {
                 lv_obj_add_event_cb(btn, _handle_callback_close, LV_EVENT_SHORT_CLICKED, this);
@@ -640,7 +641,7 @@ void PromptPanel::handle_macro_response(json &j) {
                             lv_obj_add_style(btn, &style_btn_blue, 0);
                         } else if (!prompt_button_type.compare("primary")) {
                             spdlog::debug("type primary");
-                            lv_obj_add_style(btn, &style_btn_blue, 0);
+                            lv_obj_add_style(btn, &Theme::accent_bg, 0);
                         } else { // info and primary as well
                             spdlog::debug("type default");
                             lv_obj_add_style(btn, &style_btn_dark_grey, 0);

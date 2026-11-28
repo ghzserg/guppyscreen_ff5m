@@ -7,6 +7,7 @@
 #include "pid_panel.h"
 #include "state.h"
 #include "config.h"
+#include "theme.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
 #include <algorithm>
@@ -297,8 +298,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   // the column outgrows the screen, the file name goes off the top and the
   // progress bar slides under the buttons.
   lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_REAL);
-  lv_obj_set_style_outline_color(thumbnail, lv_palette_main(LV_PALETTE_BLUE), 0);
-  lv_obj_set_style_outline_opa(thumbnail, LV_OPA_COVER, 0);
+  lv_obj_add_style(thumbnail, &Theme::accent_outline, 0);
 #endif
 
   // row 1

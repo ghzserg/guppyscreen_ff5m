@@ -585,6 +585,34 @@ msgstr "mm"
 msgid "s"
 msgstr "s"
 
+#: ../sysinfo_panel.cpp
+msgid "Theme"
+msgstr "Motiv"
+
+#: ../sysinfo_panel.cpp
+msgid "Blue"
+msgstr "Modrá"
+
+#: ../sysinfo_panel.cpp
+msgid "Red"
+msgstr "Červená"
+
+#: ../sysinfo_panel.cpp
+msgid "Green"
+msgstr "Zelená"
+
+#: ../sysinfo_panel.cpp
+msgid "Purple"
+msgstr "Fialová"
+
+#: ../sysinfo_panel.cpp
+msgid "Pink"
+msgstr "Růžová"
+
+#: ../sysinfo_panel.cpp
+msgid "Yellow"
+msgstr "Žlutá"
+
 #~ msgid "External circulation"
 #~ msgstr "Vnitřní cirkulace"
 

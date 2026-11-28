@@ -17,10 +17,6 @@
 #include <iterator>
 #include <map>
 
-#include <experimental/filesystem>
-
-namespace fs = std::experimental::filesystem;
-
 
 #ifdef GUPPYSCREEN_VERSION
 #define GS_VERSION GUPPYSCREEN_VERSION
@@ -32,15 +28,6 @@ std::vector<std::string> SysInfoPanel::log_levels = {
   "trace",
   "debug",
   "info"
-};
-
-std::vector<std::string> SysInfoPanel::themes = {
-  "blue",
-  "red",
-  "green",
-  "purple",
-  "pink",
-  "yellow"
 };
 
 static std::map<int32_t, uint32_t> sleepsec_to_dd_idx = {
@@ -109,12 +96,10 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
     // Z axis icons
   , z_icon_toggle_cont(lv_obj_create(left_cont))
   , z_icon_toggle(lv_switch_create(z_icon_toggle_cont))
-
-  // log level
-  , theme_cont(lv_obj_create(left_cont))
+#endif
+  , theme_cont(lv_obj_create(right_cont))
   , theme_dd(lv_dropdown_create(theme_cont))
   , theme(0)
-#endif
 
 {
   lv_obj_move_background(cont);
@@ -127,7 +112,7 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   lv_obj_set_flex_flow(left_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(left_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 
-  lv_obj_clear_flag(right_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_scroll_dir(right_cont, LV_DIR_VER);
   lv_obj_set_size(right_cont, LV_PCT(40), LV_PCT(100));
   lv_obj_set_flex_flow(right_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(right_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
@@ -305,29 +290,22 @@ SysInfoPanel::SysInfoPanel(KWebSocketClient &c
   lv_obj_add_event_cb(z_icon_toggle, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
 
-  // theme dropdown
+#endif
+
+  lv_obj_move_to_index(theme_cont, 0);
   lv_obj_set_size(theme_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(theme_cont, 0, 0);
+  lv_obj_set_flex_flow(theme_cont, LV_FLEX_FLOW_COLUMN);
   l = lv_label_create(theme_cont);
-  lv_label_set_text(l, "Theme Color");
-  lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
-  lv_obj_align(theme_dd, LV_ALIGN_RIGHT_MID, 0, 0);
-
-  lv_dropdown_set_options(theme_dd, fmt::format("{}", fmt::join(themes, "\n")).c_str());
-
-  v = conf->get_json("/theme");
-  if (!v.is_null()) {
-      auto it = std::find(themes.begin(), themes.end(), v.template get<std::string>());
-      if (it != std::end(themes)) {
-          theme = std::distance(themes.begin(), it);
-          lv_dropdown_set_selected(theme_dd, theme);
-      }
-  } else {
-      lv_dropdown_set_selected(theme_dd, theme);
-  }
+  lv_label_set_text(l, _("Theme"));
+  lv_obj_move_to_index(l, 0);
+  lv_obj_set_width(theme_dd, LV_PCT(100));
+  lv_dropdown_set_options(theme_dd, fmt::format("{}\n{}\n{}\n{}\n{}\n{}",
+      _("Blue"), _("Red"), _("Green"), _("Purple"), _("Pink"), _("Yellow")).c_str());
+  theme = Theme::index(conf->get_json("/theme"));
+  lv_dropdown_set_selected(theme_dd, theme);
   lv_obj_add_event_cb(theme_dd, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
-#endif
 
 }
 
@@ -432,18 +410,15 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       bool inverted = lv_obj_has_state(z_icon_toggle, LV_STATE_CHECKED);
       conf->set<bool>("/invert_z_icon", inverted);
       conf->save();
-    } else if (obj == theme_dd) {
-      auto idx = lv_dropdown_get_selected(theme_dd);
-      if (idx != theme) {
-        theme = idx;
-        auto selected_theme = themes[theme];
-        conf->set<std::string>("/theme", selected_theme);
-        conf->save();
-        auto theme_config = fs::canonical(conf->get_path()).parent_path() / "themes" / (selected_theme + ".json");
-        ThemeConfig::get_instance()->init(theme_config);
-        GuppyScreen::refresh_theme();
-      }
 #endif
+    } else if (obj == theme_dd) {
+      const auto idx = lv_dropdown_get_selected(theme_dd);
+      if (idx < Theme::colors.size() && idx != theme) {
+        theme = idx;
+        conf->set<std::string>("/theme", Theme::colors[theme].name);
+        conf->save();
+        GuppyScreen::refresh_theme(lv_color_hex(Theme::colors[theme].primary));
+      }
 #ifdef GUPPY_FF5M
     } else if (obj == disp_brightness_dd) {
         char buf[5]; // max 100

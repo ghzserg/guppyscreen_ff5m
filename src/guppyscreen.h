@@ -54,7 +54,7 @@ class GuppyScreen {
 /*  static void handle_calibrated(lv_event_t *event);
   static void save_calibration_coeff(lv_tc_coeff_t coeff);
 */
-/*  static void refresh_theme(); */
+  static void refresh_theme(lv_color_t primary);
 };
 
 #endif  // __GUPPY_SCREEN_H__

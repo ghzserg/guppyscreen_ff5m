@@ -590,6 +590,34 @@ msgstr "mm"
 msgid "s"
 msgstr "s"
 
+#: ../sysinfo_panel.cpp
+msgid "Theme"
+msgstr "테마"
+
+#: ../sysinfo_panel.cpp
+msgid "Blue"
+msgstr "파랑"
+
+#: ../sysinfo_panel.cpp
+msgid "Red"
+msgstr "빨강"
+
+#: ../sysinfo_panel.cpp
+msgid "Green"
+msgstr "초록"
+
+#: ../sysinfo_panel.cpp
+msgid "Purple"
+msgstr "보라"
+
+#: ../sysinfo_panel.cpp
+msgid "Pink"
+msgstr "분홍"
+
+#: ../sysinfo_panel.cpp
+msgid "Yellow"
+msgstr "노랑"
+
 #~ msgid "External circulation"
 #~ msgstr "외부 순환"
 

@@ -2,6 +2,7 @@
 #include "spdlog/spdlog.h"
 #include "config.h"
 #include "state.h"
+#include "theme.h"
 
 #include <algorithm>
 
@@ -322,13 +323,8 @@ void SensorContainer::set_color(lv_color_t color) {
 
 void SensorContainer::highlight(bool on) {
   // Как выбранное сопло на экране Extrude.
-  if (on) {
-    lv_obj_set_style_bg_color(sensor_cont, lv_palette_main(LV_PALETTE_BLUE), 0);
-    lv_obj_set_style_bg_opa(sensor_cont, LV_OPA_COVER, 0);
-  } else {
-    lv_obj_remove_local_style_prop(sensor_cont, LV_STYLE_BG_COLOR, 0);
-    lv_obj_remove_local_style_prop(sensor_cont, LV_STYLE_BG_OPA, 0);
-  }
+  lv_obj_remove_style(sensor_cont, &Theme::accent_bg, 0);
+  if (on) lv_obj_add_style(sensor_cont, &Theme::accent_bg, 0);
 }
 
 void SensorContainer::as_tile() {
