@@ -265,8 +265,15 @@ TEST_CASE("C5 Pro uses filament colors and hides an empty nozzle stripe") {
   }
   ui::tap(toggle);
   ui::tap_tab(Nav::HOME);
-  REQUIRE(app::wait_until([] { return stripe("T0") == palette(LV_PALETTE_RED); }));
-  CHECK(stripe("T1") == palette(LV_PALETTE_ORANGE));
+  REQUIRE(app::wait_until([&] { return has_colour(ui::find_label("T0"), LV_PALETTE_RED); }));
+  CHECK(stripe("T0") == lv_color_to32(lv_color_hex(0x12AB34)));
+  CHECK(stripe("T1") == palette(LV_PALETTE_GREY));
+  CHECK(stripe("T2") == lv_color_to32(lv_color_hex(0x0000FF)));
+  CHECK(stripe("T3") == lv_color_to32(lv_color_hex(0x00FF00)));
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    CHECK(lv_obj_get_style_border_opa(lv_obj_get_parent(name), LV_PART_MAIN) == LV_OPA_TRANSP);
+  }
   for (const auto &entry : {std::pair<const char *, lv_palette_t>{"T0", LV_PALETTE_RED},
                             {"T1", LV_PALETTE_ORANGE}, {"T2", LV_PALETTE_YELLOW},
                             {"T3", LV_PALETTE_GREEN}, {"Bed", LV_PALETTE_BLUE},
@@ -275,18 +282,33 @@ TEST_CASE("C5 Pro uses filament colors and hides an empty nozzle stripe") {
     lv_obj_t *label = ui::find_label(entry.first);
     REQUIRE(label != nullptr);
     CHECK(has_colour(label, entry.second));
-    CHECK(stripe(entry.first) == palette(entry.second));
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     bool found = false;
     for (lv_chart_series_t *s = lv_chart_get_series_next(chart, NULL); s; s = lv_chart_get_series_next(chart, s))
       found |= lv_color_to32(s->color) == palette(entry.second);
     CHECK(found);
   }
+  // Цвет филамента меняется даже при выключенном сопоставлении кривых.
+  moonraker.push_status({{"zmod_color", {{"slots", json::array({
+    {{"ID", "1"}, {"HEX", "654321"}, {"hasFilament", true}},
+    {{"ID", "2"}, {"HEX", "FF0000"}, {"hasFilament", false}}
+  })}}}});
+  REQUIRE(app::wait_until([] { return stripe("T0") == lv_color_to32(lv_color_hex(0x654321)); }));
+  CHECK(has_colour(ui::find_label("T0"), LV_PALETTE_RED));
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    bool red_line = false;
+    for (lv_chart_series_t *s = lv_chart_get_series_next(chart, NULL); s; s = lv_chart_get_series_next(chart, s)) {
+      red_line |= lv_color_to32(s->color) == palette(LV_PALETTE_RED);
+      CHECK(lv_color_to32(s->color) != lv_color_to32(lv_color_hex(0x654321)));
+    }
+    CHECK(red_line);
+  }
   ui::tap_tab(Nav::SETTINGS);
   ui::tap_label("System");
   ui::tap(toggle);
   ui::tap_tab(Nav::HOME);
-  REQUIRE(app::wait_until([] { return stripe("T0") == lv_color_to32(lv_color_hex(0x12AB34)); }));
+  CHECK(stripe("T0") == lv_color_to32(lv_color_hex(0x654321)));
   lv_obj_t *restored = ui::find_label("T0");
   REQUIRE(restored != nullptr);
   std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
@@ -294,7 +316,7 @@ TEST_CASE("C5 Pro uses filament colors and hides an empty nozzle stripe") {
   CHECK(lv_obj_get_style_border_opa(lv_obj_get_parent(name), LV_PART_MAIN) == LV_OPA_TRANSP);
   bool filament_line = false, empty_line = false;
   for (lv_chart_series_t *s = lv_chart_get_series_next(chart, NULL); s; s = lv_chart_get_series_next(chart, s)) {
-    filament_line |= lv_color_to32(s->color) == lv_color_to32(lv_color_hex(0x12AB34));
+    filament_line |= lv_color_to32(s->color) == lv_color_to32(lv_color_hex(0x654321));
     empty_line |= lv_color_to32(s->color) == palette(LV_PALETTE_GREY);
   }
   CHECK(filament_line);

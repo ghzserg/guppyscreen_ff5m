@@ -80,6 +80,7 @@ class SensorContainer {
   void as_tile();
   // The stripe's colour and the chart line's.
   void set_color(lv_color_t color);
+  void set_chart_color(lv_color_t color);
   void set_name_colored(bool colored);
   static lv_coord_t tile_width();  // a tile's width on screen
   static constexpr lv_coord_t tile_gap() { return 6; }  // between tiles, Home and Extrude alike
