@@ -13,6 +13,8 @@ output=$(realpath -m "$4")
 mkdir -p "$output"
 cp "$scenario" "$output/scenario.txt"
 
+declare -A themes=([c5pro]=purple [ad5x]=green [ad5m]=blue)
+
 cleanup() {
   [ ! -d "$output/.worktree-before" ] || git -C "$repo" worktree remove --force "$output/.worktree-before" || true
   [ ! -d "$output/.worktree-after" ] || git -C "$repo" worktree remove --force "$output/.worktree-after" || true
@@ -34,7 +36,8 @@ capture() {
   # Один бинарник на коммит, отдельный процесс на каждый профиль.
   for profile in c5pro ad5x ad5m; do
     mkdir -p "$output/$profile/$phase"
-    (cd "$work" && GUPPY_SCREENSHOT_PROFILE="$profile" GUPPY_SCREENSHOT_SCRIPT="$scenario" \
+    (cd "$work" && GUPPY_SCREENSHOT_PROFILE="$profile" GUPPY_SCREENSHOT_THEME="${themes[$profile]}" \
+      GUPPY_SCREENSHOT_SCRIPT="$scenario" \
       GUPPY_SCREENSHOT_DIR="$output/$profile/$phase" make test TEST='Screenshot: scripted' \
       TEST_SRCS="tests/test_main.cpp tests/screenshot_capture_test.cpp $(printf '%s ' tests/harness/*.cpp)")
   done
@@ -64,7 +67,7 @@ python3 "$repo/ci/ppm_to_png.py" "$output"
       ad5m) model="AD5M" ;;
     esac
     {
-      echo "### $model"
+      echo "### $model — ${themes[$profile]}"
       echo
       echo "| До | После |"
       echo "|---|---|"
