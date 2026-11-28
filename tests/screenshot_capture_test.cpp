@@ -34,6 +34,8 @@ TEST_CASE("Screenshot: scripted") {
   json settings = json::object();
   if (const char *config = std::getenv("GUPPY_SCREENSHOT_CONFIG"))
     settings = json::parse(config);
+  if (const char *theme = std::getenv("GUPPY_SCREENSHOT_THEME"))
+    settings["theme"] = theme;
   const char *profile = std::getenv("GUPPY_SCREENSHOT_PROFILE");
   const bool c5pro = profile && std::string(profile) == "c5pro";
   const bool ad5x = profile && std::string(profile) == "ad5x";
