@@ -147,8 +147,6 @@ void MainPanel::init(json &j) {
 #ifdef GUPPY_FF5M
   if (j.contains("/result/status/zmod_color/slots"_json_pointer))
     update_filament_colors(j.at("/result/status/zmod_color/slots"_json_pointer));
-  else if (!Config::get_instance()->get<bool>("/use_filament_colors"))
-    update_filament_colors(json());
 #endif
 
   macros_panel.refresh();
@@ -480,13 +478,11 @@ void MainPanel::update_filament_colors(const json &slots) {
     if (sensor == sensors.end()) continue;
     lv_obj_t *tile = sensor->second->get_sensor();
     if (lv_color_to32(lv_obj_get_style_border_color(tile, LV_PART_MAIN)) != lv_color_to32(color))
-      sensor->second->set_color(color);
+      lv_obj_set_style_border_color(tile, color, LV_PART_MAIN);
     const lv_opa_t opacity = stripe ? LV_OPA_COVER : LV_OPA_TRANSP;
     if (lv_obj_get_style_border_opa(tile, LV_PART_MAIN) != opacity)
       lv_obj_set_style_border_opa(tile, opacity, LV_PART_MAIN);
   }
-  for (const auto &[id, sensor] : sensors)
-    sensor->set_name_colored(!enabled);
 }
 #endif
 
@@ -583,7 +579,7 @@ void MainPanel::create_sensors(json &temp_sensors) {
                            _(display_name.c_str()), color_code, controllable, false, numpad, key,
                            temp_chart, temp_series)});
 #ifdef GUPPY_FF5M
-    sensors[key]->as_tile();
+    sensors[key]->as_tile(default_tool_colors.size() > 1);
 #endif
   }
 }

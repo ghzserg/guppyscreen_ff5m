@@ -77,10 +77,9 @@ class SensorContainer {
 #ifdef GUPPY_FF5M
   // Home's layout: a tile with the icon and the name under it, the target
   // (red when set, grey when off) above the current temperature on the right.
-  void as_tile();
+  void as_tile(bool color_name = false);
   // The stripe's colour and the chart line's.
   void set_color(lv_color_t color);
-  void set_name_colored(bool colored);
   static lv_coord_t tile_width();  // a tile's width on screen
   static constexpr lv_coord_t tile_gap() { return 6; }  // between tiles, Home and Extrude alike
   // График температур под плитками (Home, PID): вид плиток, слева вровень с
