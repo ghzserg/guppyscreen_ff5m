@@ -297,6 +297,16 @@ int32_t SensorContainer::chart_max_temp() {
   return State::get_instance()->get_extruders().size() > 1 ? 330 : 300;
 }
 
+void SensorContainer::set_name_colored(bool colored) {
+  if (colored) {
+    const lv_color_t color = lv_obj_get_style_border_color(sensor_cont, LV_PART_MAIN);
+    if (lv_color_to32(lv_obj_get_style_text_color(sensor_label, 0)) != lv_color_to32(color))
+      lv_obj_set_style_text_color(sensor_label, color, 0);
+  } else {
+    lv_obj_remove_local_style_prop(sensor_label, LV_STYLE_TEXT_COLOR, 0);
+  }
+}
+
 void SensorContainer::set_color(lv_color_t color) {
   lv_obj_set_style_border_color(sensor_cont, color, LV_PART_MAIN);
   if (chart != NULL && series != NULL) {
@@ -315,7 +325,7 @@ void SensorContainer::highlight(bool on) {
   }
 }
 
-void SensorContainer::as_tile(bool color_name) {
+void SensorContainer::as_tile() {
   tile = true;
   auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   // The colour stripe along the bottom. The border counts on every side of
@@ -352,8 +362,6 @@ void SensorContainer::as_tile(bool color_name) {
   // 16 px задан явно: шрифт по умолчанию 20 px, и с ним «Extruder» и «Chamber»
   // не помещаются в плитку.
   lv_obj_set_style_text_font(sensor_label, &notosemi_16, 0);
-  if (color_name)
-    lv_obj_set_style_text_color(sensor_label, lv_obj_get_style_border_color(sensor_cont, LV_PART_MAIN), 0);
   lv_obj_align(sensor_label, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 }
 #endif
