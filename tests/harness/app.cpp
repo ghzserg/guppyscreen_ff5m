@@ -58,7 +58,7 @@ static json test_config(int moonraker_port) {
       {"moonraker_port", moonraker_port},
       {"log_level", "debug"},
       {"monitored_sensors", {
-        {{"id", "extruder"}, {"display_name", "Extruder"}, {"controllable", true}, {"color", "red"}},
+        {{"id", "extruder"}, {"controllable", true}, {"color", "red"}},
         {{"id", "heater_bed"}, {"display_name", "Bed"}, {"controllable", true}, {"color", "purple"}},
       }},
       {"fans", {

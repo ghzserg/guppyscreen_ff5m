@@ -41,7 +41,9 @@ void Config::init(std::string config_path, const std::string thumbdir) {
   json sensors_conf = {
     {
       {"id", "extruder"},
+#ifndef GUPPY_FF5M
       {"display_name", "Extruder"},
+#endif
       {"controllable", true},
       {"color", "red"}
     },

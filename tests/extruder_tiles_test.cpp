@@ -228,7 +228,7 @@ TEST_CASE("the AD5X extruder screen shows its nozzle's tile and keeps the T0-T3 
   moonraker.push_status({{"extruder", {{"temperature", 187.0}, {"target", 210.0}}}});
   app::settle(moonraker);
 
-  auto texts = ui::row_texts("Extruder");
+  auto texts = ui::row_texts("T0");
   INFO("Extruder tile: " << ui::join(texts));
   CHECK(std::find(texts.begin(), texts.end(), "187") != texts.end());
   CHECK(std::find(texts.begin(), texts.end(), "210") != texts.end());
@@ -241,14 +241,14 @@ TEST_CASE("the AD5M nozzle tile on the extruder screen is not selectable") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   open_extruder_screen(moonraker);
 
-  auto texts = ui::row_texts("Extruder");
+  auto texts = ui::row_texts("T0");
   CHECK(std::find(texts.begin(), texts.end(), "/") == texts.end());
-  CHECK_FALSE(is_blue(tile("Extruder")));
-  CHECK(has_stripe(tile("Extruder")));
+  CHECK_FALSE(is_blue(tile("T0")));
+  CHECK(has_stripe(tile("T0")));
   CHECK(ui::find_label("Remove") == nullptr);
-  ui::tap(tile("Extruder"));
+  ui::tap(tile("T0"));
   app::settle(moonraker);
-  CHECK_FALSE(is_blue(tile("Extruder")));
+  CHECK_FALSE(is_blue(tile("T0")));
   CHECK(moonraker.gcodes().empty());
 }
 
@@ -256,11 +256,11 @@ TEST_CASE("the extruder screen's nozzle tile sits where Home's extruder tile doe
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker);
   app::wait_ready(moonraker);
-  auto home = tile_and_icon("Extruder");
+  auto home = tile_and_icon("T0");
   ui::tap_label("Extrude");
   moonraker.push_status({{"extruder", {{"temperature", 30.0}}}});
   app::settle(moonraker);
-  auto ext = tile_and_icon("Extruder");
+  auto ext = tile_and_icon("T0");
 
   INFO("home tile " << home.first.x1 << "," << home.first.y1 << " icon " << home.second.x1 << "," << home.second.y1
        << "; extrude tile " << ext.first.x1 << "," << ext.first.y1 << " icon " << ext.second.x1 << "," << ext.second.y1);
@@ -340,7 +340,7 @@ TEST_CASE("a tap on the AD5X nozzle with no channel active keeps Load off") {
   moonraker.push_status({{"zmod_color", {{"active_tool_id", -1}}}});
   app::settle(moonraker);
 
-  ui::tap(tile("Extruder"));
+  ui::tap(tile("T0"));
   ui::tap_label("Load");
   app::settle(moonraker);
   CHECK(moonraker.gcodes().empty());

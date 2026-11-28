@@ -1,5 +1,8 @@
 #include "state.h"
 #include "config.h"
+#ifdef GUPPY_FF5M
+#include "nozzle_tiles.h"
+#endif
 #include "utils.h"
 #include "spdlog/spdlog.h"
 #include "lvgl/lvgl.h"
@@ -236,11 +239,13 @@ json State::get_display_sensors() {
       color = GUPPY_COLORS[color_idx % GUPPY_COLOR_SIZE];
       display_sensors[e] = {
         { "id", e },
-        { "display_name", KUtils::to_title(e) },
         { "controllable", true },
         { "color", color }
       };
-
+#ifdef GUPPY_FF5M
+      if (NozzleTiles::tool_of(e) < 0)
+#endif
+        display_sensors[e]["display_name"] = KUtils::to_title(e);
       color_idx++;
     }
 

@@ -25,7 +25,12 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , panel_cont(lv_obj_create(Nav::get().content()))
   , spoolman_panel(sm)
   , extruder_temp(ws, panel_cont, &extruder, 150,
-          _("Extruder") /* "Экструдер" */, lv_palette_main(LV_PALETTE_RED), false, true, numpad, "extruder", NULL, NULL)
+#ifdef GUPPY_FF5M
+          "T0",
+#else
+          _("Extruder") /* "Экструдер" */,
+#endif
+          lv_palette_main(LV_PALETTE_RED), false, true, numpad, "extruder", NULL, NULL)
   , temp_selector(panel_cont, _("Extruder temperature") /* "Температура экструдера (C)" */,
                   {"200", "220", "240", "250", "260", "280", "300", "320", ""}, 3, &ExtruderPanel::_handle_callback, this)
   , length_selector(panel_cont, _("Extrusion length") /* "Длина экструзии (мм)" */,

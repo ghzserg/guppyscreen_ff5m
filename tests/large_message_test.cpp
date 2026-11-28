@@ -59,7 +59,7 @@ TEST_CASE("large subscribe reply is followed by live updates") {
   app::start(moonraker);
   app::wait_ready(moonraker);
 
-  auto extruder = ui::row_texts("Extruder");
+  auto extruder = ui::row_texts("T0");
   CHECK_MESSAGE(contains(extruder, "31"), "Extruder row: " << ui::join(extruder));
 
   // Small messages after the big one, then another big one.
@@ -67,8 +67,8 @@ TEST_CASE("large subscribe reply is followed by live updates") {
     double t = 200.0 + i;
     moonraker.push_status({{"extruder", {{"temperature", t}}}});
     std::string want = std::to_string((int)t);
-    bool updated = app::wait_until([&] { return contains(ui::row_texts("Extruder"), want); });
-    CHECK_MESSAGE(updated, "want " << want << "; Extruder row: " << ui::join(ui::row_texts("Extruder")));
+    bool updated = app::wait_until([&] { return contains(ui::row_texts("T0"), want); });
+    CHECK_MESSAGE(updated, "want " << want << "; Extruder row: " << ui::join(ui::row_texts("T0")));
   }
 
   moonraker.push_status({{"configfile", sub["status"]["configfile"]}, {"heater_bed", {{"temperature", 55.0}}}});
@@ -76,6 +76,6 @@ TEST_CASE("large subscribe reply is followed by live updates") {
   CHECK_MESSAGE(bed, "Bed row: " << ui::join(ui::row_texts("Bed")));
 
   moonraker.push_status({{"extruder", {{"temperature", 210.0}}}});
-  bool after = app::wait_until([] { return contains(ui::row_texts("Extruder"), "210"); });
-  CHECK_MESSAGE(after, "Extruder row: " << ui::join(ui::row_texts("Extruder")));
+  bool after = app::wait_until([] { return contains(ui::row_texts("T0"), "210"); });
+  CHECK_MESSAGE(after, "Extruder row: " << ui::join(ui::row_texts("T0")));
 }

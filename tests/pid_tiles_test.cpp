@@ -40,7 +40,7 @@ TEST_CASE("the PID screen shows its sensors as tiles") {
   app::wait_ready(moonraker);
   open_pid(moonraker);
 
-  auto texts = ui::row_texts("Extruder");
+  auto texts = ui::row_texts("T0");
   INFO("Extruder: " << ui::join(texts));
   CHECK(std::find(texts.begin(), texts.end(), "245") != texts.end());  // the PID target
   CHECK(std::find(texts.begin(), texts.end(), "31") != texts.end());
@@ -51,10 +51,10 @@ TEST_CASE("the PID screen's tiles sit where Home's do") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker);
   app::wait_ready(moonraker);
-  auto home = tile_and_icon("Extruder");
+  auto home = tile_and_icon("T0");
   auto home_bed = tile_and_icon("Bed");
   open_pid(moonraker);
-  auto pid = tile_and_icon("Extruder");
+  auto pid = tile_and_icon("T0");
   auto pid_bed = tile_and_icon("Bed");
 
   INFO("home tile " << home.first.x1 << "," << home.first.y1 << ".." << home.first.x2 << "," << home.first.y2
@@ -112,12 +112,12 @@ TEST_CASE("the AD5X PID screen calibrates its one nozzle without T0-T3 buttons")
   open_pid(moonraker);
 
   CHECK_FALSE(ui::any_shown(ui::btnmatrices("T0")));
-  CHECK_FALSE(ui::has_bg(tile("Extruder"), LV_PALETTE_BLUE));
-  ui::tap(tile("Extruder"));
-  CHECK(ui::has_bg(tile("Extruder"), LV_PALETTE_BLUE));
+  CHECK_FALSE(ui::has_bg(tile("T0"), LV_PALETTE_BLUE));
+  ui::tap(tile("T0"));
+  CHECK(ui::has_bg(tile("T0"), LV_PALETTE_BLUE));
   ui::enter_on_numpad("250");
   app::settle(moonraker);
-  CHECK(ui::has_bg(tile("Extruder"), LV_PALETTE_BLUE));
+  CHECK(ui::has_bg(tile("T0"), LV_PALETTE_BLUE));
   ui::tap_label("PID Extruder");
   REQUIRE(app::wait_until([&] { return !moonraker.gcodes().empty(); }));
   CHECK(moonraker.gcodes().back() == "PID_TUNE_EXTRUDER T=0 TEMPERATURE=250");

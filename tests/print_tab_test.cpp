@@ -510,13 +510,13 @@ json printer_config(const std::string &fixture, const std::string &printer) {
 
 TEST_CASE("Home fits the AD5M temperatures and print status") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  check_home_fits(moonraker, {{"prompt_emergency_stop", false}}, {"Extruder", "Bed"});
+  check_home_fits(moonraker, {{"prompt_emergency_stop", false}}, {"T0", "Bed"});
 }
 
 TEST_CASE("Home fits the AD5X temperatures and print status") {
   FakeMoonraker moonraker(app::fixture("ad5x_basic.json"));
   check_home_fits(moonraker, printer_config("guppyconfig_ad5x.json", "AD5X"),
-                  {"Extruder", "Bed", "Head", "Weight"});
+                  {"T0", "Bed", "Head", "Weight"});
 }
 
 TEST_CASE("Home fits the C5 Pro temperatures and print status") {

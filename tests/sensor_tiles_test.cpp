@@ -45,16 +45,16 @@ TEST_CASE("a sensor tile shows a set target in red and an unset one in grey") {
   app::start(moonraker);
   app::wait_ready(moonraker);
   moonraker.push_status({{"extruder", {{"target", 200}}}});
-  REQUIRE(app::wait_until([] { return tile_label("Extruder", "200") != nullptr; }));
+  REQUIRE(app::wait_until([] { return tile_label("T0", "200") != nullptr; }));
 
-  CHECK(has_colour(tile_label("Extruder", "200"), LV_PALETTE_RED));
+  CHECK(has_colour(tile_label("T0", "200"), LV_PALETTE_RED));
   lv_obj_t *bed_target = tile_label("Bed", "0");
   REQUIRE(bed_target != nullptr);
   CHECK(has_colour(bed_target, LV_PALETTE_GREY));
 
   moonraker.push_status({{"extruder", {{"target", 0}}}});
-  REQUIRE(app::wait_until([] { return tile_label("Extruder", "200") == nullptr; }));
-  CHECK(has_colour(tile_label("Extruder", "0"), LV_PALETTE_GREY));
+  REQUIRE(app::wait_until([] { return tile_label("T0", "200") == nullptr; }));
+  CHECK(has_colour(tile_label("T0", "0"), LV_PALETTE_GREY));
 }
 
 TEST_CASE("a tap on a C5 Pro tile opens the numpad for that nozzle") {
@@ -95,12 +95,12 @@ Lit lit_in(lv_obj_t *img) {
 TEST_CASE("the head sensor tile shows a thermometer as big as the other icons") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker, {{"printers", {{"FF5M", {{"monitored_sensors", {
-    {{"id", "extruder"}, {"display_name", "Extruder"}, {"controllable", true}, {"color", "red"}},
+    {{"id", "extruder"}, {"display_name", "T0"}, {"controllable", true}, {"color", "red"}},
     {{"id", "temperature_sensor head"}, {"display_name", "Head"}, {"controllable", false}, {"color", "green"}}}}}}}}});
   app::wait_ready(moonraker);
 
   lv_obj_t *head = ui::find_label("Head");
-  lv_obj_t *extruder = ui::find_label("Extruder");
+  lv_obj_t *extruder = ui::find_label("T0");
   REQUIRE(head != nullptr);
   REQUIRE(extruder != nullptr);
   lv_obj_t *head_img, *extruder_img;
@@ -126,10 +126,10 @@ TEST_CASE("the temperature numpad shows the value as big as the tiles and big bo
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker);
   app::wait_ready(moonraker);
-  lv_obj_t *tile_value = tile_label("Extruder", "31");  // the fixture's extruder temperature
+  lv_obj_t *tile_value = tile_label("T0", "31");  // the fixture's extruder temperature
   REQUIRE(tile_value != nullptr);
 
-  ui::tap_label("Extruder");
+  ui::tap_label("T0");
   lv_obj_t *input = ui::find_shown(&lv_textarea_class);
   REQUIRE_MESSAGE(input != nullptr, "numpad did not open");
   std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
@@ -144,10 +144,10 @@ TEST_CASE("a sensor tile shows the target above the current temperature") {
   app::start(moonraker);
   app::wait_ready(moonraker);
   moonraker.push_status({{"extruder", {{"target", 200}}}});
-  REQUIRE(app::wait_until([] { return tile_label("Extruder", "200") != nullptr; }));
+  REQUIRE(app::wait_until([] { return tile_label("T0", "200") != nullptr; }));
 
-  lv_obj_t *target = tile_label("Extruder", "200");
-  lv_obj_t *current = tile_label("Extruder", "31");  // the fixture's extruder temperature
+  lv_obj_t *target = tile_label("T0", "200");
+  lv_obj_t *current = tile_label("T0", "31");  // the fixture's extruder temperature
   REQUIRE(current != nullptr);
   std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
   lv_area_t t, c;
@@ -193,16 +193,16 @@ TEST_CASE("a sensor coloured white is white") {
 
 TEST_CASE("a sensor whose colour another sensor has gets the first free contrasting one") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  start_with_sensors(moonraker, {sensor("extruder", "Extruder", "red"), sensor("heater_bed", "Bed", "red"),
+  start_with_sensors(moonraker, {sensor("extruder", "T0", "red"), sensor("heater_bed", "Bed", "red"),
                                  sensor("temperature_sensor head", "Head", "blue")});
-  CHECK(stripe("Extruder") == palette(LV_PALETTE_RED));
+  CHECK(stripe("T0") == palette(LV_PALETTE_RED));
   CHECK(stripe("Head") == palette(LV_PALETTE_BLUE));  // set explicitly: kept
   CHECK(stripe("Bed") == palette(LV_PALETTE_GREEN));  // red and blue taken
 }
 
 TEST_CASE("a sensor with an unknown colour gets the first free contrasting one") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
-  start_with_sensors(moonraker, {sensor("extruder", "Extruder", "red"), sensor("heater_bed", "Bed", "mauve")});
+  start_with_sensors(moonraker, {sensor("extruder", "T0", "red"), sensor("heater_bed", "Bed", "mauve")});
   CHECK(stripe("Bed") == palette(LV_PALETTE_BLUE));
 }
 
@@ -359,11 +359,11 @@ TEST_CASE("Home's tile being set is blue while the numpad is open") {
   FakeMoonraker moonraker(app::fixture("ad5m_basic.json"));
   app::start(moonraker);
   app::wait_ready(moonraker);
-  lv_obj_t *extruder = tile_of("Extruder");
+  lv_obj_t *extruder = tile_of("T0");
   lv_obj_t *bed = tile_of("Bed");
   CHECK_FALSE(ui::has_bg(extruder, LV_PALETTE_BLUE));
 
-  ui::tap_label("Extruder");
+  ui::tap_label("T0");
   REQUIRE(numpad_open());
   CHECK(ui::has_bg(extruder, LV_PALETTE_BLUE));
   CHECK_FALSE(ui::has_bg(bed, LV_PALETTE_BLUE));
