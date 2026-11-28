@@ -228,6 +228,12 @@ TEST_CASE("C5 Pro uses filament colors and hides an empty nozzle stripe") {
     {{"ID", "4"}, {"HEX", "00FF00"}, {"hasFilament", true}}
   })}}}});
   REQUIRE(app::wait_until([] { return stripe("T0") == lv_color_to32(lv_color_hex(0x12AB34)); }));
+  const auto original_name_color = [&] {
+    lv_obj_t *label = ui::find_label("T0");
+    REQUIRE(label != nullptr);
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return lv_color_to32(lv_obj_get_style_text_color(label, 0));
+  }();
   CHECK(stripe("T1") == palette(LV_PALETTE_GREY));
   lv_obj_t *name = ui::find_label("T1");
   REQUIRE(name != nullptr);
@@ -260,6 +266,30 @@ TEST_CASE("C5 Pro uses filament colors and hides an empty nozzle stripe") {
   ui::tap_tab(Nav::HOME);
   REQUIRE(app::wait_until([] { return stripe("T0") == palette(LV_PALETTE_RED); }));
   CHECK(stripe("T1") == palette(LV_PALETTE_ORANGE));
+  for (const auto &entry : {std::pair<const char *, lv_palette_t>{"T0", LV_PALETTE_RED},
+                            {"T1", LV_PALETTE_ORANGE}, {"T2", LV_PALETTE_YELLOW},
+                            {"T3", LV_PALETTE_GREEN}, {"Bed", LV_PALETTE_BLUE},
+                            {"Chamber", LV_PALETTE_PURPLE}}) {
+    CAPTURE(entry.first);
+    lv_obj_t *label = ui::find_label(entry.first);
+    REQUIRE(label != nullptr);
+    CHECK(has_colour(label, entry.second));
+    CHECK(stripe(entry.first) == palette(entry.second));
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    bool found = false;
+    for (lv_chart_series_t *s = lv_chart_get_series_next(chart, NULL); s; s = lv_chart_get_series_next(chart, s))
+      found |= lv_color_to32(s->color) == palette(entry.second);
+    CHECK(found);
+  }
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("System");
+  ui::tap(toggle);
+  ui::tap_tab(Nav::HOME);
+  REQUIRE(app::wait_until([] { return stripe("T0") == lv_color_to32(lv_color_hex(0x12AB34)); }));
+  lv_obj_t *restored = ui::find_label("T0");
+  REQUIRE(restored != nullptr);
+  std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+  CHECK(lv_color_to32(lv_obj_get_style_text_color(restored, 0)) == original_name_color);
 }
 
 namespace {

@@ -147,6 +147,8 @@ void MainPanel::init(json &j) {
 #ifdef GUPPY_FF5M
   if (j.contains("/result/status/zmod_color/slots"_json_pointer))
     update_filament_colors(j.at("/result/status/zmod_color/slots"_json_pointer));
+  else if (!Config::get_instance()->get<bool>("/use_filament_colors"))
+    update_filament_colors(json());
 #endif
 
   macros_panel.refresh();
@@ -483,6 +485,8 @@ void MainPanel::update_filament_colors(const json &slots) {
     if (lv_obj_get_style_border_opa(tile, LV_PART_MAIN) != opacity)
       lv_obj_set_style_border_opa(tile, opacity, LV_PART_MAIN);
   }
+  for (const auto &[id, sensor] : sensors)
+    sensor->set_name_colored(!enabled);
 }
 #endif
 
