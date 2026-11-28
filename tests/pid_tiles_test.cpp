@@ -419,19 +419,29 @@ TEST_CASE("the PID screen's chart looks and sits as Home's") {
   const lv_area_t pid_area = ui::coords(pid);
   app::redraw();
   {
-    // Чёрные линии на 100° и 200° по шкале 0–350°, толщиной 1 px.
+    // Пунктир цветом шкалы через 100° по шкале 0–350°, толщиной 1 px.
     std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
     lv_area_t c;
     lv_obj_get_content_coords(pid, &c);
     const int h = c.y2 - c.y1 + 1;
-    for (int deg : {100, 200}) {
+    const lv_color_t line = lv_obj_get_style_text_color(pid, LV_PART_TICKS);
+    for (int deg : {100, 200, 300}) {
       CAPTURE(deg);
       const int y = c.y1 + h * (350 - deg) / 350;
       int rows = 0;
       for (int yy = y - 3; yy <= y + 3; yy++) {
-        int n = 0;
-        for (int x = c.x1; x <= c.x2; x++) n += fake_hw::pixel(x, yy).full == lv_color_black().full;
-        rows += n > (c.x2 - c.x1 + 1) / 2;
+        int n = 0, transitions = 0;
+        bool previous = false;
+        for (int x = c.x1; x <= c.x2; x++) {
+          const bool pixel = fake_hw::pixel(x, yy).full == line.full;
+          n += pixel;
+          if (x > c.x1) transitions += pixel != previous;
+          previous = pixel;
+        }
+        const double fraction = (double)n / (c.x2 - c.x1 + 1);
+        if (fraction < 0.35 || fraction > 0.75) continue;
+        CHECK(transitions > (c.x2 - c.x1) / 8);
+        rows++;
       }
       CHECK(rows == 1);
     }

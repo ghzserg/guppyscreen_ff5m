@@ -212,7 +212,6 @@ lv_coord_t SensorContainer::tile_width() {
 }
 
 void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
-  lv_obj_set_style_line_color(chart, lv_color_black(), 0);
   lv_obj_set_style_line_width(chart, 1, 0);
   lv_obj_set_style_text_font(chart, &notosemi_20, LV_PART_TICKS);
   lv_obj_set_style_text_letter_space(chart, 0, LV_PART_TICKS);
@@ -246,6 +245,9 @@ void SensorContainer::style_chart(lv_obj_t *chart, int32_t max_temp) {
     const lv_coord_t y0 = plot.y1 - lv_obj_get_scroll_top(obj);
     if (h <= 0 || top <= 200) return;
 
+    dsc->line_dsc->color = lv_obj_get_style_text_color(obj, LV_PART_TICKS);
+    dsc->line_dsc->dash_width = 4;
+    dsc->line_dsc->dash_gap = 4;
     for (int32_t deg = 100; deg < top; deg += 100) {
       const lv_coord_t y = y0 + h - h * deg / top;
       const lv_point_t p1 = {plot.x1, y}, p2 = {plot.x2, y};
