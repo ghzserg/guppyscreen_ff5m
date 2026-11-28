@@ -448,8 +448,8 @@ void MainPanel::update_filament_colors(const json &slots) {
   for (const auto &[id, original] : default_tool_colors) {
     lv_color_t color = original;
     bool stripe = true;
+    const int tool = NozzleTiles::tool_of(id);
     if (slots.is_array()) {
-      const int tool = NozzleTiles::tool_of(id);
       for (const auto &slot : slots) {
         if (!slot.is_object()) continue;
         auto index = slot.find("ID");
@@ -487,6 +487,7 @@ void MainPanel::update_filament_colors(const json &slots) {
     const lv_opa_t opacity = stripe ? LV_OPA_COVER : LV_OPA_TRANSP;
     if (lv_obj_get_style_border_opa(tile, LV_PART_MAIN) != opacity)
       lv_obj_set_style_border_opa(tile, opacity, LV_PART_MAIN);
+    print_status_panel.get_pid_panel().update_filament_color(tool, color, opacity, enabled);
   }
 }
 #endif

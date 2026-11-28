@@ -273,6 +273,80 @@ std::vector<uint32_t> pid_chart_colours(lv_obj_t *nozzle) {
 
 }  // namespace
 
+TEST_CASE("C5 Pro PID follows Home filament stripes and chart color setting") {
+  FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
+  app::start(moonraker, app::zmod_sensors("guppyconfig_c5pro.json", "C5Pro"));
+  app::wait_ready(moonraker);
+  const auto color = [](lv_palette_t p) { return lv_color_to32(lv_palette_main(p)); };
+  const auto name_color = [](const char *name) {
+    auto *label = ui::find_label(name);
+    REQUIRE(label != nullptr);
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return lv_color_to32(lv_obj_get_style_text_color(label, 0));
+  };
+  const auto theme_color = name_color("T0");
+  const auto empty_stripe = [] {
+    auto *obj = tile("T1");
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    return lv_obj_get_style_border_opa(obj, 0) == LV_OPA_TRANSP;
+  };
+  moonraker.push_status({{"zmod_color", {{"slots", json::array({
+    {{"ID", "1"}, {"HEX", "12AB34"}, {"hasFilament", true}},
+    {{"ID", "2"}, {"HEX", "FF0000"}, {"hasFilament", false}},
+    {{"ID", "3"}, {"HEX", "ABCDEF"}, {"hasFilament", true}},
+    {{"ID", "4"}, {"HEX", "00FF00"}, {"hasFilament", true}}
+  })}}}});
+  app::settle(moonraker);
+  open_pid(moonraker);
+  CHECK(name_color("T0") == theme_color);
+  CHECK(stripe_of(tile("T0")) == lv_color_to32(lv_color_hex(0x12AB34)));
+  CHECK(empty_stripe());
+  CHECK(pid_chart_colours(tile("T0")).at(0) == stripe_of(tile("T0")));
+  ui::tap(tile("T1"));
+  ui::enter_on_numpad("245");
+  app::settle(moonraker);
+  CHECK(pid_chart_colours(tile("T1")).at(0) == color(LV_PALETTE_GREY));
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("System");
+  auto *label = ui::find_label("Filament colors");
+  REQUIRE(label != nullptr);
+  lv_obj_t *toggle;
+  {
+    std::lock_guard<std::mutex> lock(GuppyScreen::get()->get_lock());
+    toggle = ui::find_in(lv_obj_get_parent(label), &lv_switch_class);
+    REQUIRE(toggle != nullptr);
+  }
+  ui::tap(toggle);
+  open_pid(moonraker);
+  CHECK(name_color("T0") == color(LV_PALETTE_RED));
+  CHECK(name_color("T1") == color(LV_PALETTE_ORANGE));
+  CHECK(name_color("T2") == color(LV_PALETTE_YELLOW));
+  CHECK(name_color("T3") == color(LV_PALETTE_GREEN));
+  CHECK(name_color("Bed") == color(LV_PALETTE_BLUE));
+  CHECK(stripe_of(tile("T0")) == lv_color_to32(lv_color_hex(0x12AB34)));
+  CHECK(empty_stripe());
+  CHECK(pid_chart_colours(tile("T1")).at(0) == color(LV_PALETTE_ORANGE));
+  ui::tap(tile("T2"));
+  ui::enter_on_numpad("245");
+  app::settle(moonraker);
+  CHECK(pid_chart_colours(tile("T2")).at(0) == color(LV_PALETTE_YELLOW));
+  moonraker.push_status({{"zmod_color", {{"slots", json::array({
+    {{"ID", "2"}, {"hasFilament", false}},
+    {{"ID", "3"}, {"HEX", "654321"}, {"hasFilament", true}}
+  })}}}});
+  app::settle(moonraker);
+  CHECK(stripe_of(tile("T2")) == lv_color_to32(lv_color_hex(0x654321)));
+  CHECK(name_color("T2") == color(LV_PALETTE_YELLOW));
+  CHECK(pid_chart_colours(tile("T2")).at(0) == color(LV_PALETTE_YELLOW));
+  ui::tap_tab(Nav::SETTINGS);
+  ui::tap_label("System");
+  ui::tap(toggle);
+  open_pid(moonraker);
+  CHECK(name_color("T2") == theme_color);
+  CHECK(empty_stripe());
+  CHECK(pid_chart_colours(tile("T2")).at(0) == lv_color_to32(lv_color_hex(0x654321)));
+}
+
 // При наличии weightValue доступны все три управления независимо от имени профиля.
 TEST_CASE("the C5 Pro PID screen keeps weight controls and colours when weightValue exists") {
   FakeMoonraker moonraker(app::fixture("c5pro_basic.json"));
