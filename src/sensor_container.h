@@ -81,7 +81,7 @@ class SensorContainer {
   // The stripe's colour and the chart line's.
   void set_color(lv_color_t color);
   void set_chart_color(lv_color_t color);
-  void set_name_colored(bool colored);
+  void set_name_colored(bool colored, const lv_color_t *configured = nullptr);
   static lv_coord_t tile_width();  // a tile's width on screen
   static constexpr lv_coord_t tile_gap() { return 6; }  // between tiles, Home and Extrude alike
   // График температур под плитками (Home, PID): вид плиток, слева вровень с

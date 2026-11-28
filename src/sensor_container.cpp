@@ -297,9 +297,10 @@ int32_t SensorContainer::chart_max_temp() {
   return State::get_instance()->get_extruders().size() > 1 ? 330 : 300;
 }
 
-void SensorContainer::set_name_colored(bool colored) {
+void SensorContainer::set_name_colored(bool colored, const lv_color_t *configured) {
   if (colored) {
-    const lv_color_t color = series ? series->color : lv_obj_get_style_border_color(sensor_cont, LV_PART_MAIN);
+    const lv_color_t color = configured ? *configured :
+        (series ? series->color : lv_obj_get_style_border_color(sensor_cont, LV_PART_MAIN));
     if (lv_color_to32(lv_obj_get_style_text_color(sensor_label, 0)) != lv_color_to32(color))
       lv_obj_set_style_text_color(sensor_label, color, 0);
   } else {

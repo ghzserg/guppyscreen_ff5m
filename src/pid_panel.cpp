@@ -1,4 +1,5 @@
 #include "pid_panel.h"
+#include "config.h"
 #include "nav.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -241,9 +242,6 @@ void PidPanel::create_chart() {
     const auto color = lv_obj_get_style_border_color(sensor->get_sensor(), LV_PART_MAIN);
     auto *series = lv_chart_add_series(temp_chart, color, LV_CHART_AXIS_PRIMARY_Y);
     sensor->attach_series(temp_chart, series);
-#ifdef GUPPY_FF5M
-    if (sensor == &extruder_temp) extruder_temp_series = series;
-#endif
   }
 #ifdef GUPPY_FF5M
   if (!nozzle_tiles.empty()) chart_selected_nozzle();
@@ -309,7 +307,9 @@ int PidPanel::chart_selected_nozzle() {
       extruder_temp.clear_series();
     }
     charted_tool = tool;
-    lv_chart_set_series_color(temp_chart, extruder_temp_series, nozzle_tiles.nozzle(tool)->color);
+    const lv_color_t color = filament_colors_enabled ?
+        lv_obj_get_style_border_color(nozzle_tiles.tile(tool)->get_sensor(), LV_PART_MAIN) : nozzle_tiles.nozzle(tool)->color;
+    extruder_temp.set_chart_color(color);
   }
   return tool;
 }
@@ -324,6 +324,27 @@ void PidPanel::show_weight_controls(bool show) {
 void PidPanel::set_colors(lv_color_t bed, lv_color_t weight) {
   heater_bed_temp.set_color(bed);
   weight_temp.set_color(weight);
+  heater_bed_temp.set_name_colored(!filament_colors_enabled);
+  weight_temp.set_name_colored(!filament_colors_enabled);
+}
+
+void PidPanel::update_filament_color(int tool, lv_color_t color, lv_opa_t opacity, bool enabled) {
+  if (!nozzle_tiles.selectable()) return;
+  auto *tile = nozzle_tiles.tile(tool);
+  if (!tile) return;
+  if (filament_colors_enabled != enabled) {
+    filament_colors_enabled = enabled;
+    heater_bed_temp.set_name_colored(!enabled);
+    weight_temp.set_name_colored(!enabled);
+  }
+  const lv_color_t &configured = nozzle_tiles.nozzle(tool)->color;
+  auto *obj = tile->get_sensor();
+  if (lv_color_to32(lv_obj_get_style_border_color(obj, LV_PART_MAIN)) != lv_color_to32(color))
+    lv_obj_set_style_border_color(obj, color, LV_PART_MAIN);
+  if (lv_obj_get_style_border_opa(obj, LV_PART_MAIN) != opacity)
+    lv_obj_set_style_border_opa(obj, opacity, LV_PART_MAIN);
+  tile->set_name_colored(!enabled, &configured);
+  if (tool == charted_tool) extruder_temp.set_chart_color(enabled ? color : configured);
 }
 
 void PidPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &nozzles, lv_coord_t left, lv_coord_t top) {
@@ -347,5 +368,10 @@ void PidPanel::create_nozzle_tiles(const std::vector<NozzleTiles::Nozzle> &nozzl
     return true;
   });
   nozzle_tiles.set_targets(extruder_temp.get_target_value());
+  filament_colors_enabled = !nozzle_tiles.selectable() || Config::get_instance()->get<bool>("/use_filament_colors");
+  if (!filament_colors_enabled) {
+    for (const auto &nozzle : nozzles)
+      nozzle_tiles.tile(nozzle.tool)->set_name_colored(true, &nozzle.color);
+  }
 }
 #endif
