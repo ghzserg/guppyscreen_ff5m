@@ -2,39 +2,22 @@
 #define __K_THEME_H__
 
 #include "hv/json.hpp"
+#include "lvgl/lvgl.h"
 
-#include <string>
+#include <array>
 
-using json = nlohmann::json;
-
-class ThemeConfig {
-private:
-  static ThemeConfig *instance;
-  std::string path;
-
-protected:
-  json data;
-
-public:
-  ThemeConfig();
-  ThemeConfig(ThemeConfig &o) = delete;
-  void operator=(const ThemeConfig &) = delete;
-  void init(const std::string config_path);
-
-  template<typename T> T get(const std::string &json_ptr) {
-    return data[json::json_pointer(json_ptr)].template get<T>();
-  };
-
-  template<typename T> T set(const std::string &json_ptr, T v) {
-    return data[json::json_pointer(json_ptr)] = v;
-  };
-
-  json &get_json(const std::string &json_path);
-
-  void save();
-
-  static ThemeConfig *get_instance();
-
+namespace Theme {
+struct Color {
+  const char *name;
+  uint32_t primary;
 };
+
+extern const std::array<Color, 6> colors;
+constexpr uint32_t secondary = 0xF44336;
+extern lv_style_t accent_bg;
+extern lv_style_t accent_outline;
+
+uint32_t index(const nlohmann::json &value);
+}
 
 #endif // __K_THEME_H__

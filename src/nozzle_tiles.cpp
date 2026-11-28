@@ -3,6 +3,7 @@
 #ifdef GUPPY_FF5M
 
 #include "state.h"
+#include "theme.h"
 
 LV_IMG_DECLARE(extruder);
 
@@ -61,11 +62,10 @@ void NozzleTiles::show_selected(int tool) {
   for (size_t i = 0; i < tiles.size(); i++) {
     lv_obj_t *obj = tiles[i]->get_sensor();
     if (nozzles[i].tool == tool) {
-      lv_obj_set_style_bg_color(obj, lv_palette_main(LV_PALETTE_BLUE), 0);
-      lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, 0);
+      lv_obj_remove_style(obj, &Theme::accent_bg, 0);
+      lv_obj_add_style(obj, &Theme::accent_bg, 0);
     } else {
-      lv_obj_remove_local_style_prop(obj, LV_STYLE_BG_COLOR, 0);
-      lv_obj_remove_local_style_prop(obj, LV_STYLE_BG_OPA, 0);
+      lv_obj_remove_style(obj, &Theme::accent_bg, 0);
     }
   }
 }

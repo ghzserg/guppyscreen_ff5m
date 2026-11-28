@@ -589,6 +589,34 @@ msgstr "мм"
 msgid "s"
 msgstr "с"
 
+#: ../sysinfo_panel.cpp
+msgid "Theme"
+msgstr "Тема"
+
+#: ../sysinfo_panel.cpp
+msgid "Blue"
+msgstr "Синяя"
+
+#: ../sysinfo_panel.cpp
+msgid "Red"
+msgstr "Красная"
+
+#: ../sysinfo_panel.cpp
+msgid "Green"
+msgstr "Зелёная"
+
+#: ../sysinfo_panel.cpp
+msgid "Purple"
+msgstr "Фиолетовая"
+
+#: ../sysinfo_panel.cpp
+msgid "Pink"
+msgstr "Розовая"
+
+#: ../sysinfo_panel.cpp
+msgid "Yellow"
+msgstr "Жёлтая"
+
 #~ msgid "External circulation"
 #~ msgstr "Внешняя циркуляция"
 

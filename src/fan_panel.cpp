@@ -1,4 +1,5 @@
 #include "fan_panel.h"
+#include "theme.h"
 #include "nav.h"
 #include "state.h"
 #include "utils.h"
@@ -57,8 +58,7 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   for (ButtonContainer *b : {&air_internal_btn, &air_external_btn, &air_stop_btn}) {
     lv_obj_set_width(b->get_container(), 100 * (double)lv_disp_get_physical_hor_res(NULL) / 800.0);  // короткие подписи
     lv_obj_set_style_radius(b->get_container(), 8, LV_STATE_CHECKED);
-    lv_obj_set_style_bg_opa(b->get_container(), LV_OPA_COVER, LV_STATE_CHECKED);
-    lv_obj_set_style_bg_color(b->get_container(), lv_palette_main(LV_PALETTE_BLUE), LV_STATE_CHECKED);
+    lv_obj_add_style(b->get_container(), &Theme::accent_bg, LV_STATE_CHECKED);
   }
   show_air_circulation(false);
 #endif

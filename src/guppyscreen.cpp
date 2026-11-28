@@ -20,8 +20,6 @@
 #include "nav.h"
 #include "theme.h"
 #include <time.h>
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 GuppyScreen *GuppyScreen::instance = NULL;
 lv_style_t GuppyScreen::style_container;
@@ -67,21 +65,8 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
       ? "debug"
       : conf->get<std::string>(ll_path));
 
-  auto selected_theme = conf->get_json("/theme").empty()
-          ? "blue.json"
-          : conf->get<std::string>("/theme") + ".json";
-  auto theme_config = fs::canonical(conf->get_path()).parent_path() / "themes" / selected_theme;
-
-  ThemeConfig *theme_conf = ThemeConfig::get_instance();
-  theme_conf->init(theme_config);
-
-  auto primary_color = theme_conf->get_json("/primary_color").empty()
-          ? lv_color_hex(0x2196F3)
-          : lv_color_hex(std::stoul(theme_conf->get<std::string>("/primary_color"), nullptr, 16));
-
-  auto secondary_color = theme_conf->get_json("/secondary_color").empty()
-          ? lv_color_hex(0xF44336)
-          : lv_color_hex(std::stoul(theme_conf->get<std::string>("/secondary_color"), nullptr, 16));
+  const auto primary_color = lv_color_hex(Theme::colors[Theme::index(conf->get_json("/theme"))].primary);
+  const auto secondary_color = lv_color_hex(Theme::secondary);
 
 #ifndef OS_ANDROID
   auto console_sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
@@ -131,6 +116,13 @@ GuppyScreen *GuppyScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
   lv_style_init(&style_imgbtn_pressed);
   lv_style_set_img_recolor_opa(&style_imgbtn_pressed, LV_OPA_100);
   lv_style_set_img_recolor(&style_imgbtn_pressed, primary_color);
+
+  lv_style_init(&Theme::accent_bg);
+  lv_style_set_bg_color(&Theme::accent_bg, primary_color);
+  lv_style_set_bg_opa(&Theme::accent_bg, LV_OPA_COVER);
+  lv_style_init(&Theme::accent_outline);
+  lv_style_set_outline_color(&Theme::accent_outline, primary_color);
+  lv_style_set_outline_opa(&Theme::accent_outline, LV_OPA_COVER);
 
   lv_style_init(&style_imgbtn_disabled);
   lv_style_set_img_recolor_opa(&style_imgbtn_disabled, LV_OPA_100);
@@ -316,23 +308,18 @@ void GuppyScreen::save_calibration_coeff(lv_tc_coeff_t coeff) {
   conf->save();
 }
 
-void GuppyScreen::refresh_theme() {
-  lv_theme_t *th = lv_theme_default_get();
-  ThemeConfig *theme_conf = ThemeConfig::get_instance();
-  auto primary_color = theme_conf->get_json("/primary_color").empty()
-                       ? lv_color_hex(0x2196F3)
-                       : lv_color_hex(std::stoul(theme_conf->get<std::string>("/primary_color"), nullptr, 16));
-
-  auto secondary_color = theme_conf->get_json("/secondary_color").empty()
-                         ? lv_color_hex(0xF44336)
-                         : lv_color_hex(std::stoul(theme_conf->get<std::string>("/secondary_color"), nullptr, 16));
-
-  lv_disp_t *disp = lv_disp_get_default();
-  lv_theme_t * new_theme =  lv_theme_default_init(disp, primary_color, secondary_color, true, th->font_normal);
-  lv_disp_set_theme(disp, new_theme);
-  lv_style_set_img_recolor(&style_imgbtn_pressed, primary_color);
-}
 */
+
+void GuppyScreen::refresh_theme(lv_color_t primary) {
+  lv_theme_t *th = lv_theme_default_get();
+  lv_theme_default_init(lv_disp_get_default(), primary, th->color_secondary, true, th->font_normal);
+  // Сохраняем родительскую тему и собственный callback оформления.
+  th_new.color_primary = primary;
+  lv_style_set_img_recolor(&style_imgbtn_pressed, primary);
+  lv_style_set_bg_color(&Theme::accent_bg, primary);
+  lv_style_set_outline_color(&Theme::accent_outline, primary);
+  lv_obj_report_style_change(NULL);
+}
 
 /*Set in lv_conf.h as `LV_TICK_CUSTOM_SYS_TIME_EXPR`*/
 uint32_t custom_tick_get(void) {

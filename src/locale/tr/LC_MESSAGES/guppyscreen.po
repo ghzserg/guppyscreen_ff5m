@@ -590,6 +590,34 @@ msgstr "mm"
 msgid "s"
 msgstr "sn"
 
+#: ../sysinfo_panel.cpp
+msgid "Theme"
+msgstr "Tema"
+
+#: ../sysinfo_panel.cpp
+msgid "Blue"
+msgstr "Mavi"
+
+#: ../sysinfo_panel.cpp
+msgid "Red"
+msgstr "Kırmızı"
+
+#: ../sysinfo_panel.cpp
+msgid "Green"
+msgstr "Yeşil"
+
+#: ../sysinfo_panel.cpp
+msgid "Purple"
+msgstr "Mor"
+
+#: ../sysinfo_panel.cpp
+msgid "Pink"
+msgstr "Pembe"
+
+#: ../sysinfo_panel.cpp
+msgid "Yellow"
+msgstr "Sarı"
+
 #~ msgid "External circulation"
 #~ msgstr "Harici Dolaşım"
 

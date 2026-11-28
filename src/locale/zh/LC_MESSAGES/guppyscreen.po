@@ -589,6 +589,34 @@ msgstr "mm"
 msgid "s"
 msgstr "s"
 
+#: ../sysinfo_panel.cpp
+msgid "Theme"
+msgstr "主题"
+
+#: ../sysinfo_panel.cpp
+msgid "Blue"
+msgstr "蓝色"
+
+#: ../sysinfo_panel.cpp
+msgid "Red"
+msgstr "红色"
+
+#: ../sysinfo_panel.cpp
+msgid "Green"
+msgstr "绿色"
+
+#: ../sysinfo_panel.cpp
+msgid "Purple"
+msgstr "紫色"
+
+#: ../sysinfo_panel.cpp
+msgid "Pink"
+msgstr "粉色"
+
+#: ../sysinfo_panel.cpp
+msgid "Yellow"
+msgstr "黄色"
+
 #~ msgid "External circulation"
 #~ msgstr "外循环模式"
 

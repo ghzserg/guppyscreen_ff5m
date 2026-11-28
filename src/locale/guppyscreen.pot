@@ -578,3 +578,31 @@ msgstr ""
 #: ../print_status_panel.cpp:840 ../utils.cpp:281
 msgid "s"
 msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Theme"
+msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Blue"
+msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Red"
+msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Green"
+msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Purple"
+msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Pink"
+msgstr ""
+
+#: ../sysinfo_panel.cpp
+msgid "Yellow"
+msgstr ""
