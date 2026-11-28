@@ -297,6 +297,21 @@ int32_t SensorContainer::chart_max_temp() {
   return State::get_instance()->get_extruders().size() > 1 ? 330 : 300;
 }
 
+void SensorContainer::set_name_colored(bool colored) {
+  if (colored) {
+    const lv_color_t color = series ? series->color : lv_obj_get_style_border_color(sensor_cont, LV_PART_MAIN);
+    if (lv_color_to32(lv_obj_get_style_text_color(sensor_label, 0)) != lv_color_to32(color))
+      lv_obj_set_style_text_color(sensor_label, color, 0);
+  } else {
+    lv_obj_remove_local_style_prop(sensor_label, LV_STYLE_TEXT_COLOR, 0);
+  }
+}
+
+void SensorContainer::set_chart_color(lv_color_t color) {
+  if (chart && series && lv_color_to32(series->color) != lv_color_to32(color))
+    lv_chart_set_series_color(chart, series, color);
+}
+
 void SensorContainer::set_color(lv_color_t color) {
   lv_obj_set_style_border_color(sensor_cont, color, LV_PART_MAIN);
   if (chart != NULL && series != NULL) {

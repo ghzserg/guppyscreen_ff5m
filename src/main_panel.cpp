@@ -436,6 +436,10 @@ static std::map<std::string, lv_color_t> sensor_colors(json &temp_sensors,
 #ifdef GUPPY_FF5M
 void MainPanel::refresh_filament_colors() {
   update_filament_colors(State::get_instance()->get_data_copy("/printer_state/zmod_color/slots"_json_pointer));
+  if (default_tool_colors.size() < 2) return;
+  const bool enabled = Config::get_instance()->get<bool>("/use_filament_colors");
+  for (const auto &entry : sensors)
+    entry.second->set_name_colored(!enabled);
 }
 
 void MainPanel::update_filament_colors(const json &slots) {
@@ -444,7 +448,7 @@ void MainPanel::update_filament_colors(const json &slots) {
   for (const auto &[id, original] : default_tool_colors) {
     lv_color_t color = original;
     bool stripe = true;
-    if (enabled && slots.is_array()) {
+    if (slots.is_array()) {
       const int tool = NozzleTiles::tool_of(id);
       for (const auto &slot : slots) {
         if (!slot.is_object()) continue;
@@ -478,7 +482,8 @@ void MainPanel::update_filament_colors(const json &slots) {
     if (sensor == sensors.end()) continue;
     lv_obj_t *tile = sensor->second->get_sensor();
     if (lv_color_to32(lv_obj_get_style_border_color(tile, LV_PART_MAIN)) != lv_color_to32(color))
-      sensor->second->set_color(color);
+      lv_obj_set_style_border_color(tile, color, LV_PART_MAIN);
+    sensor->second->set_chart_color(enabled ? color : original);
     const lv_opa_t opacity = stripe ? LV_OPA_COVER : LV_OPA_TRANSP;
     if (lv_obj_get_style_border_opa(tile, LV_PART_MAIN) != opacity)
       lv_obj_set_style_border_opa(tile, opacity, LV_PART_MAIN);
@@ -580,6 +585,8 @@ void MainPanel::create_sensors(json &temp_sensors) {
                            temp_chart, temp_series)});
 #ifdef GUPPY_FF5M
     sensors[key]->as_tile();
+    if (default_tool_colors.size() > 1 && !Config::get_instance()->get<bool>("/use_filament_colors"))
+      sensors[key]->set_name_colored(true);
 #endif
   }
 }
